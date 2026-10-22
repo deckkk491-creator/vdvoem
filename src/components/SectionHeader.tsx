@@ -26,7 +26,13 @@ export function SectionHeader({
   return (
     <View style={{ marginBottom: 16 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <Pressable onPress={() => router.push('/settings')} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }} hitSlop={8}>
+        <Pressable
+          onPress={() => router.push('/settings')}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 34, flexShrink: 1 }}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Пространство «${space?.name ?? ''}»${live ? ', синхронизировано' : ''}. Открыть настройки`}
+        >
           <Text style={{ fontSize: 13, color: c.textMuted, fontWeight: '600' }} numberOfLines={1}>
             {space?.name ?? ''}
           </Text>
@@ -55,6 +61,9 @@ export function SortToggle({ value, onChange }: { value: 'likes' | 'new'; onChan
   return (
     <Pressable
       onPress={() => onChange(value === 'likes' ? 'new' : 'likes')}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={value === 'likes' ? 'Сортировка: по лайкам. Нажми, чтобы показать новые' : 'Сортировка: новые. Нажми, чтобы сортировать по лайкам'}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',

@@ -83,7 +83,12 @@ export default function WatchScreen() {
                   </>
                 }
                 footerExtra={
-                  <Pressable onPress={() => update(item.id, { status: STATUS_NEXT[status] }).catch(() => undefined)} hitSlop={6}>
+                  <Pressable
+                    onPress={() => update(item.id, { status: STATUS_NEXT[status] }).catch(() => undefined)}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Статус: ${STATUS_LABEL[status]}. Нажми, чтобы сменить`}
+                  >
                     <Badge
                       label={`${status === 'watched' ? '✓ ' : status === 'watching' ? '▶ ' : ''}${STATUS_LABEL[status]}`}
                       color={status === 'watched' ? c.sage : status === 'watching' ? c.honey : c.textMuted}

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Avatar } from '../../src/components/people';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { Body, Card, Label, Row, Screen } from '../../src/components/ui';
@@ -47,14 +47,19 @@ export default function UsScreen() {
               </View>
             );
           })}
-          <View style={{ alignItems: 'center', width: 72 }}>
+          <Pressable
+            onPress={() => router.push('/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Пригласить участника"
+            style={({ pressed }) => ({ alignItems: 'center', width: 72, opacity: pressed ? 0.6 : 1 })}
+          >
             <View
               style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderStyle: 'dashed', borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Ionicons name="add" size={24} color={c.textMuted} onPress={() => router.push('/settings')} />
+              <Ionicons name="add" size={24} color={c.textMuted} />
             </View>
             <Text style={{ marginTop: 6, color: c.textMuted, fontSize: 13 }}>Пригласить</Text>
-          </View>
+          </Pressable>
         </View>
       </Card>
 

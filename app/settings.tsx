@@ -127,7 +127,13 @@ export default function Settings() {
           <View style={{ marginTop: 16 }}>
             <Label>Переключить</Label>
             {spaces.map((s) => (
-              <Pressable key={s.id} onPress={() => selectSpace(s.id)} style={{ paddingVertical: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Pressable
+                key={s.id}
+                onPress={() => selectSpace(s.id)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: s.id === space?.id }}
+                style={{ minHeight: 44, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+              >
                 <Text style={{ color: c.text, fontWeight: s.id === space?.id ? '700' : '400' }}>{s.name}</Text>
                 {s.id === space?.id ? <Text style={{ color: c.accent }}>●</Text> : null}
               </Pressable>

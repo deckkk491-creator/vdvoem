@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../src/theme';
+import { TAB_BAR_HEIGHT, space, useTheme } from '../../src/theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -19,6 +19,8 @@ const TABS: { name: string; title: string; icon: IconName; iconActive: IconName 
 export default function TabsLayout() {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
+  // На iPhone с «чёлкой» — системный отступ, на iPhone SE и Android — свой небольшой
+  const bottomPad = Math.max(insets.bottom, space.sm);
   return (
     <Tabs
       screenOptions={{
@@ -31,9 +33,9 @@ export default function TabsLayout() {
           backgroundColor: c.card,
           borderTopColor: c.border,
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 58 + insets.bottom,
+          height: TAB_BAR_HEIGHT + bottomPad,
           paddingTop: 6,
-          paddingBottom: Math.max(insets.bottom, Platform.OS === 'ios' ? 20 : 8),
+          paddingBottom: bottomPad,
         },
         sceneStyle: { backgroundColor: c.bg },
       }}

@@ -78,7 +78,12 @@ export function ItemCard({
               </Text>
             ) : null}
             {item.url ? (
-              <Pressable onPress={() => openLink(item.url)} hitSlop={6} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 }}>
+              <Pressable
+                onPress={() => openLink(item.url)}
+                hitSlop={10}
+                accessibilityRole="link"
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, alignSelf: 'flex-start' }}
+              >
                 <Ionicons name="link-outline" size={15} color={accent} />
                 <Text style={{ color: accent, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
                   {hostOf(item.url) || 'Ссылка'}

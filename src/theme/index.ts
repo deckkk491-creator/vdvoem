@@ -26,6 +26,13 @@ export type Palette = {
   shadow: string;
 };
 
+/*
+ * Все цвета приложения — только отсюда.
+ * Пары «текст на фоне» проверены на контраст WCAG AA (≥ 4.5:1 для текста,
+ * ≥ 3:1 для иконок и крупного текста): белый на accent/honey/sage/sky/plum/danger,
+ * цвет раздела на его *Soft-фоне, textMuted на bg/bgAlt/card.
+ * textFaint тоже проходит AA на bg/card, но по смыслу — только для вторичных подписей.
+ */
 const light: Palette = {
   bg: '#FBF4EC',
   bgAlt: '#F5EADF',
@@ -33,20 +40,20 @@ const light: Palette = {
   cardPressed: '#F7EFE6',
   border: '#EADBCB',
   text: '#2B1D17',
-  textMuted: '#7D685C',
-  textFaint: '#B09D90',
-  accent: '#E0623A',
+  textMuted: '#735F52',
+  textFaint: '#806B5D',
+  accent: '#B04620',
   accentSoft: '#FBE1D5',
   onAccent: '#FFFFFF',
   plum: '#7A3F5C',
   plumSoft: '#F1DDE6',
-  honey: '#C98618',
+  honey: '#93600E',
   honeySoft: '#FBEBCB',
-  sage: '#4F7A55',
+  sage: '#3F6B45',
   sageSoft: '#DDEBD9',
   sky: '#3B6E8F',
-  skySoft: '#DAE8F1',
-  danger: '#C2412D',
+  skySoft: '#E3EEF5',
+  danger: '#A93A27',
   dangerSoft: '#F8DCD5',
   heart: '#E5484D',
   shadow: 'rgba(80, 40, 20, 0.10)',
@@ -60,7 +67,7 @@ const dark: Palette = {
   border: '#3A2D25',
   text: '#F6EBE1',
   textMuted: '#B7A293',
-  textFaint: '#7A6759',
+  textFaint: '#9A8473',
   accent: '#F07A52',
   accentSoft: '#3D2219',
   onAccent: '#1A0F0A',
@@ -85,6 +92,10 @@ export const fonts = {
 
 export const radius = { sm: 10, md: 16, lg: 22, xl: 28, pill: 999 };
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
+/** Минимальный размер области нажатия (Apple HIG — 44 pt) */
+export const TAP = 44;
+/** Высота нижнего таб-бара без системного отступа */
+export const TAB_BAR_HEIGHT = 58;
 
 export type Theme = { c: Palette; dark: boolean };
 

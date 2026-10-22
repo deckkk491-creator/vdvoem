@@ -121,6 +121,9 @@ export default function ShoppingScreen() {
             <Pressable
               onPress={quickAdd}
               disabled={!title.trim() || busy}
+              hitSlop={4}
+              accessibilityRole="button"
+              accessibilityLabel="Добавить в список"
               style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: title.trim() ? st.fg : c.bgAlt, alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="arrow-up" size={22} color={title.trim() ? c.onAccent : c.textFaint} />
@@ -150,6 +153,8 @@ export default function ShoppingScreen() {
                   <Pressable
                     key={i.id}
                     onPress={() => toggleBought(i)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: i.done }}
                     onLongPress={() =>
                       itemMenu(i.title, () => setEditing(i), () => remove(i.id).catch((e) => Alert.alert('Ошибка', humanError(e))))
                     }
@@ -157,7 +162,8 @@ export default function ShoppingScreen() {
                       flexDirection: 'row',
                       alignItems: 'center',
                       gap: 12,
-                      paddingVertical: 12,
+                      minHeight: 52,
+                      paddingVertical: 10,
                       paddingHorizontal: 14,
                       borderTopWidth: idx === 0 ? 0 : 1,
                       borderColor: c.bgAlt,

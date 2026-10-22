@@ -17,7 +17,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fonts, radius, space, useTheme } from '../theme';
+import { fonts, radius, space, TAB_BAR_HEIGHT, TAP, useTheme } from '../theme';
 
 export type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -165,10 +165,14 @@ export function Button({
       onPress={onPress}
       disabled={disabled || loading}
       accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: !!(disabled || loading), busy: !!loading }}
+      hitSlop={small ? 4 : undefined}
       style={({ pressed }) => [
         {
           backgroundColor: bg,
           borderRadius: radius.pill,
+          minHeight: small ? 36 : TAP + 4,
           paddingVertical: small ? 8 : 14,
           paddingHorizontal: small ? 14 : 22,
           flexDirection: 'row',
@@ -212,7 +216,8 @@ export function IconButton({
   return (
     <Pressable
       onPress={onPress}
-      hitSlop={10}
+      hitSlop={Math.max(4, (TAP - (size + 18)) / 2 + 4)}
+      accessibilityRole="button"
       accessibilityLabel={label}
       style={({ pressed }) => ({
         width: size + 18,
@@ -282,6 +287,9 @@ export function Chip({
     <Pressable
       onPress={onPress}
       disabled={!onPress}
+      hitSlop={small ? { top: 10, bottom: 10, left: 2, right: 2 } : { top: 5, bottom: 5 }}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityState={{ selected: !!active }}
       style={({ pressed }) => ({
         paddingHorizontal: small ? 10 : 14,
         paddingVertical: small ? 4 : 8,
@@ -341,8 +349,12 @@ export function Segmented<T extends string>({
           <Pressable
             key={o.value}
             onPress={() => onChange(o.value)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
             style={{
               flex: 1,
+              minHeight: 38,
+              justifyContent: 'center',
               paddingVertical: 7,
               paddingHorizontal: 10,
               borderRadius: radius.pill,
@@ -475,16 +487,32 @@ export function Sheet({
 
 /* ------------------------------ FAB ------------------------------ */
 
-export function Fab({ onPress, color, icon = 'add', label }: { onPress: () => void; color?: string; icon?: IconName; label?: string }) {
+export function Fab({
+  onPress,
+  color,
+  icon = 'add',
+  label,
+  overTabBar = true,
+}: {
+  onPress: () => void;
+  color?: string;
+  icon?: IconName;
+  label?: string;
+  /** Кнопка над нижним таб-баром (по умолчанию) или на экране без него */
+  overTabBar?: boolean;
+}) {
   const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  const bottom = overTabBar ? TAB_BAR_HEIGHT + Math.max(insets.bottom, space.sm) + space.lg : Math.max(insets.bottom, space.lg) + space.sm;
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
       accessibilityLabel={label ?? 'Добавить'}
       style={({ pressed }) => ({
         position: 'absolute',
         right: 20,
-        bottom: 104,
+        bottom,
         height: 58,
         minWidth: 58,
         paddingHorizontal: label ? 20 : 0,

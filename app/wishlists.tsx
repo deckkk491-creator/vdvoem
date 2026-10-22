@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { itemMenu, openLink } from '../src/components/ItemCard';
+import { Badge, itemMenu, openLink } from '../src/components/ItemCard';
 import { Avatar, useNameOf } from '../src/components/people';
 import { Body, Button, Card, ChipGroup, EmptyState, ErrorNote, Fab, Input, Label, Loading, Row, Sheet } from '../src/components/ui';
 import { hostOf, normalizeUrl, parseAmount, rub } from '../src/lib/format';
@@ -84,7 +84,10 @@ export default function Wishlists() {
               <Pressable
                 key={m.user_id}
                 onPress={() => setOwner(m.user_id)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
                 style={{
+                  minHeight: 44,
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 8,
@@ -156,20 +159,25 @@ export default function Wishlists() {
               >
                 <Row style={{ alignItems: 'flex-start' }} gap={12}>
                   <View style={{ flex: 1 }}>
-                    <Row gap={6} style={{ flexWrap: 'wrap', marginBottom: 4 }}>
-                      {item.occasion ? (
-                        <View style={{ backgroundColor: st.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 }}>
-                          <Text style={{ color: st.fg, fontSize: 11.5, fontWeight: '700' }}>{item.occasion}</Text>
-                        </View>
-                      ) : null}
-                    </Row>
-                    <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>{item.title}</Text>
+                    {item.occasion ? (
+                      <Row gap={6} style={{ flexWrap: 'wrap', marginBottom: 6 }}>
+                        <Badge label={item.occasion} color={st.fg} bg={st.bg} />
+                      </Row>
+                    ) : null}
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: c.text, lineHeight: 23 }}>{item.title}</Text>
                     {item.price !== null ? <Text style={{ color: c.textMuted, marginTop: 2, fontWeight: '600' }}>{rub(item.price)}</Text> : null}
                     {item.note ? <Body muted style={{ fontSize: 14, marginTop: 4 }}>{item.note}</Body> : null}
                     {item.url ? (
-                      <Pressable onPress={() => openLink(item.url)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 }}>
+                      <Pressable
+                        onPress={() => openLink(item.url)}
+                        hitSlop={10}
+                        accessibilityRole="link"
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, alignSelf: 'flex-start' }}
+                      >
                         <Ionicons name="link-outline" size={15} color={st.fg} />
-                        <Text style={{ color: st.fg, fontWeight: '600' }}>{hostOf(item.url)}</Text>
+                        <Text style={{ color: st.fg, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
+                          {hostOf(item.url) || 'Ссылка'}
+                        </Text>
                       </Pressable>
                     ) : null}
                   </View>
@@ -203,7 +211,7 @@ export default function Wishlists() {
           })
         )}
       </ScrollView>
-      {isMine && list.length > 0 ? <Fab onPress={() => setEditing('new')} color={st.fg} /> : null}
+      {isMine && list.length > 0 ? <Fab onPress={() => setEditing('new')} color={st.fg} overTabBar={false} /> : null}
       <WishSheet
         item={editing === 'new' ? null : editing}
         visible={editing !== null}
