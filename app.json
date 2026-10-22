@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "Вдвоём",
+    "slug": "vdvoem",
+    "scheme": "vdvoem",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "backgroundColor": "#FBF4EC",
+    "ios": {
+      "bundleIdentifier": "com.deckkk491.vdvoem",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDevelopmentRegion": "ru"
+      }
+    },
+    "android": {
+      "package": "com.deckkk491.vdvoem",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#E0623A"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#FBF4EC",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#17110E"
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#E0623A"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "locales": {
+      "ru": "./locales/ru.json"
+    }
+  }
+}

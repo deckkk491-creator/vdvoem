@@ -1,0 +1,8 @@
+# Минимальная конфигурация для supabase CLI (используется при `supabase functions deploy`).
+project_id = "vdvoem"
+
+[functions.link-preview]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
