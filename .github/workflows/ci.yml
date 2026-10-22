@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Align Expo SDK versions
+        run: npx expo install --check || true
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Expo doctor
+        run: npx expo-doctor || true
+      - name: Bundle for iOS
+        run: npx expo export --platform ios
