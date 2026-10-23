@@ -12,7 +12,7 @@ import { fonts, useTheme } from '../src/theme';
 export default function Onboarding() {
   const { c } = useTheme();
   const { profile, signOut } = useAuth();
-  const { space, createSpace, joinSpace } = useSpace();
+  const { space, createSpace, joinSpace, loadError, refresh } = useSpace();
   const [mode, setMode] = useState<'create' | 'join'>('create');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -75,6 +75,8 @@ export default function Onboarding() {
       <Body muted style={{ marginTop: 6, marginBottom: 20 }}>
         Всё, что вы добавляете, хранится в общем пространстве. Создай его и пригласи партнёра — или присоединись по коду.
       </Body>
+      {/* Если список пространств не загрузился, человек мог попасть сюда, хотя пространство у него есть */}
+      {!created ? <ErrorNote text={loadError} onRetry={refresh} /> : null}
 
       {created && space ? (
         <Card>

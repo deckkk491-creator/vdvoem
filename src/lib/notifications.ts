@@ -14,12 +14,24 @@ Notifications.setNotificationHandler({
 
 const PREFIX = 'rule222-';
 
-export async function ensurePermission(): Promise<boolean> {
-  const current = await Notifications.getPermissionsAsync();
-  if (current.granted) return true;
-  if (!current.canAskAgain) return false;
-  const req = await Notifications.requestPermissionsAsync();
-  return req.granted;
+let permissionRequest: Promise<boolean> | null = null;
+
+/** Спрашивает разрешение на уведомления. Параллельные вызовы делят один запрос — диалог не покажется дважды. */
+export function ensurePermission(): Promise<boolean> {
+  if (!permissionRequest) {
+    permissionRequest = (async () => {
+      const current = await Notifications.getPermissionsAsync();
+      if (current.granted) return true;
+      if (!current.canAskAgain) return false;
+      const req = await Notifications.requestPermissionsAsync();
+      return req.granted;
+    })()
+      .catch(() => false)
+      .finally(() => {
+        permissionRequest = null;
+      });
+  }
+  return permissionRequest;
 }
 
 async function cancelRuleReminders(): Promise<void> {

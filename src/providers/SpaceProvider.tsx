@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { humanError, supabase } from '../lib/supabase';
 import type { Member, Profile, RealtimeTable, Space } from '../lib/types';
 import { useAuth } from './AuthProvider';
 
@@ -22,6 +22,8 @@ type SpaceState = {
   updateSpace: (patch: Partial<Pick<Space, 'name' | 'city' | 'rule222_enabled' | 'rule222_start'>>) => Promise<void>;
   subscribe: (fn: Listener) => () => void;
   live: boolean;
+  /** Не удалось загрузить список пространств (например, нет сети) */
+  loadError: string | null;
 };
 
 const Ctx = createContext<SpaceState | null>(null);
@@ -50,7 +52,11 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [people, setPeople] = useState<Record<string, Profile>>({});
   const [live, setLive] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const listeners = useRef(new Set<Listener>());
+  // актуальный пользователь: ответы, пришедшие после выхода/смены аккаунта, не применяем
+  const userRef = useRef(userId);
+  userRef.current = userId;
 
   const space = useMemo(() => spaces.find((s) => s.id === currentId) ?? null, [spaces, currentId]);
 
@@ -58,18 +64,23 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
     if (!userId) {
       setSpaces([]);
       setCurrentId(null);
+      setLoadError(null);
       setLoadedFor(null);
       return;
     }
     const { data, error } = await supabase.from('spaces').select('*').order('created_at', { ascending: true });
+    if (userRef.current !== userId) return;
     if (error) {
-      console.warn('load spaces', error.message);
+      // Список не трогаем: при сбое сети не «теряем» пространства и не отправляем на онбординг молча
+      setLoadError(humanError(error));
       setLoadedFor(userId);
       return;
     }
+    setLoadError(null);
     const list = (data ?? []) as Space[];
-    setSpaces(list);
     const stored = await AsyncStorage.getItem(STORAGE_KEY).catch(() => null);
+    if (userRef.current !== userId) return;
+    setSpaces(list);
     setCurrentId((prev) => {
       const pick = [prev, stored].find((id) => id && list.some((s) => s.id === id));
       return pick ?? list[0]?.id ?? null;
@@ -77,36 +88,59 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
     setLoadedFor(userId);
   }, [userId]);
 
+  // номер последнего запроса участников: ответ для прошлого пространства не применяем
+  const membersReq = useRef(0);
   const loadMembers = useCallback(async () => {
+    const req = ++membersReq.current;
     if (!currentId) {
       setMembers([]);
       setPeople({});
       return;
     }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('space_members')
       .select('user_id, role, joined_at')
       .eq('space_id', currentId)
       .order('joined_at');
+    if (req !== membersReq.current) return;
+    if (error) {
+      console.warn('load members', error.message);
+      return;
+    }
     const list = (data ?? []) as Member[];
-    setMembers(list);
+    const map: Record<string, Profile> = {};
     if (list.length) {
-      const { data: profs } = await supabase
+      const { data: profs, error: pErr } = await supabase
         .from('profiles')
         .select('*')
         .in(
           'id',
           list.map((m) => m.user_id),
         );
-      const map: Record<string, Profile> = {};
+      if (req !== membersReq.current) return;
+      if (pErr) console.warn('load profiles', pErr.message);
       for (const p of (profs ?? []) as Profile[]) map[p.id] = p;
-      setPeople(map);
     }
+    setMembers(list);
+    setPeople(map);
   }, [currentId]);
 
   useEffect(() => {
     loadSpaces();
   }, [loadSpaces]);
+
+  // Выход из аккаунта: забываем выбранное пространство и всё, что было загружено для прошлого пользователя
+  const prevUser = useRef(userId);
+  useEffect(() => {
+    if (prevUser.current && prevUser.current !== userId) {
+      AsyncStorage.removeItem(STORAGE_KEY).catch(() => undefined);
+      setSpaces([]);
+      setCurrentId(null);
+      setMembers([]);
+      setPeople({});
+    }
+    prevUser.current = userId;
+  }, [userId]);
 
   useEffect(() => {
     loadMembers();
@@ -115,7 +149,10 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
   // Realtime: один канал на пространство, все таблицы. RLS отсекает чужие строки.
   useEffect(() => {
     if (!currentId || !userId) return;
-    let channel: RealtimeChannel = supabase.channel(`space-${currentId}`);
+    // Уникальное имя канала: supabase.channel() возвращает уже существующий канал с тем же именем,
+    // а старый в этот момент может ещё закрываться (быстрое переключение A → B → A).
+    let channel: RealtimeChannel = supabase.channel(`space-${currentId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
+    let active = true;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const pending = new Set<RealtimeTable>();
 
@@ -151,12 +188,16 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
         timer = setTimeout(flush, 250);
       });
     }
-    channel.subscribe((status) => setLive(status === 'SUBSCRIBED'));
+    channel.subscribe((status) => {
+      if (active) setLive(status === 'SUBSCRIBED');
+    });
 
     return () => {
+      active = false;
       if (timer) clearTimeout(timer);
+      pending.clear();
       setLive(false);
-      supabase.removeChannel(channel);
+      supabase.removeChannel(channel).catch(() => undefined);
     };
   }, [currentId, userId, loadSpaces, loadMembers]);
 
@@ -192,10 +233,15 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
     if (!currentId) return;
     const { error } = await supabase.rpc('leave_space', { p_space: currentId });
     if (error) throw error;
-    setCurrentId(null);
-    await AsyncStorage.removeItem(STORAGE_KEY).catch(() => undefined);
+    // Сразу убираем пространство локально и переключаемся на следующее (если есть):
+    // без промежуточного «нет пространства», даже если перезагрузка списка не удастся
+    const remaining = spaces.filter((s) => s.id !== currentId);
+    setSpaces(remaining);
+    setCurrentId(remaining[0]?.id ?? null);
+    if (remaining[0]) await AsyncStorage.setItem(STORAGE_KEY, remaining[0].id).catch(() => undefined);
+    else await AsyncStorage.removeItem(STORAGE_KEY).catch(() => undefined);
     await loadSpaces();
-  }, [currentId, loadSpaces]);
+  }, [currentId, spaces, loadSpaces]);
 
   const updateSpace = useCallback<SpaceState['updateSpace']>(
     async (patch) => {
@@ -233,8 +279,9 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
       updateSpace,
       subscribe,
       live,
+      loadError,
     }),
-    [loaded, spaces, space, members, people, selectSpace, refresh, createSpace, joinSpace, leaveSpace, updateSpace, subscribe, live],
+    [loaded, spaces, space, members, people, selectSpace, refresh, createSpace, joinSpace, leaveSpace, updateSpace, subscribe, live, loadError],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

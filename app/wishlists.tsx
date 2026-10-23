@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, itemMenu, openLink } from '../src/components/ItemCard';
@@ -29,15 +29,22 @@ export default function Wishlists() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<WishItem | 'new' | null>(null);
 
+  const req = useRef(0);
   const load = useCallback(async () => {
     if (!space) return;
+    const id = ++req.current;
     const [w, cl] = await Promise.all([
       supabase.from('wishlist_items').select('*').eq('space_id', space.id).order('created_at', { ascending: false }),
       // RLS не вернёт «я подарю» по вашим собственным желаниям — сюрприз сохраняется
       supabase.from('wishlist_claims').select('*').eq('space_id', space.id),
     ]);
-    if (w.error || cl.error) setError(humanError(w.error ?? cl.error));
-    else setError(null);
+    if (id !== req.current) return;
+    if (w.error || cl.error) {
+      setError(humanError(w.error ?? cl.error));
+      setLoading(false);
+      return;
+    }
+    setError(null);
     setItems(((w.data ?? []) as WishItem[]).map((x) => ({ ...x, price: x.price === null ? null : Number(x.price) })));
     setClaims((cl.data ?? []) as WishClaim[]);
     setLoading(false);

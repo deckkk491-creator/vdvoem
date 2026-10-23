@@ -1,12 +1,13 @@
 import * as Haptics from 'expo-haptics';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Linking, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '../src/components/people';
 import { Body, Button, Card, EmptyState, ErrorNote, H2, Input, Loading, ProgressBar, Row, Segmented, Sheet } from '../src/components/ui';
 import { COUNTRY_IDEAS, DATE_IDEAS, PLACE_IDEAS, pickRandom, type CountryIdea, type DateIdea, type PlaceIdea } from '../src/data/ideas';
 import { formatDate, isoToRu, normalizeDateInput, relativeDays, todayISO } from '../src/lib/format';
 import { openMapSearch } from '../src/lib/maps';
+import { ensurePermission } from '../src/lib/notifications';
 import { RULE_META, nextDue, progressTo } from '../src/lib/rule222';
 import { humanError, supabase } from '../src/lib/supabase';
 import type { ItemKind, RuleEvent, RuleKind } from '../src/lib/types';
@@ -29,12 +30,15 @@ export default function Rule222() {
   const [startOpen, setStartOpen] = useState(false);
 
   const spaceId = space?.id;
+  const req = useRef(0);
   const load = useCallback(async () => {
     if (!spaceId) {
       setEvents([]);
       return;
     }
+    const id = ++req.current;
     const { data, error: e } = await supabase.from('rule_events').select('*').eq('space_id', spaceId).order('done_on', { ascending: false });
+    if (id !== req.current) return;
     if (e) {
       setError(humanError(e));
       return;
@@ -62,6 +66,20 @@ export default function Rule222() {
       await updateSpace({ rule222_enabled: v });
     } catch (e) {
       Alert.alert('Ошибка', humanError(e));
+      return;
+    }
+    if (v && Platform.OS !== 'web') {
+      const granted = await ensurePermission().catch(() => false);
+      if (!granted) {
+        Alert.alert(
+          'Уведомления выключены',
+          'Правило работает, но напоминаний не будет, пока ты не разрешишь уведомления для «Вдвоём» в настройках телефона.',
+          [
+            { text: 'Не сейчас', style: 'cancel' },
+            { text: 'Открыть настройки', onPress: () => Linking.openSettings().catch(() => undefined) },
+          ],
+        );
+      }
     }
   }
 

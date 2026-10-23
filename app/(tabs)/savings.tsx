@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { confirmDelete } from '../../src/components/ItemCard';
 import { Avatar, useNameOf } from '../../src/components/people';
@@ -27,12 +27,16 @@ export default function SavingsScreen() {
   const [contribFor, setContribFor] = useState<GoalWithProgress | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
 
+  const req = useRef(0);
   const load = useCallback(async () => {
     if (!space) return;
+    const id = ++req.current;
     const [g, cs] = await Promise.all([
       supabase.from('savings_goals').select('*').eq('space_id', space.id).order('created_at'),
       supabase.from('savings_contributions').select('*').eq('space_id', space.id).order('contributed_on', { ascending: false }),
     ]);
+    // ответ для прошлого пространства (или устаревший) не применяем
+    if (id !== req.current) return;
     if (g.error || cs.error) {
       setError(humanError(g.error ?? cs.error));
       setLoading(false);

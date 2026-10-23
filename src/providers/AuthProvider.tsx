@@ -1,5 +1,5 @@
 import type { Session } from '@supabase/supabase-js';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { isConfigured } from '../lib/env';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../lib/types';
@@ -43,6 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const userId = session?.user.id ?? null;
+  const userRef = useRef(userId);
+  userRef.current = userId;
   const profileLoaded = profileFor === userId;
 
   const refreshProfile = useCallback(async () => {
@@ -52,7 +54,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+    // пока шёл запрос, пользователь мог выйти или смениться — чужой профиль не применяем
+    if (userRef.current !== userId) return;
     if (!error) setProfile((data as Profile | null) ?? null);
+    else setProfile((p) => (p?.id === userId ? p : null));
     setProfileFor(userId);
   }, [userId]);
 
@@ -75,7 +80,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    // Без сети supabase.auth.signOut() возвращает ошибку и НЕ удаляет сессию с устройства —
+    // тогда выходим хотя бы локально, чтобы кнопка «Выйти» работала всегда.
+    const { error } = await supabase.auth.signOut().catch((e: unknown) => ({ error: e }));
+    if (error) {
+      console.warn('signOut', error);
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+    }
     setProfile(null);
   }, []);
 

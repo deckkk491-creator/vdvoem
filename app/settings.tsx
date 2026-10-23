@@ -1,5 +1,4 @@
 import * as Clipboard from 'expo-clipboard';
-import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
@@ -49,8 +48,8 @@ export default function Settings() {
         style: 'destructive',
         onPress: async () => {
           try {
+            // если пространств не осталось, Gate сам откроет онбординг; иначе остаёмся здесь с другим пространством
             await leaveSpace();
-            router.replace('/onboarding');
           } catch (e) {
             Alert.alert('Ошибка', humanError(e));
           }

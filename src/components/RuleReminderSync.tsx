@@ -7,16 +7,20 @@ import { useRealtimeRefetch, useSpace } from '../providers/SpaceProvider';
 /** Невидимый компонент: держит локальные напоминания 2-2-2 в актуальном состоянии */
 export function RuleReminderSync() {
   const { space } = useSpace();
-  const [events, setEvents] = useState<RuleEvent[] | null>(null);
+  // события вместе с id пространства, к которому они относятся
+  const [loaded, setLoaded] = useState<{ spaceId: string | null; events: RuleEvent[] } | null>(null);
+  const spaceId = space?.id ?? null;
 
   const load = useCallback(async () => {
-    if (!space?.rule222_enabled) {
-      setEvents([]);
+    if (!spaceId || !space?.rule222_enabled) {
+      setLoaded({ spaceId, events: [] });
       return;
     }
-    const { data } = await supabase.from('rule_events').select('*').eq('space_id', space.id);
-    setEvents((data ?? []) as RuleEvent[]);
-  }, [space?.id, space?.rule222_enabled]);
+    const { data, error } = await supabase.from('rule_events').select('*').eq('space_id', spaceId);
+    // при ошибке оставляем прежние напоминания, а не пересчитываем их «с нуля»
+    if (error) return;
+    setLoaded({ spaceId, events: (data ?? []) as RuleEvent[] });
+  }, [spaceId, space?.rule222_enabled]);
 
   useEffect(() => {
     load();
@@ -25,9 +29,10 @@ export function RuleReminderSync() {
   useRealtimeRefetch(['rule_events'], load);
 
   useEffect(() => {
-    if (events === null) return;
-    syncRuleReminders(space, events);
-  }, [events, space?.rule222_enabled, space?.rule222_start, space]);
+    // ждём событий именно этого пространства, чтобы не посчитать сроки по чужой истории
+    if (loaded === null || loaded.spaceId !== spaceId) return;
+    syncRuleReminders(space, loaded.events);
+  }, [loaded, spaceId, space]);
 
   return null;
 }
