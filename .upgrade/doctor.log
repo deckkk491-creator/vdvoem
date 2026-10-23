@@ -1,0 +1,69 @@
+npm warn exec The following package was not found and will be installed: expo-doctor@1.21.5
+Running 20 checks on your project...
+16/20 checks passed. 4 checks failed. Possible issues detected:
+Use the --verbose flag to see more details about passed checks.
+
+✖ Check Expo config (app.json/ app.config.js) schema
+Error validating fields in /home/runner/work/vdvoem/vdvoem/app.json:
+ Field: newArchEnabled - Additional property "newArchEnabled" is not allowed.
+Advice:
+Resolve schema errors in your app config. Learn more: https://docs.expo.dev/workflow/configuration/
+
+✖ Check that required peer dependencies are installed
+Missing peer dependency: expo-font
+Required by: @expo/vector-icons
+Advice:
+Install missing required peer dependency with "npx expo install expo-font"
+Your app may crash outside of Expo Go without this dependency. Native module peer dependencies must be installed directly.
+
+✖ Check that no duplicate dependencies are installed
+Your project contains duplicate native module dependencies, which should be de-duplicated.
+Native builds may only contain one version of any given native module, and having multiple versions of a single Native module installed may lead to unexpected build errors.
+Found duplicates for expo-constants:
+  ├─ expo-constants@18.0.14 (at: node_modules/expo-constants)
+  └─ expo-constants@58.0.13 (at: node_modules/expo/node_modules/expo-constants)
+Advice:
+Resolve your dependency issues and deduplicate your dependencies. Learn more: https://expo.fyi/resolving-dependency-issues
+
+✖ Check that packages match versions required by installed Expo SDK
+
+❗ Major version mismatches
+package                         expected  found    
+expo-clipboard                  ~58.0.4   8.0.8    
+expo-constants                  ~58.0.13  18.0.14  
+expo-haptics                    ~58.0.7   15.0.8   
+expo-linking                    ~58.0.14  8.0.12   
+expo-notifications              ~58.1.6   0.32.17  
+expo-router                     ~58.0.25  6.0.24   
+expo-splash-screen              ~58.0.11  31.0.13  
+expo-status-bar                 ~58.0.4   3.0.9    
+expo-system-ui                  ~58.0.6   6.0.9    
+expo-web-browser                ~58.0.6   15.0.11  
+typescript                      ~6.0.3    5.9.3    
+
+⚠️ Minor version mismatches
+package                         expected  found    
+react                           19.3.0    19.1.0   
+react-native                    0.88.0    0.81.4   
+react-native-safe-area-context  ~5.10.1   5.6.2    
+react-native-screens            ~4.30.0   4.16.0   
+@types/react                    ~19.3.0   19.1.17  
+
+Changelogs:
+- expo-clipboard → https://github.com/expo/expo/blob/sdk-58/packages/expo-clipboard/CHANGELOG.md
+- expo-constants → https://github.com/expo/expo/blob/sdk-58/packages/expo-constants/CHANGELOG.md
+- expo-haptics → https://github.com/expo/expo/blob/sdk-58/packages/expo-haptics/CHANGELOG.md
+- expo-linking → https://github.com/expo/expo/blob/sdk-58/packages/expo-linking/CHANGELOG.md
+- expo-notifications → https://github.com/expo/expo/blob/sdk-58/packages/expo-notifications/CHANGELOG.md
+- expo-router → https://github.com/expo/expo/blob/sdk-58/packages/expo-router/CHANGELOG.md
+- expo-splash-screen → https://github.com/expo/expo/blob/sdk-58/packages/expo-splash-screen/CHANGELOG.md
+- expo-status-bar → https://github.com/expo/expo/blob/sdk-58/packages/expo-status-bar/CHANGELOG.md
+- expo-system-ui → https://github.com/expo/expo/blob/sdk-58/packages/expo-system-ui/CHANGELOG.md
+- expo-web-browser → https://github.com/expo/expo/blob/sdk-58/packages/expo-web-browser/CHANGELOG.md
+
+16 packages out of date.
+Advice:
+Use 'npx expo install --check' to review and upgrade your dependencies.
+To ignore specific packages, add them to "expo.install.exclude" in package.json. Learn more: https://expo.fyi/dependency-validation
+
+4 checks failed, indicating possible issues with the project.

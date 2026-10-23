@@ -1,0 +1,3 @@
+src/lib/notifications.ts(24,19): error TS2339: Property 'granted' does not exist on type 'NotificationPermissionsStatus'.
+src/lib/notifications.ts(25,20): error TS2339: Property 'canAskAgain' does not exist on type 'NotificationPermissionsStatus'.
+src/lib/notifications.ts(27,18): error TS2339: Property 'granted' does not exist on type 'NotificationPermissionsStatus'.
