@@ -66,12 +66,21 @@ export function rub(n: number): string {
   return `${rounded < 0 ? '−' : ''}${spaced}${frac === '00' ? '' : ',' + frac} ₽`;
 }
 
-/** Разбор суммы, введённой пользователем: «12 500,50» → 12500.5 */
+/**
+ * Разбор суммы, введённой пользователем: «12 500,50» → 12500.5, «1500.5 ₽» → 1500.5.
+ * Пробелы (в т. ч. неразрывные) — разделители тысяч, запятая или точка — десятичный разделитель,
+ * не больше двух знаков после него. Всё остальное («1e5», «0x10», «1.500,50») — null.
+ */
 export function parseAmount(s: string): number | null {
-  const cleaned = s.replace(/\s| |₽/g, '').replace(',', '.');
-  if (!cleaned) return null;
-  const n = Number(cleaned);
-  return Number.isFinite(n) ? n : null;
+  const cleaned = s
+    .replace(/[\s  ']/g, '')
+    .replace(/(₽|руб\.?|р\.?)$/i, '')
+    .replace(/^[−–]/, '-');
+  if (!/^-?\d+([.,]\d{1,2})?$/.test(cleaned)) return null;
+  const n = Number(cleaned.replace(',', '.'));
+  // numeric(14, 2) в базе
+  if (!Number.isFinite(n) || Math.abs(n) >= 1e12) return null;
+  return n;
 }
 
 /** Проверка и нормализация 'ДД.ММ.ГГГГ' или 'ГГГГ-ММ-ДД' → 'ГГГГ-ММ-ДД' */
@@ -91,6 +100,7 @@ export function normalizeDateInput(s: string): string | null {
     m = Number(iso[2]);
     d = Number(iso[3]);
   } else return null;
+  if (y < 1900 || y > 2100) return null;
   const date = new Date(y, m - 1, d);
   if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
   return toISODate(date);

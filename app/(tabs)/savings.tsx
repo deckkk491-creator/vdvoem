@@ -224,6 +224,7 @@ function GoalSheet({ goal, visible, onClose, onSaved }: { goal: SavingsGoal | nu
 
   async function save() {
     const amount = parseAmount(target);
+    if (target.trim() && amount === null) return setError('Не получилось разобрать сумму. Пример: 150 000 или 1 500,50');
     if (!amount || amount <= 0) return setError('Укажи сумму цели');
     if (!space || !userId) return;
     setBusy(true);
@@ -284,8 +285,10 @@ function ContributionSheet({ goal, onClose, onSaved }: { goal: GoalWithProgress 
   async function save() {
     if (!goal || !userId) return;
     const n = parseAmount(amount);
+    if (amount.trim() && n === null) return setError('Не получилось разобрать сумму. Пример: 1 500,50');
     if (!n || n <= 0) return setError('Введи сумму');
-    const d = normalizeDateInput(date) ?? todayISO();
+    const d = date.trim() ? normalizeDateInput(date) : todayISO();
+    if (!d) return setError('Укажи дату в формате ДД.ММ.ГГГГ');
     setBusy(true);
     const { error: e } = await supabase.from('savings_contributions').insert({
       goal_id: goal.id,
