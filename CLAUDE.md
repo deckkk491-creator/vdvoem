@@ -3,7 +3,7 @@
 Общее пространство для пар и семей под iOS (App Store). Владелец: deckkk491-creator.
 
 ## Стек и сборка
-- Expo SDK 54, expo-router 6, React Native 0.81, TypeScript strict.
+- Expo SDK 58, expo-router 58, React Native 0.88, React 19.3, TypeScript 6 strict.
 - Бэкенд: Supabase (Postgres + RLS, вход по 6-значному коду из письма, realtime).
 - Сборка только в облаке EAS: у владельца MacBook Air 2019, Xcode 26 на нём не ставится.
 - Bundle ID: `com.deckkk491.vdvoem`.
