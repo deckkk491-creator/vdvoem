@@ -2,7 +2,7 @@
 project_id = "vdvoem"
 
 [functions.link-preview]
-verify_jwt = true
+verify_jwt = false
 
 [functions.delete-account]
-verify_jwt = true
+verify_jwt = false

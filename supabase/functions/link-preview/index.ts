@@ -2,7 +2,8 @@
 // Принимает { url } и возвращает { title, image, description, siteName, url }
 // на основе Open Graph / Twitter / <title> тегов страницы.
 // Деплой: supabase functions deploy link-preview
-// (JWT проверяется по умолчанию — вызывать могут только вошедшие пользователи)
+// Вызывать могут только вошедшие пользователи: токен проверяется в коде.
+// Деплоить с отключённой проверкой JWT (--no-verify-jwt): новые ключи подписи ES256.
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -107,6 +108,19 @@ function absolutize(maybe: string | undefined, base: URL): string | null {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+  // Только для вошедших пользователей. Проверяем токен через Auth API сами:
+  // встроенная проверка JWT «legacy secret» не принимает новые ключи подписи (ES256).
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return json({ error: "unauthorized" }, 401);
+  try {
+    const who = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
+      headers: { Authorization: authHeader, apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "" },
+    });
+    if (!who.ok) return json({ error: "unauthorized" }, 401);
+  } catch {
+    return json({ error: "auth_unavailable" }, 503);
+  }
 
   let target: URL;
   try {
