@@ -76,6 +76,7 @@ scripts/make_icons.py   генерирует иконку и сплэш (Pillow)
    ```
    EXPO_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
    EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon public key>
+   # необязательно, по умолчанию — https://deckkk491-creator.github.io/vdvoem/privacy-policy.html
    EXPO_PUBLIC_PRIVACY_URL=https://<ваша-страница>/privacy
    ```
    Anon-ключ можно публиковать: доступ к данным ограничивают RLS-политики. **service_role** ключ в приложение никогда не кладите.
@@ -132,7 +133,7 @@ npx expo start
 
 ### Требования App Store
 
-- **Политика конфиденциальности.** В App Store Connect нужен публичный URL. Подойдёт страница на GitHub Pages, Notion или Telegraph. Опишите, что хранится (почта, имя, город, записи пространства), где хранится (Supabase), что данные не передаются третьим лицам и как их удалить. Тот же URL укажите в `EXPO_PUBLIC_PRIVACY_URL`, тогда в настройках приложения появится ссылка на него.
+- **Политика конфиденциальности.** В App Store Connect нужен публичный URL. Готовые страницы лежат в `docs/` и публикуются через GitHub Pages (Settings → Pages → Branch `main`, папка `/docs`): https://deckkk491-creator.github.io/vdvoem/privacy-policy.html и https://deckkk491-creator.github.io/vdvoem/support.html. Приложение по умолчанию ссылается на эту политику; другой URL можно задать в `EXPO_PUBLIC_PRIVACY_URL`.
 - **Удаление аккаунта в приложении (Guideline 5.1.1(v)).** Уже реализовано: **Настройки → Удалить аккаунт**. Кнопка вызывает Edge Function `delete-account`. Функция от имени пользователя запускает RPC `delete_my_data()` (удаляет профиль, записи, лайки, вишлист, взносы, членство и опустевшие пространства), а затем через service role удаляет запись в `auth.users`.
 - **App Privacy («ярлык конфиденциальности»).** Укажите: *Contact Info → Email*, *User Content*. Данные привязаны к пользователю и не используются для трекинга.
 - **Шифрование.** В `app.json` уже стоит `ITSAppUsesNonExemptEncryption: false`.

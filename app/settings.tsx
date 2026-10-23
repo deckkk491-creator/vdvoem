@@ -152,21 +152,17 @@ export default function Settings() {
         </Row>
       </Card>
 
-      {PRIVACY_URL ? (
-        <>
-          <Label>О приложении</Label>
-          <Card style={{ marginBottom: 16 }}>
-            <Button
-              title="Политика конфиденциальности"
-              small
-              variant="ghost"
-              icon="document-text-outline"
-              onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL).catch(() => undefined)}
-              style={{ alignSelf: 'flex-start' }}
-            />
-          </Card>
-        </>
-      ) : null}
+      <Label>О приложении</Label>
+      <Card style={{ marginBottom: 16 }}>
+        <Button
+          title="Политика конфиденциальности"
+          small
+          variant="ghost"
+          icon="document-text-outline"
+          onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL).catch(() => Alert.alert('Не получилось открыть ссылку', PRIVACY_URL))}
+          style={{ alignSelf: 'flex-start' }}
+        />
+      </Card>
 
       <Label style={{ color: c.danger }}>Осторожно</Label>
       <Card style={{ marginBottom: 16 }}>
