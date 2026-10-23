@@ -20,7 +20,7 @@ export default function UsScreen() {
     {
       key: 'rule',
       title: 'Правило 2-2-2',
-      text: space?.rule222_enabled ? 'Свидания, новые места и страны — по расписанию' : 'Выключено · включите, чтобы не забывать о свиданиях',
+      text: space?.rule222_enabled ? 'Свидания, новые места и страны — по расписанию' : 'Выключено · включи, чтобы не забывать о свиданиях',
       href: '/rule222',
     },
   ];
@@ -37,7 +37,7 @@ export default function UsScreen() {
               <View key={m.user_id} style={{ alignItems: 'center', width: 72 }}>
                 <Avatar profile={p} size={52} />
                 <Text style={{ marginTop: 6, color: c.text, fontWeight: '600', fontSize: 13 }} numberOfLines={1}>
-                  {m.user_id === userId ? 'Вы' : p?.display_name || '…'}
+                  {m.user_id === userId ? 'Ты' : p?.display_name || 'Участник'}
                 </Text>
                 {p?.city ? (
                   <Text style={{ color: c.textFaint, fontSize: 11 }} numberOfLines={1}>

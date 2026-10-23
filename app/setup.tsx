@@ -4,10 +4,10 @@ import { Body, Card, Label, Screen, Spacer, Title } from '../src/components/ui';
 import { useTheme } from '../src/theme';
 
 const STEPS = [
-  'Создайте бесплатный проект на supabase.com.',
-  'Выполните файл supabase/migrations/0001_init.sql в SQL Editor.',
-  'Скопируйте .env.example в .env и вставьте Project URL и anon key (Project Settings → API).',
-  'Перезапустите сервер: npx expo start -c',
+  'Создай бесплатный проект на supabase.com.',
+  'Выполни файл supabase/migrations/0001_init.sql в SQL Editor.',
+  'Скопируй .env.example в .env и вставь Project URL и anon key (Project Settings → API).',
+  'Перезапусти сервер: npx expo start -c',
 ];
 
 export default function Setup() {
@@ -39,7 +39,7 @@ export default function Setup() {
           EXPO_PUBLIC_SUPABASE_URL=…{'\n'}EXPO_PUBLIC_SUPABASE_ANON_KEY=…
         </Text>
         <Body muted style={{ marginTop: 10, fontSize: 13 }}>
-          Для сборки в EAS добавьте их также в переменные окружения проекта на expo.dev. Подробности — в README.md.
+          Для сборки в EAS добавь их также в переменные окружения проекта на expo.dev. Подробности — в README.md.
         </Body>
       </Card>
     </Screen>

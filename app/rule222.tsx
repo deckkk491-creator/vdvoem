@@ -61,10 +61,15 @@ export default function Rule222() {
               Каждые 2 недели — свидание, каждые 2 месяца — новое место, каждые 2 года — новая страна.
             </Body>
           </View>
-          <Switch value={enabled} onValueChange={toggle} trackColor={{ true: st.fg, false: c.border }} thumbColor="#fff" />
+          <Switch
+            value={enabled}
+            onValueChange={toggle}
+            trackColor={{ true: st.fg, false: c.border }}
+            accessibilityLabel="Правило 2-2-2"
+          />
         </Row>
         {enabled ? (
-          <Pressable onPress={() => setStartOpen(true)} style={{ marginTop: 10 }}>
+          <Pressable onPress={() => setStartOpen(true)} hitSlop={12} accessibilityRole="button" style={{ marginTop: 10, alignSelf: 'flex-start' }}>
             <Text style={{ color: st.fg, fontWeight: '600', fontSize: 13 }}>
               Отсчёт с {formatDate(space.rule222_start)} · изменить
             </Text>
@@ -76,7 +81,7 @@ export default function Rule222() {
         <EmptyState
           emoji="✨"
           title="Правило выключено"
-          text="Включите, и мы будем напоминать о свиданиях и путешествиях, а генератор подскажет идеи. Можно посмотреть идеи и без этого — ниже."
+          text="Включи — и мы напомним о свиданиях и путешествиях. А идеи можно посмотреть и так, они ниже."
         />
       ) : (
         KINDS.map((kind) => {
@@ -100,10 +105,10 @@ export default function Rule222() {
                 <ProgressBar value={progressTo(kind, due)} color={overdue ? c.danger : st.fg} height={6} />
               </View>
               <Row style={{ justifyContent: 'space-between', marginTop: 10 }}>
-                <Text style={{ color: c.textFaint, fontSize: 12 }}>{last ? `Последний раз: ${formatDate(last)}` : 'Ещё не отмечали'}</Text>
+                <Text style={{ color: c.textFaint, fontSize: 12 }}>{last ? `В последний раз: ${formatDate(last)}` : 'Пока не отмечали'}</Text>
                 <Row gap={4}>
                   <Button title="Идеи" small variant="ghost" color={st.fg} onPress={() => setIdeaKind(kind)} />
-                  <Button title="Было!" small icon="checkmark" color={st.fg} onPress={() => setMarkKind({ kind })} />
+                  <Button title="Было" small icon="checkmark" color={st.fg} onPress={() => setMarkKind({ kind })} />
                 </Row>
               </Row>
             </Card>
@@ -127,7 +132,7 @@ export default function Rule222() {
       <H2 style={{ marginTop: 24, marginBottom: 10 }}>История</H2>
       <ErrorNote text={error} />
       {events.length === 0 ? (
-        <Body faint>Здесь появятся отмеченные свидания, места и страны.</Body>
+        <Body muted>Здесь появятся отмеченные свидания, места и страны.</Body>
       ) : (
         <Card style={{ padding: 0 }}>
           {events.map((e, i) => (
@@ -214,7 +219,7 @@ function IdeaGenerator({ kind, onDone }: { kind: RuleKind; onDone: (title: strin
         text: placeIdea.description,
         tag: placeIdea.nearby ? `рядом с городом${city ? ` · ${city}` : ''}` : city || 'в городе',
       };
-    return { emoji: country.flag, title: country.name, text: country.description, tag: `${country.vibe} · лучше: ${country.bestSeason}` };
+    return { emoji: country.flag, title: country.name, text: country.description, tag: `${country.vibe} · сезон: ${country.bestSeason}` };
   }, [kind, dateIdea, placeIdea, country, city]);
 
   async function saveToSection() {
@@ -242,7 +247,7 @@ function IdeaGenerator({ kind, onDone }: { kind: RuleKind; onDone: (title: strin
     if (error) return Alert.alert('Ошибка', humanError(error));
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     const where: Record<ItemKind, string> = { weekend: '«На выходные»', recipe: '«Что приготовить»', watch: '«Смотрим вместе»', shopping: '«Покупки»' };
-    Alert.alert('Сохранено', `Идея добавлена в раздел ${where[kindTo]}.`);
+    Alert.alert('Сохранили', `Идея добавлена в раздел ${where[kindTo]}.`);
   }
 
   return (
@@ -256,18 +261,18 @@ function IdeaGenerator({ kind, onDone }: { kind: RuleKind; onDone: (title: strin
         <Body muted style={{ marginTop: 6 }}>{card.text}</Body>
         {kind === 'place' ? (
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-            <Button title="Найти на Яндекс Картах" small variant="secondary" icon="map-outline" onPress={() => openMapSearch(`${placeIdea.query} ${city}`)} />
+            <Button title="Яндекс Карты" small variant="secondary" icon="map-outline" onPress={() => openMapSearch(`${placeIdea.query} ${city}`)} />
             <Button title="Apple Maps" small variant="secondary" icon="navigate-outline" onPress={() => openMapSearch(`${placeIdea.query} ${city}`, 'apple')} />
           </View>
         ) : null}
         {kind === 'place' && !city ? (
-          <Text style={{ color: c.textFaint, fontSize: 12, marginTop: 8 }}>Укажите город в настройках пространства, чтобы поиск был точнее.</Text>
+          <Text style={{ color: c.textFaint, fontSize: 12, marginTop: 8 }}>Укажи город в настройках пространства — поиск станет точнее.</Text>
         ) : null}
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
           <Button title="Ещё идею" icon="shuffle" variant="secondary" onPress={next} style={{ flex: 1 }} />
           <Button title="Сохранить" icon="bookmark-outline" onPress={saveToSection} loading={saving} color={st.fg} style={{ flex: 1 }} />
         </View>
-        <Button title="Отметить как выполненное" small variant="ghost" color={st.fg} onPress={() => onDone(card.title)} style={{ marginTop: 6 }} />
+        <Button title="Мы это сделали — отметить" small variant="ghost" color={st.fg} onPress={() => onDone(card.title)} style={{ marginTop: 6 }} />
       </View>
     </Card>
   );
@@ -307,7 +312,7 @@ function MarkDoneSheet({
   async function save() {
     if (!state || !userId) return;
     const d = normalizeDateInput(date);
-    if (!d) return setError('Дата в формате ДД.ММ.ГГГГ');
+    if (!d) return setError('Укажи дату в формате ДД.ММ.ГГГГ');
     setBusy(true);
     const { error: e } = await supabase.from('rule_events').insert({
       space_id: spaceId,
@@ -372,14 +377,14 @@ function StartDateSheet({
           color={st.fg}
           onPress={() => {
             const d = normalizeDateInput(date);
-            if (!d) return setError('Дата в формате ДД.ММ.ГГГГ');
+            if (!d) return setError('Укажи дату в формате ДД.ММ.ГГГГ');
             onSave(d).catch((e) => setError(humanError(e)));
           }}
         />
       }
     >
       <Body muted style={{ marginBottom: 14 }}>
-        От этой даты считаются сроки, пока вы ещё ничего не отметили. Потом следующий срок считается от последней отметки.
+        Пока вы ничего не отметили, сроки считаются от этой даты. Потом — от последней отметки.
       </Body>
       <Input label="Дата" value={date} onChangeText={setDate} placeholder="ДД.ММ.ГГГГ" keyboardType="numbers-and-punctuation" maxLength={10} />
       <ErrorNote text={error} />

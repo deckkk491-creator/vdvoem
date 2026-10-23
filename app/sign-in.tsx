@@ -68,7 +68,7 @@ export default function SignIn() {
             label="Электронная почта"
             value={email}
             onChangeText={setEmail}
-            placeholder="you@example.com"
+            placeholder="name@mail.ru"
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
@@ -79,16 +79,20 @@ export default function SignIn() {
           <ErrorNote text={error} />
           <Button title="Получить код" onPress={sendCode} loading={busy} disabled={!validEmail} icon="mail-outline" />
           <Body faint style={{ marginTop: 14, fontSize: 13, textAlign: 'center' }}>
-            Пароль не нужен — пришлём на почту 6-значный код.
+            Пароль не нужен — пришлём на почту код из 6 цифр.
           </Body>
         </>
       ) : (
         <>
           <Body muted>
-            Код отправлен на <Text style={{ color: c.text, fontWeight: '700' }}>{email.trim()}</Text>
+            Отправили код на <Text style={{ color: c.text, fontWeight: '700' }}>{email.trim()}</Text>
           </Body>
           <Spacer h={16} />
-          <Pressable onPress={() => codeRef.current?.focus()} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Pressable
+            onPress={() => codeRef.current?.focus()}
+            accessibilityLabel={`Код из письма, введено ${code.length} из 6`}
+            style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 6 }}
+          >
             {Array.from({ length: 6 }).map((_, i) => {
               const ch = code[i] ?? '';
               const active = i === code.length;
@@ -96,7 +100,8 @@ export default function SignIn() {
                 <View
                   key={i}
                   style={{
-                    width: 48,
+                    flex: 1,
+                    maxWidth: 52,
                     height: 60,
                     borderRadius: radius.md,
                     backgroundColor: c.card,

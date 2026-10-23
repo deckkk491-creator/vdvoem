@@ -5,7 +5,7 @@ import { confirmDelete } from '../../src/components/ItemCard';
 import { Avatar, useNameOf } from '../../src/components/people';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { Body, Button, Card, EmptyState, ErrorNote, Fab, Input, Label, Loading, ProgressBar, Row, Screen, Sheet } from '../../src/components/ui';
-import { formatDate, isoToRu, normalizeDateInput, parseAmount, rub, todayISO } from '../../src/lib/format';
+import { formatDate, isoToRu, normalizeDateInput, parseAmount, plural, rub, todayISO } from '../../src/lib/format';
 import { humanError, supabase } from '../../src/lib/supabase';
 import type { Contribution, GoalWithProgress, SavingsGoal } from '../../src/lib/types';
 import { useAuth } from '../../src/providers/AuthProvider';
@@ -97,7 +97,7 @@ export default function SavingsScreen() {
                   <Row key={uid} gap={6}>
                     <Avatar profile={people[uid]} size={22} />
                     <Text style={{ color: c.textMuted, fontSize: 13 }}>
-                      {nameOf(uid, { you: 'Вы' })}: <Text style={{ color: c.text, fontWeight: '700' }}>{rub(sum)}</Text>
+                      {nameOf(uid, { you: 'Ты' })}: <Text style={{ color: c.text, fontWeight: '700' }}>{rub(sum)}</Text>
                     </Text>
                   </Row>
                 ))}
@@ -111,8 +111,8 @@ export default function SavingsScreen() {
         ) : goals.length === 0 ? (
           <EmptyState
             emoji="🐷"
-            title="Начните копить"
-            text="Отпуск, ремонт или подарок родителям — создайте цель и вносите суммы. Прогресс увидят все участники."
+            title="Копилка пока пуста"
+            text="Отпуск, ремонт или подарок родителям — создай цель и вноси суммы. Прогресс видят все участники."
             action="Создать цель"
             onAction={() => setGoalSheet('new')}
             color={st.fg}
@@ -158,7 +158,7 @@ export default function SavingsScreen() {
                             <Avatar profile={x.user_id ? people[x.user_id] : null} size={24} />
                             <View style={{ flex: 1 }}>
                               <Text style={{ color: c.text, fontSize: 14 }}>
-                                {nameOf(x.user_id, { you: 'Вы' })}
+                                {nameOf(x.user_id, { you: 'Ты' })}
                                 {x.note ? <Text style={{ color: c.textMuted }}> · {x.note}</Text> : null}
                               </Text>
                               <Text style={{ color: c.textFaint, fontSize: 12 }}>{formatDate(x.contributed_on)}</Text>
@@ -178,7 +178,9 @@ export default function SavingsScreen() {
                   </View>
                 ) : (
                   <Text style={{ fontSize: 12, color: c.textFaint, marginTop: 8 }}>
-                    {g.contributions.length} {g.contributions.length === 1 ? 'взнос' : 'взносов'} · нажмите, чтобы посмотреть
+                    {g.contributions.length === 0
+                      ? 'Взносов пока нет'
+                      : `${g.contributions.length} ${plural(g.contributions.length, 'взнос', 'взноса', 'взносов')} · нажми, чтобы посмотреть`}
                   </Text>
                 )}
               </Card>
@@ -222,7 +224,7 @@ function GoalSheet({ goal, visible, onClose, onSaved }: { goal: SavingsGoal | nu
 
   async function save() {
     const amount = parseAmount(target);
-    if (!amount || amount <= 0) return setError('Укажите сумму цели');
+    if (!amount || amount <= 0) return setError('Укажи сумму цели');
     if (!space || !userId) return;
     setBusy(true);
     const res = goal
@@ -237,7 +239,7 @@ function GoalSheet({ goal, visible, onClose, onSaved }: { goal: SavingsGoal | nu
     <Sheet
       visible={visible}
       onClose={onClose}
-      title={goal ? 'Цель' : 'Новая цель'}
+      title={goal ? 'Изменить цель' : 'Новая цель'}
       footer={<Button title={goal ? 'Сохранить' : 'Создать'} onPress={save} loading={busy} disabled={!title.trim()} color={st.fg} />}
     >
       <Label>Иконка</Label>
@@ -282,7 +284,7 @@ function ContributionSheet({ goal, onClose, onSaved }: { goal: GoalWithProgress 
   async function save() {
     if (!goal || !userId) return;
     const n = parseAmount(amount);
-    if (!n || n <= 0) return setError('Введите сумму');
+    if (!n || n <= 0) return setError('Введи сумму');
     const d = normalizeDateInput(date) ?? todayISO();
     setBusy(true);
     const { error: e } = await supabase.from('savings_contributions').insert({
@@ -306,10 +308,10 @@ function ContributionSheet({ goal, onClose, onSaved }: { goal: GoalWithProgress 
       visible={!!goal}
       onClose={onClose}
       title={goal ? `${goal.emoji} ${goal.title}` : ''}
-      footer={<Button title={withdraw ? 'Списать' : 'Внести'} onPress={save} loading={busy} color={withdraw ? c.danger : st.fg} />}
+      footer={<Button title={withdraw ? 'Снять' : 'Внести'} onPress={save} loading={busy} color={withdraw ? c.danger : st.fg} />}
     >
       <Input
-        label={withdraw ? 'Сколько взяли, ₽' : 'Сколько вносите, ₽'}
+        label={withdraw ? 'Сколько берёшь, ₽' : 'Сколько вносишь, ₽'}
         value={amount}
         onChangeText={setAmount}
         placeholder="0"
@@ -325,7 +327,7 @@ function ContributionSheet({ goal, onClose, onSaved }: { goal: GoalWithProgress 
       <Input label="Дата" value={date} onChangeText={setDate} placeholder="ДД.ММ.ГГГГ" keyboardType="numbers-and-punctuation" maxLength={10} />
       <Input label="Комментарий" value={note} onChangeText={setNote} placeholder="Премия, кэшбэк…" maxLength={200} />
       <Button
-        title={withdraw ? 'Это списание из копилки' : 'Нужно взять из копилки?'}
+        title={withdraw ? 'Это снятие из копилки' : 'Нужно взять из копилки?'}
         small
         variant="ghost"
         color={withdraw ? c.danger : c.textMuted}

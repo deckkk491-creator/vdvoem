@@ -12,7 +12,7 @@ export const RULE_META: Record<RuleKind, { title: string; short: string; emoji: 
     title: 'Новое место',
     short: 'каждые 2 месяца',
     emoji: '🧭',
-    hint: 'Выходные там, где вы ещё не были: в городе или неподалёку.',
+    hint: 'Выходные там, где вы ещё не бывали: в городе или неподалёку.',
   },
   country: {
     title: 'Новая страна',

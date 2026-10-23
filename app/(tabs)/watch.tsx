@@ -58,14 +58,14 @@ export default function WatchScreen() {
         ) : items.length === 0 ? (
           <EmptyState
             emoji="🍿"
-            title="Пока пусто"
-            text="Добавьте фильм или сериал, который давно хотели посмотреть. Партнёр поставит ♥, если тоже хочет."
-            action="Добавить первый"
+            title="Что посмотрим?"
+            text="Добавь фильм или сериал, который давно хотелось посмотреть. Если партнёру тоже интересно — поставит ♥."
+            action="Добавить фильм"
             onAction={() => setEditing('new')}
             color={st.fg}
           />
         ) : visible.length === 0 ? (
-          <EmptyState emoji="🎞️" title="Здесь ничего" text="В этом статусе пока нет ни одного фильма." />
+          <EmptyState emoji="🎞️" title="Здесь пусто" text="С таким статусом пока ничего нет." />
         ) : (
           visible.map((item) => {
             const status = item.status ?? 'want';
@@ -169,7 +169,7 @@ function WatchSheet({
     <Sheet
       visible={visible}
       onClose={onClose}
-      title={item ? 'Изменить' : 'Что посмотрим?'}
+      title={item ? 'Фильм или сериал' : 'Что посмотрим?'}
       footer={<Button title={item ? 'Сохранить' : 'Добавить'} onPress={save} loading={busy} disabled={!title.trim()} color={st.fg} />}
     >
       <Input label="Название" value={title} onChangeText={setTitle} placeholder="Например, «Дюна»" autoFocus={!item} maxLength={200} />

@@ -14,7 +14,7 @@ export function openLink(url: string | null | undefined) {
 }
 
 export function confirmDelete(what: string, onConfirm: () => void) {
-  Alert.alert('Удалить?', `«${what}» исчезнет у всех участников.`, [
+  Alert.alert('Удалить?', `«${what}» пропадёт у всех участников.`, [
     { text: 'Отмена', style: 'cancel' },
     { text: 'Удалить', style: 'destructive', onPress: onConfirm },
   ]);

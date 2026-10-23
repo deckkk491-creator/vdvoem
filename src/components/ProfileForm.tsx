@@ -36,15 +36,18 @@ export function ProfileForm({ onDone, submitTitle = 'Сохранить' }: { on
     <View>
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
         <Avatar profile={preview} size={88} />
-        <Text style={{ marginTop: 10, fontSize: 18, fontWeight: '700', color: c.text }}>{name.trim() || 'Ваше имя'}</Text>
+        <Text style={{ marginTop: 10, fontSize: 18, fontWeight: '700', color: c.text }}>{name.trim() || 'Твоё имя'}</Text>
       </View>
-      <Input label="Как вас зовут" value={name} onChangeText={setName} placeholder="Например, Аня" maxLength={40} />
+      <Input label="Как тебя зовут" value={name} onChangeText={setName} placeholder="Например, Аня" maxLength={40} />
       <Label>Аватар</Label>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
         {AVATAR_EMOJI.map((e) => (
           <Pressable
             key={e}
             onPress={() => setEmoji(e)}
+            accessibilityRole="button"
+            accessibilityLabel={`Аватар ${e}`}
+            accessibilityState={{ selected: emoji === e }}
             style={{
               width: 44,
               height: 44,
@@ -66,7 +69,10 @@ export function ProfileForm({ onDone, submitTitle = 'Сохранить' }: { on
           <Pressable
             key={col}
             onPress={() => setColor(col)}
-            accessibilityLabel={`Цвет ${col}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Цвет ${AVATAR_COLORS.indexOf(col) + 1} из ${AVATAR_COLORS.length}`}
+            accessibilityState={{ selected: color === col }}
+            hitSlop={4}
             style={{
               width: 36,
               height: 36,

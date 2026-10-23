@@ -9,6 +9,7 @@ import { Button, Card, Chip, EmptyState, ErrorNote, Input, Label, Loading, Scree
 import { useItems } from '../../src/hooks/useItems';
 import { humanError } from '../../src/lib/supabase';
 import type { ItemWithLikes } from '../../src/lib/types';
+import { plural } from '../../src/lib/format';
 import { useSpace } from '../../src/providers/SpaceProvider';
 import { radius, sectionStyle, useTheme } from '../../src/theme';
 
@@ -74,7 +75,7 @@ export default function ShoppingScreen() {
   }
 
   function clearBought() {
-    Alert.alert('Убрать купленное?', `${boughtCount} поз. исчезнут из списка у всех.`, [
+    Alert.alert('Убрать купленное?', `${boughtCount} ${plural(boughtCount, 'позиция пропадёт', 'позиции пропадут', 'позиций пропадут')} из списка у всех.`, [
       { text: 'Отмена', style: 'cancel' },
       {
         text: 'Убрать',
@@ -89,7 +90,7 @@ export default function ShoppingScreen() {
       <Screen>
         <SectionHeader
           title="Покупки"
-          subtitle={items.length ? `${items.length - boughtCount} купить · ${boughtCount} куплено` : 'Общий список в магазин'}
+          subtitle={items.length ? `Осталось ${items.length - boughtCount} · куплено ${boughtCount}` : 'Общий список в магазин'}
           emoji={st.emoji}
           color={st.fg}
           right={boughtCount > 0 ? <Button title="Очистить" small variant="secondary" icon="checkmark-done" onPress={clearBought} /> : null}
@@ -133,7 +134,7 @@ export default function ShoppingScreen() {
             {categories.map((k) => (
               <Chip key={k} small label={`${CAT_EMOJI[k] ?? '🏷️'} ${k}`} active={cat === k} onPress={() => setCat(k)} color={st.fg} />
             ))}
-            <Chip small label="+ своя" onPress={() => setNewCatOpen(true)} />
+            <Chip small label="+ Своя" onPress={() => setNewCatOpen(true)} />
           </ScrollView>
         </Card>
 
@@ -141,7 +142,7 @@ export default function ShoppingScreen() {
         {loading ? (
           <Loading />
         ) : items.length === 0 ? (
-          <EmptyState emoji="🧺" title="Список пуст" text="Напишите, что купить, — партнёр увидит сразу, даже если уже стоит в магазине." />
+          <EmptyState emoji="🧺" title="Список пуст" text="Напиши, что купить, — партнёр сразу увидит, даже если он уже в магазине." />
         ) : (
           groups.map(({ cat: k, list }) => (
             <View key={k} style={{ marginBottom: 18 }}>
@@ -207,7 +208,7 @@ export default function ShoppingScreen() {
           ))
         )}
         {items.length > 0 ? (
-          <Text style={{ textAlign: 'center', color: c.textFaint, fontSize: 12 }}>Нажмите — куплено, удерживайте — изменить</Text>
+          <Text style={{ textAlign: 'center', color: c.textFaint, fontSize: 12 }}>Нажми — куплено, удерживай — изменить</Text>
         ) : null}
       </Screen>
 
@@ -227,7 +228,7 @@ export default function ShoppingScreen() {
           />
         }
       >
-        <Input label="Название" value={newCat} onChangeText={setNewCat} placeholder="Зоотовары, Для дачи…" maxLength={40} autoFocus />
+        <Input label="Название" value={newCat} onChangeText={setNewCat} placeholder="Зоотовары, для дачи…" maxLength={40} autoFocus />
       </Sheet>
 
       <EditShopSheet item={editing} categories={categories} onClose={() => setEditing(null)} onSave={async (patch) => {
@@ -271,7 +272,7 @@ function EditShopSheet({
     <Sheet
       visible={!!item}
       onClose={onClose}
-      title="Изменить"
+      title="Покупка"
       footer={
         <Button
           title="Сохранить"
@@ -286,7 +287,7 @@ function EditShopSheet({
       <Label>Категория</Label>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         {categories.map((k) => (
-          <Chip key={k} label={k} active={cat === k} onPress={() => setCat(k)} color={st.fg} />
+          <Chip key={k} label={`${CAT_EMOJI[k] ?? '🏷️'} ${k}`} active={cat === k} onPress={() => setCat(k)} color={st.fg} />
         ))}
       </View>
       <Input label="Заметка" value={note} onChangeText={setNote} placeholder="Марка, где купить" maxLength={2000} />

@@ -56,7 +56,7 @@ export default function Wishlists() {
     if (!userId || !space) return;
     const cl = claimOf(item.id);
     if (cl && cl.claimed_by !== userId) {
-      Alert.alert('Уже занято', `${nameOf(cl.claimed_by)} собирается подарить это.`);
+      Alert.alert('Уже занято', `Этот подарок уже выбрал(а) ${nameOf(cl.claimed_by)}.`);
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
@@ -102,7 +102,7 @@ export default function Wishlists() {
               >
                 <Avatar profile={people[m.user_id]} size={28} />
                 <Text style={{ fontWeight: '700', color: active ? st.fg : c.text }}>
-                  {m.user_id === userId ? 'Мой' : people[m.user_id]?.display_name || '…'}
+                  {m.user_id === userId ? 'Мой' : people[m.user_id]?.display_name || 'Участник'}
                 </Text>
                 <Text style={{ color: c.textFaint, fontSize: 12 }}>{count}</Text>
               </Pressable>
@@ -115,7 +115,7 @@ export default function Wishlists() {
             <Row gap={10}>
               <Text style={{ fontSize: 22 }}>🤫</Text>
               <Body muted style={{ flex: 1, fontSize: 13 }}>
-                Это ваш вишлист. Вы не увидите, кто и что решил подарить — пусть будет сюрприз.
+                Это твой вишлист. Ты не увидишь, кто что собирается подарить, — пусть будет сюрприз.
               </Body>
             </Row>
           </Card>
@@ -124,7 +124,7 @@ export default function Wishlists() {
             <Row gap={10}>
               <Text style={{ fontSize: 22 }}>🎁</Text>
               <Body style={{ flex: 1, fontSize: 13, color: c.text }}>
-                Нажмите «Я подарю», чтобы забронировать подарок. {nameOf(owner)} этого не увидит, а остальные — да.
+                Нажми «Я подарю», чтобы забронировать подарок. {nameOf(owner)} этого не увидит, а остальные — да.
               </Body>
             </Row>
           </Card>
@@ -137,14 +137,14 @@ export default function Wishlists() {
           isMine ? (
             <EmptyState
               emoji="🎁"
-              title="Ваш вишлист пуст"
-              text="Добавьте то, что хотели бы получить, — близким будет проще с подарком."
+              title="Твой вишлист пуст"
+              text="Добавь то, что хочется получить, — близким будет проще выбрать подарок."
               action="Добавить желание"
               onAction={() => setEditing('new')}
               color={st.fg}
             />
           ) : (
-            <EmptyState emoji="🫙" title="Здесь пока пусто" text={`${nameOf(owner)} ещё ничего не добавил(а) в вишлист. Можно намекнуть 😉`} />
+            <EmptyState emoji="🫙" title="Здесь пока пусто" text={`${nameOf(owner)} пока ничего не добавил(а) в вишлист. Можно намекнуть 😉`} />
           )
         ) : (
           list.map((item) => {
@@ -188,7 +188,7 @@ export default function Wishlists() {
                       <Row gap={6}>
                         <Avatar profile={people[cl.claimed_by]} size={20} />
                         <Text style={{ color: c.textMuted, fontSize: 13 }}>
-                          {mineClaim ? 'Вы дарите это' : `Дарит ${nameOf(cl.claimed_by)}`}
+                          {mineClaim ? 'Это даришь ты' : `Дарит ${nameOf(cl.claimed_by)}`}
                         </Text>
                       </Row>
                     ) : (
@@ -196,7 +196,7 @@ export default function Wishlists() {
                     )}
                     {!cl || mineClaim ? (
                       <Button
-                        title={mineClaim ? 'Передумал(а)' : 'Я подарю'}
+                        title={mineClaim ? 'Отменить' : 'Я подарю'}
                         small
                         variant={mineClaim ? 'secondary' : 'primary'}
                         icon={mineClaim ? 'close' : 'gift-outline'}
@@ -253,7 +253,7 @@ function WishSheet({ item, visible, onClose, onSaved }: { item: WishItem | null;
     const link = url.trim() ? normalizeUrl(url) : null;
     if (url.trim() && !link) return setError('Ссылка выглядит неправильно');
     const p = price.trim() ? parseAmount(price) : null;
-    if (price.trim() && (p === null || p < 0)) return setError('Цена — это число');
+    if (price.trim() && (p === null || p < 0)) return setError('Цена должна быть числом');
     setBusy(true);
     const data = { title: title.trim(), url: link, price: p, occasion, note: note.trim() };
     const res = item
@@ -272,7 +272,7 @@ function WishSheet({ item, visible, onClose, onSaved }: { item: WishItem | null;
       footer={<Button title={item ? 'Сохранить' : 'Добавить'} onPress={save} loading={busy} disabled={!title.trim()} color={st.fg} />}
     >
       <Input label="Что хочется" value={title} onChangeText={setTitle} placeholder="Плёночный фотоаппарат" maxLength={200} />
-      <Input label="Ссылка" value={url} onChangeText={setUrl} placeholder="Ozon, WB, сайт магазина…" autoCapitalize="none" keyboardType="url" />
+      <Input label="Ссылка (необязательно)" value={url} onChangeText={setUrl} placeholder="Ozon, WB, сайт магазина…" autoCapitalize="none" keyboardType="url" />
       <Input label="Примерная цена, ₽" value={price} onChangeText={setPrice} placeholder="5 000" keyboardType="decimal-pad" />
       <Label>Повод</Label>
       <ChipGroup options={OCCASIONS} value={(occasion as (typeof OCCASIONS)[number]) ?? null} onChange={(v) => setOccasion(occasion === v ? null : v)} color={st.fg} />

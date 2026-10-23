@@ -34,10 +34,10 @@ export function humanError(e: unknown): string {
       : e && typeof e === 'object' && 'message' in e
         ? String((e as { message: unknown }).message)
         : 'Неизвестная ошибка';
-  if (/network request failed|fetch failed/i.test(msg)) return 'Нет связи с сервером. Проверьте интернет.';
-  if (/token has expired|invalid.*otp|otp.*invalid|expired/i.test(msg)) return 'Код неверный или устарел. Запросите новый.';
-  if (/rate limit|too many/i.test(msg)) return 'Слишком много попыток. Подождите минуту и попробуйте снова.';
+  if (/network request failed|fetch failed/i.test(msg)) return 'Нет связи с сервером. Проверь интернет.';
+  if (/token has expired|invalid.*otp|otp.*invalid|expired/i.test(msg)) return 'Код неверный или устарел. Запроси новый.';
+  if (/rate limit|too many/i.test(msg)) return 'Слишком много попыток. Подожди минуту и попробуй снова.';
   if (/row-level security/i.test(msg)) return 'Нет доступа к этим данным.';
-  if (/not authenticated|JWT/i.test(msg)) return 'Сессия истекла — войдите снова.';
+  if (/not authenticated|JWT/i.test(msg)) return 'Сессия истекла — войди снова.';
   return msg;
 }

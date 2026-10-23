@@ -44,13 +44,13 @@ export function AvatarStack({ ids, size = 22 }: { ids: string[]; size?: number }
   );
 }
 
-/** Имя участника; для текущего пользователя — «вы» */
+/** Имя участника; для текущего пользователя — «ты» */
 export function useNameOf() {
   const { people } = useSpace();
   const { userId } = useAuth();
   return (id: string | null | undefined, opts?: { you?: string }) => {
     if (!id) return 'кто-то';
-    if (id === userId) return opts?.you ?? 'вы';
+    if (id === userId) return opts?.you ?? 'ты';
     return people[id]?.display_name || 'партнёр';
   };
 }
@@ -63,7 +63,7 @@ export function AddedBy({ userId, date }: { userId: string | null; date?: string
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
       <Avatar profile={userId ? people[userId] : null} size={20} />
       <Text style={{ fontSize: 13, color: c.textMuted }}>
-        {nameOf(userId, { you: 'Вы' }) === 'Вы' ? 'Вы' : nameOf(userId)}
+        {nameOf(userId, { you: 'Ты' })}
         {date ? ` · ${date}` : ''}
       </Text>
     </View>
@@ -80,7 +80,9 @@ export function LikeButton({ likes, onPress }: { likes: string[]; onPress: () =>
     <Pressable
       onPress={onPress}
       hitSlop={8}
-      accessibilityLabel={liked ? 'Убрать лайк' : 'Нравится'}
+      accessibilityRole="button"
+      accessibilityState={{ selected: liked }}
+      accessibilityLabel={liked ? `Убрать лайк${who ? `. Нравится: ${who}` : ''}` : `Нравится${who ? `. Уже нравится: ${who}` : ''}`}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',

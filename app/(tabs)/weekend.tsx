@@ -70,7 +70,7 @@ export default function WeekendScreen() {
           <EmptyState
             emoji="🌿"
             title="Планов пока нет"
-            text="Сохраняйте сюда спектакли, выставки, рестораны и прогулки — потом выберете вместе по лайкам."
+            text="Сохраняй сюда спектакли, выставки, рестораны и прогулки — а потом выбирайте вместе по лайкам."
             action="Добавить идею"
             onAction={() => setEditing('new')}
             color={st.fg}
@@ -90,7 +90,7 @@ export default function WeekendScreen() {
                     <Badge label={`${CATEGORY_EMOJI[item.category as WeekendCategory] ?? '✨'} ${item.category}`} color={st.fg} bg={st.bg} />
                   ) : null}
                   {item.event_date ? <Badge label={`📅 ${formatDate(item.event_date)}`} color={c.textMuted} bg={c.bgAlt} /> : null}
-                  {item.done ? <Badge label="✓ были" color={c.sage} bg={c.sageSoft} /> : null}
+                  {item.done ? <Badge label="✓ Сходили" color={c.sage} bg={c.sageSoft} /> : null}
                 </>
               }
               meta={
@@ -178,7 +178,7 @@ function WeekendSheet({
     const link = url.trim() ? normalizeUrl(url) : null;
     if (url.trim() && !link) return setError('Ссылка выглядит неправильно');
     const d = date.trim() ? normalizeDateInput(date) : null;
-    if (date.trim() && !d) return setError('Дата в формате ДД.ММ.ГГГГ');
+    if (date.trim() && !d) return setError('Укажи дату в формате ДД.ММ.ГГГГ');
     setBusy(true);
     try {
       await onSave({ title: title.trim(), category, place: place.trim() || null, event_date: d, url: link, note: note.trim(), done });
@@ -196,7 +196,7 @@ function WeekendSheet({
       title={item ? 'Идея' : 'Новая идея'}
       footer={<Button title={item ? 'Сохранить' : 'Добавить'} onPress={save} loading={busy} disabled={!title.trim()} color={st.fg} />}
     >
-      <Input label="Что" value={title} onChangeText={setTitle} placeholder="Спектакль «Мастер и Маргарита»" maxLength={200} />
+      <Input label="Что делаем" value={title} onChangeText={setTitle} placeholder="Спектакль «Мастер и Маргарита»" maxLength={200} />
       <Label>Категория</Label>
       <ChipGroup
         options={WEEKEND_CATEGORIES}
@@ -206,11 +206,11 @@ function WeekendSheet({
         color={st.fg}
       />
       <Input label="Место" value={place} onChangeText={setPlace} placeholder="Театр, адрес или парк" maxLength={200} />
-      <Input label="Дата" value={date} onChangeText={setDate} placeholder="ДД.ММ.ГГГГ" keyboardType="numbers-and-punctuation" maxLength={10} />
-      <Input label="Ссылка" value={url} onChangeText={setUrl} placeholder="Билеты, афиша…" autoCapitalize="none" keyboardType="url" />
+      <Input label="Дата (необязательно)" value={date} onChangeText={setDate} placeholder="ДД.ММ.ГГГГ" keyboardType="numbers-and-punctuation" maxLength={10} />
+      <Input label="Ссылка (необязательно)" value={url} onChangeText={setUrl} placeholder="Билеты, афиша…" autoCapitalize="none" keyboardType="url" />
       <Input label="Заметка" value={note} onChangeText={setNote} multiline placeholder="Детали, цена, с кем пойти" maxLength={2000} />
       {item ? (
-        <Chip label={done ? '✓ Уже сходили' : 'Отметить: сходили'} active={done} onPress={() => setDone(!done)} color={c.sage} />
+        <Chip label={done ? '✓ Сходили' : 'Отметить: сходили'} active={done} onPress={() => setDone(!done)} color={c.sage} />
       ) : null}
       <View style={{ height: 12 }} />
       <ErrorNote text={error} />

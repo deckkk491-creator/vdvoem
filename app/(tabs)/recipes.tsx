@@ -54,7 +54,7 @@ export default function RecipesScreen() {
           <EmptyState
             emoji="🍲"
             title="Книга рецептов пуста"
-            text="Скопируйте ссылку на рецепт из браузера, Instagram, VK или YouTube — мы постараемся подтянуть название и фото."
+            text="Вставь ссылку на рецепт с любого сайта, из VK или YouTube — название и фото подтянутся сами."
             action="Добавить рецепт"
             onAction={() => setEditing('new')}
             color={st.fg}
@@ -143,13 +143,13 @@ function RecipeSheet({
     const p = await fetchLinkPreview(link);
     setFetching(false);
     if (!p || (!p.title && !p.image)) {
-      setHint('Не удалось прочитать страницу — заполните название вручную.');
+      setHint('Не получилось прочитать страницу — впиши название вручную.');
       return;
     }
     if (p.title) setTitle((t) => t || p.title!);
     if (p.image) setImage((i) => i || p.image!);
     if (p.description) setNote((n) => n || p.description!.slice(0, 300));
-    setHint(`Подтянули данные с ${p.siteName ?? 'сайта'} ✨`);
+    setHint(p.siteName ? `Подтянули данные с ${p.siteName} ✨` : 'Подтянули данные со страницы ✨');
   }
 
   async function pasteFromClipboard() {
@@ -242,11 +242,11 @@ function RecipeSheet({
           }}
         />
       </Row>
-      <Input label="Заметки" value={note} onChangeText={setNote} placeholder="Ингредиенты, что заменить, на сколько порций…" multiline maxLength={2000} />
+      <Input label="Заметка" value={note} onChangeText={setNote} placeholder="Ингредиенты, что заменить, на сколько порций…" multiline maxLength={2000} />
       <ErrorNote text={error} />
       {onDelete ? <Button title="Удалить" variant="danger" icon="trash-outline" onPress={() => onDelete().catch((e) => setError(humanError(e)))} /> : null}
       <Text style={{ fontSize: 12, color: c.textFaint, marginTop: 12, textAlign: 'center' }}>
-        Совет: в Instagram или VK нажмите «Поделиться → Копировать ссылку», затем «Вставить» здесь.
+        Совет: в соцсети нажми «Поделиться» → «Копировать ссылку», а здесь — «Вставить».
       </Text>
     </Sheet>
   );

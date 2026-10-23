@@ -59,7 +59,7 @@ export default function Onboarding() {
         <Text style={{ color: c.accent, fontWeight: '700', marginBottom: 6 }}>Шаг 1 из 2</Text>
         <Title>Знакомимся</Title>
         <Body muted style={{ marginTop: 6, marginBottom: 20 }}>
-          Так вас увидят партнёр и семья: в лайках, вишлистах и копилке.
+          Так тебя увидят партнёр и семья: в лайках, вишлистах и копилке.
         </Body>
         <ProfileForm submitTitle="Дальше" />
         <Spacer />
@@ -71,9 +71,9 @@ export default function Onboarding() {
   return (
     <Screen>
       <Text style={{ color: c.accent, fontWeight: '700', marginBottom: 6 }}>Шаг 2 из 2</Text>
-      <Title>Ваше пространство</Title>
+      <Title>Ваше общее пространство</Title>
       <Body muted style={{ marginTop: 6, marginBottom: 20 }}>
-        Всё, что вы добавляете, живёт в общем пространстве. Создайте его и пригласите партнёра — или присоединитесь по коду.
+        Всё, что вы добавляете, хранится в общем пространстве. Создай его и пригласи партнёра — или присоединись по коду.
       </Body>
 
       {created && space ? (
@@ -83,7 +83,7 @@ export default function Onboarding() {
             {created}
           </Text>
           <Body muted style={{ textAlign: 'center' }}>
-            Партнёр устанавливает «Вдвоём», входит по почте и вводит этот код. Его всегда можно найти в настройках.
+            Партнёру нужно установить «Вдвоём», войти по почте и ввести этот код. Код всегда есть в настройках.
           </Body>
           <Spacer />
           <View style={{ flexDirection: 'row', gap: 10 }}>
