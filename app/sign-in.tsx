@@ -13,6 +13,8 @@ export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const codeRef = useRef<TextInput>(null);
+  // автопроверка на 6-й цифре, автоподстановка кода и кнопка «Войти» не должны отправить код дважды
+  const verifying = useRef(false);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -37,10 +39,12 @@ export default function SignIn() {
   }
 
   async function verify(value = code) {
-    if (value.length !== 6) return;
+    if (value.length !== 6 || verifying.current) return;
+    verifying.current = true;
     setBusy(true);
     setError(null);
     const { error: e } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: value, type: 'email' });
+    verifying.current = false;
     setBusy(false);
     if (e) {
       setError(humanError(e));
