@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '../src/components/people';
-import { Body, Button, Card, EmptyState, ErrorNote, H2, Input, ProgressBar, Row, Segmented, Sheet } from '../src/components/ui';
+import { Body, Button, Card, EmptyState, ErrorNote, H2, Input, Loading, ProgressBar, Row, Segmented, Sheet } from '../src/components/ui';
 import { COUNTRY_IDEAS, DATE_IDEAS, PLACE_IDEAS, pickRandom, type CountryIdea, type DateIdea, type PlaceIdea } from '../src/data/ideas';
 import { formatDate, isoToRu, normalizeDateInput, relativeDays, todayISO } from '../src/lib/format';
 import { openMapSearch } from '../src/lib/maps';
@@ -20,7 +20,7 @@ export default function Rule222() {
   const { c } = useTheme();
   const st = sectionStyle(c, 'rule');
   const insets = useSafeAreaInsets();
-  const { space, updateSpace, people } = useSpace();
+  const { space, loaded, updateSpace, people } = useSpace();
   const { userId } = useAuth();
   const [events, setEvents] = useState<RuleEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -28,19 +28,33 @@ export default function Rule222() {
   const [markKind, setMarkKind] = useState<{ kind: RuleKind; title?: string } | null>(null);
   const [startOpen, setStartOpen] = useState(false);
 
+  const spaceId = space?.id;
   const load = useCallback(async () => {
-    if (!space) return;
-    const { data, error: e } = await supabase.from('rule_events').select('*').eq('space_id', space.id).order('done_on', { ascending: false });
-    if (e) setError(humanError(e));
+    if (!spaceId) {
+      setEvents([]);
+      return;
+    }
+    const { data, error: e } = await supabase.from('rule_events').select('*').eq('space_id', spaceId).order('done_on', { ascending: false });
+    if (e) {
+      setError(humanError(e));
+      return;
+    }
+    setError(null);
     setEvents((data ?? []) as RuleEvent[]);
-  }, [space]);
+  }, [spaceId]);
 
   useEffect(() => {
     load();
   }, [load]);
   useRealtimeRefetch(['rule_events'], load);
 
-  if (!space) return null;
+  if (!space) {
+    return (
+      <View style={{ flex: 1, backgroundColor: c.bg, justifyContent: 'center' }}>
+        {loaded ? <EmptyState emoji="💛" title="Нет пространства" text="Создай общее пространство или присоединись по коду — и правило 2-2-2 заработает." /> : <Loading />}
+      </View>
+    );
+  }
   const enabled = space.rule222_enabled;
 
   async function toggle(v: boolean) {
@@ -145,7 +159,13 @@ export default function Rule222() {
                     text: 'Удалить',
                     style: 'destructive',
                     onPress: async () => {
-                      await supabase.from('rule_events').delete().eq('id', e.id);
+                      const prev = events;
+                      setEvents((list) => list.filter((x) => x.id !== e.id));
+                      const { error: delErr } = await supabase.from('rule_events').delete().eq('id', e.id);
+                      if (delErr) {
+                        setEvents(prev);
+                        Alert.alert('Не получилось удалить', humanError(delErr));
+                      }
                       load();
                     },
                   },
@@ -378,7 +398,7 @@ function StartDateSheet({
           onPress={() => {
             const d = normalizeDateInput(date);
             if (!d) return setError('Укажи дату в формате ДД.ММ.ГГГГ');
-            onSave(d).catch((e) => setError(humanError(e)));
+            return onSave(d).catch((e) => setError(humanError(e)));
           }}
         />
       }
