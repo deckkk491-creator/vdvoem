@@ -7,7 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "backgroundColor": "#FBF4EC",
     "ios": {
       "bundleIdentifier": "com.deckkk491.vdvoem",
