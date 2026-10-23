@@ -16,7 +16,7 @@ const TYPE_LABEL: Record<MediaType, string> = { movie: 'Фильм', series: 'С
 export default function WatchScreen() {
   const { c } = useTheme();
   const st = sectionStyle(c, 'watch');
-  const { items, loading, error, add, update, remove, toggleLike } = useItems('watch');
+  const { items, loading, error, retry, add, update, remove, toggleLike } = useItems('watch');
   const [sort, setSort] = useState<SortMode>('likes');
   const [filter, setFilter] = useState<WatchStatus | 'all'>('all');
   const [editing, setEditing] = useState<ItemWithLikes | 'new' | null>(null);
@@ -52,7 +52,7 @@ export default function WatchScreen() {
             ))}
           </ScrollView>
         ) : null}
-        <ErrorNote text={error} />
+        <ErrorNote text={error} onRetry={retry} />
         {loading ? (
           <Loading />
         ) : items.length === 0 ? (
@@ -84,7 +84,7 @@ export default function WatchScreen() {
                 }
                 footerExtra={
                   <Pressable
-                    onPress={() => update(item.id, { status: STATUS_NEXT[status] }).catch(() => undefined)}
+                    onPress={() => update(item.id, { status: STATUS_NEXT[status] }).catch((e) => Alert.alert('Не получилось сменить статус', humanError(e)))}
                     hitSlop={12}
                     accessibilityRole="button"
                     accessibilityLabel={`Статус: ${STATUS_LABEL[status]}. Нажми, чтобы сменить`}

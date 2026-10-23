@@ -16,7 +16,7 @@ const BASE_TAGS = ['завтрак', 'обед', 'ужин', 'десерт', 'в
 export default function RecipesScreen() {
   const { c } = useTheme();
   const st = sectionStyle(c, 'recipe');
-  const { items, loading, error, add, update, remove, toggleLike } = useItems('recipe');
+  const { items, loading, error, retry, add, update, remove, toggleLike } = useItems('recipe');
   const [sort, setSort] = useState<SortMode>('new');
   const [tag, setTag] = useState<string | null>(null);
   const [editing, setEditing] = useState<ItemWithLikes | 'new' | null>(null);
@@ -47,7 +47,7 @@ export default function RecipesScreen() {
             ))}
           </ScrollView>
         ) : null}
-        <ErrorNote text={error} />
+        <ErrorNote text={error} onRetry={retry} />
         {loading ? (
           <Loading />
         ) : items.length === 0 ? (

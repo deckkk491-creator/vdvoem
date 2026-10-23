@@ -146,7 +146,8 @@ export function Button({
   color,
 }: {
   title: string;
-  onPress?: () => void;
+  /** Если onPress возвращает промис, повторные нажатия игнорируются, пока он не завершится */
+  onPress?: () => unknown;
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   icon?: IconName;
   loading?: boolean;
@@ -156,13 +157,25 @@ export function Button({
   color?: string;
 }) {
   const { c } = useTheme();
+  const pending = React.useRef(false);
+  const handlePress = () => {
+    if (pending.current || !onPress) return;
+    const r = onPress();
+    if (r && typeof (r as Promise<unknown>).then === 'function') {
+      pending.current = true;
+      const done = () => {
+        pending.current = false;
+      };
+      (r as Promise<unknown>).then(done, done);
+    }
+  };
   const accent = color ?? c.accent;
   const bg =
     variant === 'primary' ? accent : variant === 'secondary' ? c.bgAlt : variant === 'danger' ? c.dangerSoft : 'transparent';
   const fg = variant === 'primary' ? c.onAccent : variant === 'danger' ? c.danger : variant === 'ghost' ? accent : c.text;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       disabled={disabled || loading}
       accessibilityRole="button"
       accessibilityLabel={title}
@@ -438,12 +451,15 @@ export function Loading() {
   );
 }
 
-export function ErrorNote({ text }: { text: string | null }) {
+export function ErrorNote({ text, onRetry }: { text: string | null; onRetry?: () => void }) {
   const { c } = useTheme();
   if (!text) return null;
   return (
     <View style={{ backgroundColor: c.dangerSoft, borderRadius: radius.md, padding: 12, marginBottom: space.md }}>
       <Text style={{ color: c.danger, fontSize: 14 }}>{text}</Text>
+      {onRetry ? (
+        <Button title="Повторить" small variant="ghost" icon="refresh" color={c.danger} onPress={onRetry} style={{ alignSelf: 'flex-start', marginTop: 6, paddingHorizontal: 0 }} />
+      ) : null}
     </View>
   );
 }

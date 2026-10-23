@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { supabase } from '../lib/supabase';
+import { humanError, supabase } from '../lib/supabase';
 import type { Item, ItemKind, ItemWithLikes } from '../lib/types';
 import { useAuth } from '../providers/AuthProvider';
 import { useRealtimeRefetch, useSpace } from '../providers/SpaceProvider';
@@ -18,31 +19,65 @@ export function useItems(kind: ItemKind) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Номер последнего запроса: ответ от устаревшего запроса (например, после смены пространства) не применяем
+  const requestId = useRef(0);
+  const likeInFlight = useRef(new Set<string>());
+
   const load = useCallback(async () => {
-    if (!space) return;
-    const [{ data: rows, error: e1 }, { data: likes, error: e2 }] = await Promise.all([
-      supabase.from('items').select('*').eq('space_id', space.id).eq('kind', kind).order('created_at', { ascending: false }),
-      supabase.from('item_likes').select('item_id, user_id').eq('space_id', space.id),
-    ]);
-    if (e1 || e2) {
-      setError((e1 ?? e2)!.message);
+    if (!space) {
+      requestId.current += 1;
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    const id = ++requestId.current;
+    let rows: Item[] | null = null;
+    let likes: { item_id: string; user_id: string }[] | null = null;
+    let failure: unknown = null;
+    try {
+      const [r1, r2] = await Promise.all([
+        supabase.from('items').select('*').eq('space_id', space.id).eq('kind', kind).order('created_at', { ascending: false }),
+        supabase.from('item_likes').select('item_id, user_id').eq('space_id', space.id),
+      ]);
+      failure = r1.error ?? r2.error;
+      rows = (r1.data ?? []) as Item[];
+      likes = (r2.data ?? []) as { item_id: string; user_id: string }[];
+    } catch (e) {
+      failure = e;
+    }
+    if (id !== requestId.current) return;
+    if (failure || !rows || !likes) {
+      setError(humanError(failure));
       setLoading(false);
       return;
     }
     const byItem = new Map<string, string[]>();
-    for (const l of (likes ?? []) as { item_id: string; user_id: string }[]) {
+    for (const l of likes) {
       const arr = byItem.get(l.item_id) ?? [];
       arr.push(l.user_id);
       byItem.set(l.item_id, arr);
     }
-    setItems(((rows ?? []) as Item[]).map((r) => ({ ...r, tags: r.tags ?? [], likes: byItem.get(r.id) ?? [] })));
+    setItems(rows.map((r) => ({ ...r, tags: r.tags ?? [], likes: byItem.get(r.id) ?? [] })));
     setError(null);
     setLoading(false);
   }, [space, kind]);
 
+  // При смене пространства не показываем записи предыдущего
+  const spaceId = space?.id ?? null;
+  useEffect(() => {
+    setItems([]);
+    setError(null);
+  }, [spaceId]);
+
   useEffect(() => {
     setLoading(true);
     load();
+  }, [load]);
+
+  const retry = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    return load();
   }, [load]);
 
   useRealtimeRefetch(['items', 'item_likes'], load);
@@ -85,6 +120,9 @@ export function useItems(kind: ItemKind) {
   const toggleLike = useCallback(
     async (item: ItemWithLikes) => {
       if (!userId || !space) return;
+      // защита от двойного нажатия: пока запрос по этой записи не завершился, новые нажатия игнорируем
+      if (likeInFlight.current.has(item.id)) return;
+      likeInFlight.current.add(item.id);
       const liked = item.likes.includes(userId);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
       setItems((list) =>
@@ -92,15 +130,22 @@ export function useItems(kind: ItemKind) {
           i.id === item.id ? { ...i, likes: liked ? i.likes.filter((u) => u !== userId) : [...i.likes, userId] } : i,
         ),
       );
-      const res = liked
-        ? await supabase.from('item_likes').delete().eq('item_id', item.id).eq('user_id', userId)
-        : await supabase.from('item_likes').insert({ item_id: item.id, user_id: userId, space_id: space.id });
-      if (res.error) await load();
+      try {
+        const res = liked
+          ? await supabase.from('item_likes').delete().eq('item_id', item.id).eq('user_id', userId)
+          : await supabase.from('item_likes').insert({ item_id: item.id, user_id: userId, space_id: space.id });
+        if (res.error) throw res.error;
+      } catch (e) {
+        await load();
+        Alert.alert('Не получилось', humanError(e));
+      } finally {
+        likeInFlight.current.delete(item.id);
+      }
     },
     [userId, space, load],
   );
 
-  return { items, loading, error, reload: load, add, update, remove, toggleLike };
+  return { items, loading, error, reload: load, retry, add, update, remove, toggleLike };
 }
 
 export function sortItems(items: ItemWithLikes[], mode: SortMode): ItemWithLikes[] {

@@ -17,7 +17,7 @@ export default function WeekendScreen() {
   const { c } = useTheme();
   const st = sectionStyle(c, 'weekend');
   const { space } = useSpace();
-  const { items, loading, error, add, update, remove, toggleLike } = useItems('weekend');
+  const { items, loading, error, retry, add, update, remove, toggleLike } = useItems('weekend');
   const [sort, setSort] = useState<SortMode>('likes');
   const [cat, setCat] = useState<string | null>(null);
   const [editing, setEditing] = useState<ItemWithLikes | 'new' | null>(null);
@@ -63,7 +63,7 @@ export default function WeekendScreen() {
             ))}
           </ScrollView>
         ) : null}
-        <ErrorNote text={error} />
+        <ErrorNote text={error} onRetry={retry} />
         {loading ? (
           <Loading />
         ) : items.length === 0 ? (

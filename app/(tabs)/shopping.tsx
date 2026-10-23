@@ -20,7 +20,7 @@ export default function ShoppingScreen() {
   const { c } = useTheme();
   const st = sectionStyle(c, 'shopping');
   const { people } = useSpace();
-  const { items, loading, error, add, update, remove, toggleLike } = useItems('shopping');
+  const { items, loading, error, retry, add, update, remove, toggleLike } = useItems('shopping');
   const [cat, setCat] = useState('Продукты');
   const [title, setTitle] = useState('');
   const [qty, setQty] = useState('');
@@ -30,6 +30,7 @@ export default function ShoppingScreen() {
   const [extraCats, setExtraCats] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const adding = useRef(false);
 
   const categories = useMemo(() => {
     const s = new Set<string>(BASE_CATEGORIES);
@@ -55,7 +56,9 @@ export default function ShoppingScreen() {
 
   async function quickAdd() {
     const t = title.trim();
-    if (!t) return;
+    // onSubmitEditing не учитывает disabled у кнопки — защищаемся от двойной отправки сами
+    if (!t || adding.current) return;
+    adding.current = true;
     setBusy(true);
     try {
       await add({ title: t, quantity: qty.trim() || null, category: cat, done: false });
@@ -65,13 +68,15 @@ export default function ShoppingScreen() {
     } catch (e) {
       Alert.alert('Не получилось', humanError(e));
     } finally {
+      adding.current = false;
       setBusy(false);
     }
   }
 
   function toggleBought(i: ItemWithLikes) {
     Haptics.selectionAsync().catch(() => undefined);
-    update(i.id, { done: !i.done }).catch(() => undefined);
+    // update() сразу меняет галочку и сам откатывает её, если сервер вернул ошибку
+    update(i.id, { done: !i.done }).catch((e) => Alert.alert('Не получилось отметить', humanError(e)));
   }
 
   function clearBought() {
@@ -80,7 +85,11 @@ export default function ShoppingScreen() {
       {
         text: 'Убрать',
         style: 'destructive',
-        onPress: () => items.filter((i) => i.done).forEach((i) => remove(i.id).catch(() => undefined)),
+        onPress: async () => {
+          const results = await Promise.allSettled(items.filter((i) => i.done).map((i) => remove(i.id)));
+          const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
+          if (failed) Alert.alert('Не всё получилось убрать', humanError(failed.reason));
+        },
       },
     ]);
   }
@@ -138,7 +147,7 @@ export default function ShoppingScreen() {
           </ScrollView>
         </Card>
 
-        <ErrorNote text={error} />
+        <ErrorNote text={error} onRetry={retry} />
         {loading ? (
           <Loading />
         ) : items.length === 0 ? (
