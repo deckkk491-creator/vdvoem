@@ -13,7 +13,7 @@ export default function SignIn() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
-  const codeRef = useRef<TextInput>(null);
+  const codeRef = useRef<React.ComponentRef<typeof TextInput>>(null);
   // автопроверка на 6-й цифре, автоподстановка кода и кнопка «Войти» не должны отправить код дважды
   const verifying = useRef(false);
 

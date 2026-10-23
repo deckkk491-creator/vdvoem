@@ -29,7 +29,7 @@ export default function ShoppingScreen() {
   const [newCat, setNewCat] = useState('');
   const [extraCats, setExtraCats] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
   const adding = useRef(false);
 
   const categories = useMemo(() => {
