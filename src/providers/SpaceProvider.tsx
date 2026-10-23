@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { AppState } from 'react-native';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { humanError, supabase } from '../lib/supabase';
 import type { Member, Profile, RealtimeTable, Space } from '../lib/types';
@@ -188,8 +189,17 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
         timer = setTimeout(flush, 250);
       });
     }
+    let subscribedOnce = false;
     channel.subscribe((status) => {
-      if (active) setLive(status === 'SUBSCRIBED');
+      if (!active) return;
+      setLive(status === 'SUBSCRIBED');
+      if (status !== 'SUBSCRIBED') return;
+      // Переподключились после обрыва: пока канала не было, события могли потеряться — перечитываем всё
+      if (subscribedOnce) {
+        TABLES.forEach((t) => pending.add(t));
+        flush();
+      }
+      subscribedOnce = true;
     });
 
     return () => {
@@ -200,6 +210,25 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
       supabase.removeChannel(channel).catch(() => undefined);
     };
   }, [currentId, userId, loadSpaces, loadMembers]);
+
+  // Вернулись в приложение из фона: realtime в фоне не работает, поэтому перечитываем пространство
+  // и даём всем экранам (в том числе напоминаниям 2-2-2) обновиться — изменения с другого устройства не теряются
+  useEffect(() => {
+    if (!userId) return;
+    let prev = AppState.currentState;
+    const sub = AppState.addEventListener('change', (next) => {
+      const wasAway = prev === 'background' || prev === 'inactive';
+      prev = next;
+      if (next !== 'active' || !wasAway) return;
+      loadSpaces();
+      loadMembers();
+      for (const t of TABLES) {
+        if (t === 'spaces' || t === 'space_members' || t === 'profiles') continue;
+        listeners.current.forEach((fn) => fn(t));
+      }
+    });
+    return () => sub.remove();
+  }, [userId, loadSpaces, loadMembers]);
 
   const selectSpace = useCallback(async (id: string) => {
     setCurrentId(id);
