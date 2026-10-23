@@ -42,7 +42,7 @@ export default function Settings() {
   }
 
   function confirmLeave() {
-    Alert.alert('Выйти из пространства?', 'Ваши лайки и вишлист в этом пространстве будут удалены. Если вы последний участник — пространство удалится целиком.', [
+    Alert.alert('Выйти из пространства?', 'Твои лайки и вишлист в этом пространстве будут удалены. Если ты последний участник, пространство удалится целиком.', [
       { text: 'Отмена', style: 'cancel' },
       {
         text: 'Выйти',
@@ -69,7 +69,7 @@ export default function Settings() {
         if (rpcErr) throw rpcErr;
         Alert.alert(
           'Данные удалены',
-          'Все ваши данные удалены. Учётную запись не удалось удалить автоматически — мы обработаем это вручную. Напишите нам, если нужно ускорить.',
+          'Все твои данные удалены. Учётную запись не получилось удалить автоматически — мы удалим её вручную. Напиши нам, если нужно быстрее.',
         );
       } else {
         Alert.alert('Аккаунт удалён', 'Спасибо, что были с нами 🤍');
@@ -85,7 +85,7 @@ export default function Settings() {
   function confirmDeleteAccount() {
     Alert.alert(
       'Удалить аккаунт?',
-      'Будут безвозвратно удалены ваш профиль, добавленные вами записи, лайки, вишлист, взносы в копилку и сама учётная запись. Это действие нельзя отменить.',
+      'Безвозвратно удалятся твой профиль, добавленные тобой записи, лайки, вишлист, взносы в копилку и сама учётная запись. Отменить это нельзя.',
       [
         { text: 'Отмена', style: 'cancel' },
         { text: 'Удалить навсегда', style: 'destructive', onPress: deleteAccount },
@@ -102,7 +102,7 @@ export default function Settings() {
             {space.invite_code}
           </Text>
           <Body muted style={{ textAlign: 'center', fontSize: 13 }}>
-            Пусть партнёр или родные введут этот код после входа.
+            Пусть партнёр или родные введут этот код после входа в приложение.
           </Body>
           <Row style={{ marginTop: 14 }}>
             <Button title="Копировать" small variant="secondary" icon="copy-outline" style={{ flex: 1 }} onPress={() => Clipboard.setStringAsync(space.invite_code)} />
@@ -122,10 +122,10 @@ export default function Settings() {
         <Input label="Название" value={spaceName} onChangeText={setSpaceName} maxLength={60} />
         <Input label="Город (для идей правила 2-2-2)" value={spaceCity} onChangeText={setSpaceCity} placeholder="Москва" maxLength={60} />
         <ErrorNote text={error} />
-        <Button title={saved ? 'Сохранено ✓' : 'Сохранить'} small onPress={saveSpace} />
+        <Button title={saved ? 'Сохранено ✓' : 'Сохранить'} small onPress={saveSpace} style={{ alignSelf: 'flex-start' }} />
         {spaces.length > 1 ? (
           <View style={{ marginTop: 16 }}>
-            <Label>Переключить</Label>
+            <Label>Мои пространства</Label>
             {spaces.map((s) => (
               <Pressable
                 key={s.id}
@@ -140,7 +140,7 @@ export default function Settings() {
             ))}
           </View>
         ) : null}
-        <Button title="Создать или присоединиться к ещё одному" small variant="ghost" onPress={() => setAddOpen(true)} style={{ marginTop: 8 }} />
+        <Button title="Добавить ещё пространство" small variant="ghost" icon="add" onPress={() => setAddOpen(true)} style={{ marginTop: 8, alignSelf: 'flex-start' }} />
       </Card>
 
       <Label>Профиль</Label>
@@ -148,20 +148,41 @@ export default function Settings() {
         <Body muted style={{ fontSize: 14 }}>{email}</Body>
         <Row style={{ marginTop: 12 }}>
           <Button title="Изменить профиль" small variant="secondary" icon="person-outline" onPress={() => setProfileOpen(true)} />
-          <Button title="Выйти" small variant="ghost" onPress={() => signOut()} />
+          <Button title="Выйти из аккаунта" small variant="ghost" icon="log-out-outline" onPress={() => signOut()} />
         </Row>
       </Card>
 
-      <Label>Прочее</Label>
+      {PRIVACY_URL ? (
+        <>
+          <Label>О приложении</Label>
+          <Card style={{ marginBottom: 16 }}>
+            <Button
+              title="Политика конфиденциальности"
+              small
+              variant="ghost"
+              icon="document-text-outline"
+              onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL).catch(() => undefined)}
+              style={{ alignSelf: 'flex-start' }}
+            />
+          </Card>
+        </>
+      ) : null}
+
+      <Label style={{ color: c.danger }}>Осторожно</Label>
       <Card style={{ marginBottom: 16 }}>
-        {PRIVACY_URL ? (
-          <Button title="Политика конфиденциальности" small variant="ghost" icon="document-text-outline" onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)} style={{ alignSelf: 'flex-start' }} />
+        {space ? (
+          <>
+            <Button title="Выйти из пространства" small variant="ghost" color={c.danger} icon="exit-outline" onPress={confirmLeave} style={{ alignSelf: 'flex-start' }} />
+            <View style={{ height: 8 }} />
+          </>
         ) : null}
-        <Button title="Выйти из пространства" small variant="ghost" color={c.danger} icon="exit-outline" onPress={confirmLeave} style={{ alignSelf: 'flex-start' }} />
-        <Button title="Удалить аккаунт" small variant="danger" icon="trash-outline" loading={deleting} onPress={confirmDeleteAccount} style={{ alignSelf: 'flex-start', marginTop: 8 }} />
+        <Button title="Удалить аккаунт" small variant="danger" icon="trash-outline" loading={deleting} onPress={confirmDeleteAccount} style={{ alignSelf: 'flex-start' }} />
+        <Body muted style={{ fontSize: 13, marginTop: 8 }}>
+          Удалит профиль, твои записи и учётную запись без возможности восстановления.
+        </Body>
       </Card>
 
-      <Text style={{ textAlign: 'center', color: c.textFaint, fontSize: 12 }}>Вдвоём · сделано с теплом</Text>
+      <Text style={{ textAlign: 'center', color: c.textFaint, fontSize: 12 }}>«Вдвоём» · сделано с теплом</Text>
 
       <Sheet visible={profileOpen} onClose={() => setProfileOpen(false)} title="Профиль">
         <ProfileForm onDone={() => setProfileOpen(false)} />
@@ -208,7 +229,7 @@ function AddSpaceSheet({
       <Button title="Создать" small onPress={() => run(() => createSpace(name.trim()))} disabled={!name.trim()} loading={busy} />
       <View style={{ height: 24 }} />
       <Input
-        label="Или войти по коду"
+        label="Или присоединиться по коду"
         value={code}
         onChangeText={(t) => setCode(t.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
         placeholder="ABC234"
