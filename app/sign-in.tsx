@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { Body, Button, ErrorNote, Input, Screen, Spacer, Title } from '../src/components/ui';
+import { AUTH_REDIRECT_URL } from '../src/lib/authLink';
 import { humanError, supabase } from '../src/lib/supabase';
 import { fonts, radius, useTheme } from '../src/theme';
 
@@ -29,7 +30,7 @@ export default function SignIn() {
     setError(null);
     const { error: e } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { shouldCreateUser: true },
+      options: { shouldCreateUser: true, emailRedirectTo: AUTH_REDIRECT_URL },
     });
     setBusy(false);
     if (e) return setError(humanError(e));
@@ -81,15 +82,18 @@ export default function SignIn() {
             onSubmitEditing={() => validEmail && sendCode()}
           />
           <ErrorNote text={error} />
-          <Button title="Получить код" onPress={sendCode} loading={busy} disabled={!validEmail} icon="mail-outline" />
+          <Button title="Получить письмо" onPress={sendCode} loading={busy} disabled={!validEmail} icon="mail-outline" />
           <Body faint style={{ marginTop: 14, fontSize: 13, textAlign: 'center' }}>
-            Пароль не нужен — пришлём на почту код из 6 цифр.
+            Пароль не нужен — пришлём на почту код или ссылку для входа.
           </Body>
         </>
       ) : (
         <>
           <Body muted>
-            Отправили код на <Text style={{ color: c.text, fontWeight: '700' }}>{email.trim()}</Text>
+            Отправили письмо на <Text style={{ color: c.text, fontWeight: '700' }}>{email.trim()}</Text>
+          </Body>
+          <Body faint style={{ marginTop: 6, fontSize: 13 }}>
+            Введи код из письма или просто нажми в нём ссылку на этом телефоне.
           </Body>
           <Spacer h={16} />
           <Pressable
@@ -140,7 +144,7 @@ export default function SignIn() {
           <Button title="Войти" onPress={() => verify()} loading={busy} disabled={code.length !== 6} />
           <Spacer h={8} />
           <Button
-            title={cooldown > 0 ? `Отправить снова через ${cooldown} с` : 'Отправить код ещё раз'}
+            title={cooldown > 0 ? `Отправить снова через ${cooldown} с` : 'Отправить письмо ещё раз'}
             variant="ghost"
             disabled={cooldown > 0 || busy}
             onPress={sendCode}

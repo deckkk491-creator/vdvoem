@@ -7,6 +7,7 @@ import { isConfigured } from '../src/lib/env';
 import { AuthProvider, useAuth } from '../src/providers/AuthProvider';
 import { SpaceProvider, useSpace } from '../src/providers/SpaceProvider';
 import { RuleReminderSync } from '../src/components/RuleReminderSync';
+import { useAuthDeepLinks } from '../src/lib/authLink';
 import { useTheme } from '../src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -48,11 +49,17 @@ function Gate() {
   return null;
 }
 
+function AuthLinks() {
+  useAuthDeepLinks();
+  return null;
+}
+
 function Shell() {
   const { c, dark } = useTheme();
   return (
     <>
       <StatusBar style={dark ? 'light' : 'dark'} />
+      <AuthLinks />
       <Gate />
       <RuleReminderSync />
       <Stack
@@ -69,6 +76,7 @@ function Shell() {
         <Stack.Screen name="index" />
         <Stack.Screen name="setup" />
         <Stack.Screen name="sign-in" />
+        <Stack.Screen name="auth-callback" />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="wishlists" options={{ headerShown: true, title: 'Вишлисты' }} />
