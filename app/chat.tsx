@@ -9,7 +9,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Keyboard, KeyboardAvoidingView, Platform, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Keyboard, KeyboardAvoidingView, Linking, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PhotoViewer, openStoredFile } from '../src/components/Attachments';
 import { ChatEmpty } from '../src/components/chat/ChatEmpty';
@@ -26,6 +26,9 @@ import type { Profile } from '../src/lib/types';
 import { useAuth } from '../src/providers/AuthProvider';
 import { useSpace } from '../src/providers/SpaceProvider';
 import { useTheme } from '../src/theme';
+
+/** Куда уходят жалобы на сообщения */
+const SUPPORT_EMAIL = 'deckkk491@gmail.com';
 
 /** Сообщения одного человека с паузой меньше 5 минут собираются в группу */
 const GROUP_GAP_MS = 5 * 60 * 1000;
@@ -223,6 +226,26 @@ export default function ChatScreen() {
       .catch(() => undefined);
   }, []);
 
+  const report = useCallback(
+    (m: ChatItem) => {
+      const body = [
+        'Жалоба на сообщение в «Вдвоём»',
+        `Пространство: ${spaceId ?? '—'}`,
+        `Сообщение: ${m.id}`,
+        `Отправитель: ${m.sender_id}`,
+        `Время: ${m.created_at}`,
+        `Текст: ${m.body || '(вложение)'}`,
+        '',
+        'Что случилось:',
+      ].join('\n');
+      const url = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Жалоба на сообщение')}&body=${encodeURIComponent(body)}`;
+      Linking.openURL(url).catch(() =>
+        Alert.alert('Не получилось открыть почту', `Напиши на ${SUPPORT_EMAIL} — разберёмся в течение суток. Если общение неприятно, можно выйти из пространства в настройках.`),
+      );
+    },
+    [spaceId],
+  );
+
   const onPress = useCallback(
     (m: ChatItem) => {
       if (m.local) {
@@ -249,11 +272,13 @@ export default function ChatScreen() {
       const actions: { text: string; destructive?: boolean; onPress: () => void }[] = [];
       if (m.body.trim()) actions.push({ text: 'Скопировать', onPress: () => copy(m) });
       if (m.sender_id === userId) actions.push({ text: 'Удалить', destructive: true, onPress: () => confirmDelete(m) });
+      // Жалоба разработчику (App Store Guideline 1.2): письмо с id сообщения и текстом
+      else actions.push({ text: 'Пожаловаться', onPress: () => report(m) });
       if (!actions.length) return;
       Haptics.selectionAsync().catch(() => undefined);
       showActions(undefined, actions);
     },
-    [retrySend, discard, copy, confirmDelete, userId],
+    [retrySend, discard, copy, confirmDelete, report, userId],
   );
 
   const onSend = useCallback(

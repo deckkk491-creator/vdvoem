@@ -41,13 +41,16 @@ FEATURES TO CHECK
 - Add an item in any section (e.g. a movie) and like an item.
 - Wishlists: open the other member's wishlist and tap "I'll gift this". This mark is hidden from the wishlist owner.
 - Savings jar: a manual tracker only. The app does not process payments or connect to banks.
-- 2-2-2 rule (optional, in Settings): date night every 2 weeks, a new place every 2 months, a new country every 2 years. When enabled, the app asks for notification permission and schedules LOCAL notifications with ideas. No remote push.
+- 2-2-2 rule ("Us" tab → 2-2-2): date night every 2 weeks, a new place every 2 months, a new country every 2 years; the couple can change the rhythm (e.g. 1-2-3). When enabled, the app asks for notification permission and schedules LOCAL notifications. No remote push. Country ideas show landmark photos from Wikimedia Commons (free licences, author credited on each photo).
+- Calendar tab: shared events, tasks ("I'll do it" to take a task) and important dates. Optional "Add to iPhone Calendar" switch writes events to a separate "Вдвоём" calendar on the device; calendar permission is asked only when the user turns it on.
+- Chat (bubble icon at the top of every tab): private messages between members of the space, with photo and document attachments stored in private storage (signed URLs, members only).
+- Photos: the photo library / camera permission is asked only when the user taps "Photo" to attach a picture.
 
 ACCOUNT DELETION
 Profile → "Delete account". This permanently deletes the account and the user's data from our database (Guideline 5.1.1(v)).
 
 USER-GENERATED CONTENT
-Content is visible only to members of the same private space, who joined by an invite code they received from someone they know. There is no public feed, no discovery of strangers and no messaging. [If implemented: a member can remove another member from a space, and anyone can leave a space at any time.]
+Content and chat messages are visible only to members of the same private space, who joined by an invite code they received from someone they know (typically a partner or family). There is no public feed and no way to find or message strangers. Any member can leave a space at any time (Profile → Leave space), which immediately stops all contact; a long-press on any chat message offers "Report", which sends the message to the developer (deckkk491@gmail.com) for review within 24 hours.
 
 DATA
 Data is stored in Supabase (EU region). No ads, no analytics, no tracking, no in-app purchases.
@@ -75,6 +78,8 @@ Then:
 
 - [ ] Account deletion is easy to find (Profile/Settings) and actually deletes data.
 - [ ] Notification permission is asked only when the user turns on the 2-2-2 rule, not at first launch.
+- [ ] Calendar permission is asked only when the user turns on "Add to iPhone Calendar"; photo/camera permission only when attaching a photo.
+- [ ] Chat: long-press → «Пожаловаться» works (opens mail to the developer).
 - [ ] Recipe links open in Safari / SFSafariViewController.
 - [ ] Privacy Policy URL is also linked inside the app (Settings/Profile).
 - [ ] UGC (Guideline 1.2): even for private spaces, it helps to have a way to leave a space and remove a member. If there is none, say so honestly in the notes and stress that spaces are invite-only.

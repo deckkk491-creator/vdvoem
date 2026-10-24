@@ -53,7 +53,7 @@
   </header>
 
   <section id="ru">
-    <p class="meta">Действует с 22 октября 2026 года</p>
+    <p class="meta">Действует с 24 октября 2026 года</p>
 
     <div class="summary">
       <p><strong>Коротко:</strong> мы храним только то, что нужно для работы общего пространства: ваш email, имя в профиле и то, что вы добавляете в приложение. Без рекламы и трекинга, данные не продаются. Аккаунт можно удалить прямо в приложении.</p>
@@ -66,11 +66,14 @@
     <ul>
       <li><strong>Email</strong> — чтобы вы могли войти: на него приходит одноразовый код.</li>
       <li><strong>Имя в профиле</strong> — его видят участники вашего пространства.</li>
-      <li><strong>Контент, который вы создаёте:</strong> фильмы и сериалы, рецепты и ссылки на них, идеи на выходные, цели и суммы в копилке, список покупок, вишлисты, отметки «Подарю я», лайки, настройки правила 2-2-2.</li>
+      <li><strong>Контент, который вы создаёте:</strong> фильмы и сериалы, рецепты и ссылки на них, идеи на выходные и поездки, цели и суммы в копилке, список покупок, вишлисты, отметки «Подарю я», лайки и дизлайки, настройки правила 2-2-2, события, задачи и важные даты календаря.</li>
+      <li><strong>Сообщения в чате</strong> — текст и вложения, которые вы отправляете участникам своего пространства, и отметка о прочтении.</li>
+      <li><strong>Фото и файлы, которые вы сами прикрепляете</strong> — к свиданиям, поездкам, событиям, идеям и сообщениям (например, снимки на память или билеты). Они хранятся в закрытом хранилище и доступны только участникам пространства по временным ссылкам.</li>
+      <li><strong>Настройки оформления</strong> — выбранный цвет и тема приложения.</li>
       <li><strong>Участие в пространствах</strong> — в каких пространствах вы состоите и коды приглашения.</li>
       <li><strong>Технические данные входа</strong> — служебные записи сервиса авторизации (например, время входа), необходимые для безопасности аккаунта.</li>
     </ul>
-    <p>Мы не собираем геолокацию, контакты, фото, данные о здоровье или платёжные данные. Копилка — это только учёт сумм, которые вы вводите сами; приложение не работает с деньгами и банковскими картами.</p>
+    <p>Мы не собираем геолокацию, контакты, данные о здоровье или платёжные данные. Приложение получает доступ к галерее и камере только когда вы сами выбираете фото, и загружает только выбранные снимки. Копилка — это только учёт сумм, которые вы вводите сами; приложение не работает с деньгами и банковскими картами.</p>
 
     <h2>Зачем</h2>
     <p>Только чтобы приложение работало: входить в аккаунт, показывать общее содержимое участникам пространства и синхронизировать его между устройствами. Мы не используем данные для рекламы, не строим профили и не продаём данные.</p>
@@ -88,8 +91,14 @@
     <h2>Уведомления</h2>
     <p>Напоминания по правилу 2-2-2 — локальные уведомления. Они создаются на вашем устройстве и не требуют передачи данных на сервер. Отключить их можно в приложении или в настройках iOS.</p>
 
-    <h2>Ссылки на рецепты</h2>
-    <p>Когда вы сохраняете рецепт по ссылке, мы храним саму ссылку и данные, которые вы ввели. Если приложение загружает название или картинку со страницы рецепта, сайт рецепта видит этот запрос, как при обычном открытии страницы.</p>
+    <h2>Календарь iPhone</h2>
+    <p>Если вы включите «Добавлять в календарь iPhone», приложение создаст на устройстве календарь «Вдвоём» и будет записывать в него общие события и даты. Это происходит только на вашем телефоне; приложение не читает другие ваши календари и не отправляет их на сервер. Выключить можно в любой момент в разделе «Календарь».</p>
+
+    <h2>Ссылки</h2>
+    <p>Когда вы сохраняете рецепт, афишу или товар по ссылке, мы храним саму ссылку и данные, которые вы ввели. Если приложение загружает название, картинку или цену со страницы, сайт видит этот запрос, как при обычном открытии страницы.</p>
+
+    <h2>Фото достопримечательностей</h2>
+    <p>Фото стран в генераторе идей загружаются с Wikimedia Commons (свободные лицензии, авторы указаны на фото). Wikimedia видит запрос на загрузку картинки, как при открытии страницы в браузере.</p>
 
     <h2>Чего в приложении нет</h2>
     <ul>
@@ -102,7 +111,7 @@
     <p>Пока у вас есть аккаунт. После удаления аккаунта данные удаляются из базы. Служебные резервные копии Supabase могут храниться ограниченное время, после чего перезаписываются.</p>
 
     <h2>Удаление аккаунта</h2>
-    <p>Откройте в приложении профиль и выберите «Удалить аккаунт». Будут удалены ваш email, профиль и созданный вами контент. Если вы не можете войти в приложение, напишите на <a href="mailto:deckkk491@gmail.com">deckkk491@gmail.com</a> с адреса, к которому привязан аккаунт, — удалим вручную.</p>
+    <p>Откройте в приложении профиль и выберите «Удалить аккаунт». Будут удалены ваш email, профиль, созданный вами контент, ваши сообщения и загруженные вами фото и файлы. Если вы не можете войти в приложение, напишите на <a href="mailto:deckkk491@gmail.com">deckkk491@gmail.com</a> с адреса, к которому привязан аккаунт, — удалим вручную.</p>
     <p>Если вы были единственным участником пространства, оно удаляется целиком. Если в пространстве остались другие участники, общие записи, добавленные вами, удаляются вместе с аккаунтом.</p>
 
     <h2>Ваши права</h2>
@@ -121,7 +130,7 @@
   <hr>
 
   <section id="en" lang="en">
-    <p class="meta">Effective October 22, 2026</p>
+    <p class="meta">Effective October 24, 2026</p>
 
     <div class="summary">
       <p><strong>In short:</strong> we store only what a shared space needs to work: your email, your profile name and what you add in the app. No ads, no tracking, and your data is never sold. You can delete your account right in the app.</p>
@@ -134,11 +143,14 @@
     <ul>
       <li><strong>Email</strong> — so you can sign in: we send a one-time code to it.</li>
       <li><strong>Profile name</strong> — visible to members of your space.</li>
-      <li><strong>Content you create:</strong> movies and series, recipes and their links, weekend ideas, savings goals and amounts, the shopping list, wishlists, "I'll gift this" marks, likes and your 2-2-2 rule settings.</li>
+      <li><strong>Content you create:</strong> movies and series, recipes and their links, weekend ideas and trips, savings goals and amounts, the shopping list, wishlists, "I'll gift this" marks, likes and dislikes, your 2-2-2 rule settings, and calendar events, tasks and important dates.</li>
+      <li><strong>Chat messages</strong> — the text and attachments you send to members of your space, and read receipts.</li>
+      <li><strong>Photos and files you choose to attach</strong> — to dates, trips, events, ideas and messages (for example keepsake photos or tickets). They are kept in private storage and are available only to members of your space through temporary links.</li>
+      <li><strong>Appearance settings</strong> — the colour and theme you picked.</li>
       <li><strong>Space membership</strong> — which spaces you belong to and their invite codes.</li>
       <li><strong>Technical sign-in data</strong> — service records kept by the sign-in service (such as sign-in time) needed to keep your account secure.</li>
     </ul>
-    <p>We don't collect your location, contacts, photos, health data or payment details. The savings jar only tracks amounts you type in yourself; the app doesn't handle money or bank cards.</p>
+    <p>We don't collect your location, contacts, health data or payment details. The app opens your photo library or camera only when you choose to attach a photo, and uploads only the photos you pick. The savings jar only tracks amounts you type in yourself; the app doesn't handle money or bank cards.</p>
 
     <h2>Why</h2>
     <p>Only to make the app work: to sign you in, show shared content to members of your space and sync it across devices. We don't use your data for advertising, don't build profiles and don't sell it.</p>
@@ -156,8 +168,14 @@
     <h2>Notifications</h2>
     <p>2-2-2 rule reminders are local notifications. They are scheduled on your device and don't require sending any data to a server. You can turn them off in the app or in iOS Settings.</p>
 
-    <h2>Recipe links</h2>
-    <p>When you save a recipe from a link, we store the link and the details you entered. If the app loads the title or picture from the recipe page, the recipe website sees that request, just as when you open the page normally.</p>
+    <h2>iPhone Calendar</h2>
+    <p>If you turn on "Add to iPhone Calendar", the app creates a "Вдвоём" calendar on your device and writes your shared events and dates to it. This happens only on your phone; the app doesn't read your other calendars or send them to a server. You can turn it off at any time in the Calendar tab.</p>
+
+    <h2>Links</h2>
+    <p>When you save a recipe, event or product from a link, we store the link and the details you entered. If the app loads the title, picture or price from the page, that website sees the request, just as when you open the page normally.</p>
+
+    <h2>Landmark photos</h2>
+    <p>Country photos in the idea generator are loaded from Wikimedia Commons (free licences, authors credited on each photo). Wikimedia sees the image request, just as when you open a page in a browser.</p>
 
     <h2>What the app doesn't have</h2>
     <ul>
@@ -170,7 +188,7 @@
     <p>For as long as you have an account. When you delete your account, your data is removed from the database. Supabase's routine backups may keep it for a limited time before they are overwritten.</p>
 
     <h2>Deleting your account</h2>
-    <p>In the app, open your profile and choose "Delete account". Your email, profile and the content you created will be deleted. If you can't sign in, write to <a href="mailto:deckkk491@gmail.com">deckkk491@gmail.com</a> from the email address linked to your account and we'll delete it manually.</p>
+    <p>In the app, open your profile and choose "Delete account". Your email, profile, the content you created, your messages and the photos and files you uploaded will be deleted. If you can't sign in, write to <a href="mailto:deckkk491@gmail.com">deckkk491@gmail.com</a> from the email address linked to your account and we'll delete it manually.</p>
     <p>If you were the only member of a space, the whole space is deleted. If other members remain, the shared items you added are deleted together with your account.</p>
 
     <h2>Your rights</h2>

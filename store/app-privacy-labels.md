@@ -16,7 +16,10 @@ App Store Connect → your app → **App Privacy** → Get Started.
 |---|---|---|---|
 | Contact Info | **Email Address** | ✅ | Email-code sign-in |
 | Contact Info | **Name** | ✅ | Profile name shown to space members |
-| User Content | **Other User Content** | ✅ | Movies, recipes and links, weekend ideas, savings goals/amounts, shopping list, wishlists, "I'll gift this" marks, likes, 2-2-2 settings |
+| User Content | **Other User Content** | ✅ | Movies, recipes and links, weekend ideas/trips, savings goals/amounts, shopping list, wishlists, "I'll gift this" marks, likes/dislikes, 2-2-2 settings, calendar events/tasks/important dates, theme choice |
+| User Content | **Emails or Text Messages** | ✅ | In-app chat messages between members of a space |
+| User Content | **Photos or Videos** | ✅ | Photos the user attaches to dates, trips, events and chat (private storage, members only) |
+| User Content | **Other User Content** (files) | ✅ (same row as above) | Documents the user attaches (tickets, PDFs) |
 | Identifiers | **User ID** | ✅ | Supabase account UUID that ties content to the user |
 | Contact Info | Phone Number, Physical Address, Other Contact Info | — | not collected |
 | Health & Fitness | — | — | not collected |
@@ -24,7 +27,7 @@ App Store Connect → your app → **App Privacy** → Get Started.
 | Location | Precise / Coarse | — | not collected |
 | Sensitive Info | — | — | not collected |
 | Contacts | — | — | not collected (invite code is shared manually) |
-| User Content | Emails or Text Messages, Photos or Videos, Audio, Gameplay, Customer Support | — | not collected |
+| User Content | Audio, Gameplay, Customer Support | — | not collected |
 | Browsing History, Search History | — | — | not collected |
 | Identifiers | Device ID | — | not collected (no IDFA/IDFV sent) |
 | Purchases | — | — | not collected |
@@ -36,7 +39,7 @@ Note on "Other Financial Info": Apple means things like salary or debts. A savin
 
 ## Step 3. For EACH ticked type, answer the same way
 
-Applies to Email Address, Name, Other User Content and User ID.
+Applies to Email Address, Name, Other User Content, Emails or Text Messages, Photos or Videos and User ID.
 
 | Question | Answer |
 |---|---|
@@ -48,7 +51,7 @@ Applies to Email Address, Name, Other User Content and User ID.
 ## Resulting App Store label
 
 - **Data Used to Track You:** none
-- **Data Linked to You:** Contact Info (Email Address, Name), User Content, Identifiers (User ID)
+- **Data Linked to You:** Contact Info (Email Address, Name), User Content (Emails or Text Messages, Photos or Videos, Other User Content), Identifiers (User ID)
 - **Data Not Linked to You:** none
 
 ## Before you submit — check the build
@@ -66,7 +69,7 @@ Applies to Email Address, Name, Other User Content and User ID.
 ## Privacy manifest (PrivacyInfo.xcprivacy)
 
 - `NSPrivacyTracking` → `false`.
-- `NSPrivacyCollectedDataTypes` → EmailAddress, Name, OtherUserContent, UserID; each `Linked = true`, `Tracking = false`, purpose `AppFunctionality`.
+- `NSPrivacyCollectedDataTypes` → EmailAddress, Name, OtherUserContent, EmailsOrTextMessages, PhotosorVideos, UserID; each `Linked = true`, `Tracking = false`, purpose `AppFunctionality`.
 - Required Reason APIs: `NSPrivacyAccessedAPICategoryUserDefaults` → `CA92.1` (AsyncStorage / session storage).
 
 Expo/React Native: set these under `ios.privacyManifests` in `app.json`.
