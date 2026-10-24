@@ -11,6 +11,7 @@ import { DateField } from '../src/components/DateField';
 import { Avatar } from '../src/components/people';
 import { Body, Button, Card, Chip, EmptyState, ErrorNote, H2, Input, Loading, ProgressBar, Row, Segmented, Sheet } from '../src/components/ui';
 import { countryPhotos } from '../src/data/countryPhotos';
+import { ideaPhoto } from '../src/data/photos';
 import { COUNTRY_CARDS, COUNTRY_IDEAS, DATE_IDEAS, PLACE_IDEAS, type CountryCard, type CountryIdea, type DateIdea, type PlaceIdea } from '../src/data/ideas';
 import { commitAttachments, deleteWithFiles, emptyDraft, type AttachmentDraft } from '../src/lib/files';
 import { formatDate, normalizeUrl, relativeDays, todayISO } from '../src/lib/format';
@@ -363,9 +364,7 @@ function IdeaCard({ item, onReplace, onSave, onDone }: { item: AnyIdea; onReplac
       {item.kind === 'country' ? (
         <CountryGallery countryId={item.idea.id} flag={item.idea.flag} />
       ) : (
-        <View style={{ backgroundColor: st.bg, paddingVertical: 16, alignItems: 'center' }}>
-          <Text style={{ fontSize: 44 }}>{emoji}</Text>
-        </View>
+        <IdeaPhoto id={item.idea.id} emoji={emoji} />
       )}
       <View style={{ padding: 14 }}>
         {tag ? <Text style={{ color: st.fg, fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.6 }}>{tag}</Text> : null}
@@ -482,6 +481,36 @@ function CountryGallery({ countryId, flag }: { countryId: string; flag: string }
   );
 }
 
+/** Фото идеи свидания или места с подписью автора; если фото нет — эмодзи */
+function IdeaPhoto({ id, emoji }: { id: string; emoji: string }) {
+  const { c } = useTheme();
+  const st = sectionStyle(c, 'rule');
+  const ph = ideaPhoto(id);
+  if (!ph) {
+    return (
+      <View style={{ backgroundColor: st.bg, paddingVertical: 16, alignItems: 'center' }}>
+        <Text style={{ fontSize: 44 }}>{emoji}</Text>
+      </View>
+    );
+  }
+  return (
+    <View>
+      <Image source={{ uri: ph.url }} style={{ width: '100%', height: 190, backgroundColor: st.bg }} contentFit="cover" transition={200} />
+      <View style={{ position: 'absolute', left: 10, bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 4, maxWidth: '85%' }}>
+        <Text style={{ fontSize: 16 }}>{emoji}</Text>
+        <Text
+          style={{ color: '#fff', fontSize: 10, opacity: 0.9, flexShrink: 1 }}
+          numberOfLines={1}
+          onPress={() => WebBrowser.openBrowserAsync(ph.source).catch(() => undefined)}
+          accessibilityRole="link"
+        >
+          Фото: {ph.author} · {ph.license}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 /** Визитка страны: четыре коротких строки поверх фото */
 function CountryInfo({ info }: { info: CountryCard }) {
   const rows: [string, string, string][] = [
@@ -569,6 +598,7 @@ function SaveIdeaSheet({ item, onClose }: { item: AnyIdea | null; onClose: () =>
       payload.event_date = date;
       payload.end_date = isTrip ? endDate : null;
       if (item.kind === 'country') payload.image_url = countryPhotos(item.idea.id)[0]?.url ?? null;
+      else payload.image_url = ideaPhoto(item.idea.id)?.url ?? null;
     } else if (target === 'watch') {
       payload.media_type = 'movie';
       payload.status = 'want';

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
-import { ActionSheetIOS, Alert, Image, Platform, Pressable, Text, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
+import { ActionSheetIOS, Alert, Platform, Pressable, Text, View } from 'react-native';
 import { formatDate, hostOf } from '../lib/format';
 import type { ItemWithLikes } from '../lib/types';
 import { radius, useTheme } from '../theme';
@@ -50,7 +51,13 @@ export function ItemCard({
   footerExtra,
   extra,
   showImage = true,
+  image,
+  placeholder,
 }: {
+  /** Картинка вместо image_url (например, своё фото из вложений) */
+  image?: { uri: string; cacheKey?: string } | null;
+  /** Эмодзи-заглушка, если картинки нет совсем */
+  placeholder?: { emoji: string; bg: string };
   /** Дополнительный блок под текстом карточки (например, вложения) */
   extra?: React.ReactNode;
   item: ItemWithLikes;
@@ -67,8 +74,17 @@ export function ItemCard({
   const { c } = useTheme();
   return (
     <Card onPress={onPress} onLongPress={onLongPress} style={{ marginBottom: 12, padding: 0, overflow: 'hidden' }}>
-      {showImage && item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={{ width: '100%', height: 170, backgroundColor: c.bgAlt }} resizeMode="cover" />
+      {showImage && (image ?? item.image_url) ? (
+        <ExpoImage
+          source={image ?? { uri: item.image_url! }}
+          style={{ width: '100%', height: 170, backgroundColor: c.bgAlt }}
+          contentFit="cover"
+          transition={150}
+        />
+      ) : showImage && placeholder ? (
+        <View style={{ width: '100%', height: 110, backgroundColor: placeholder.bg, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 48 }}>{placeholder.emoji}</Text>
+        </View>
       ) : null}
       <View style={{ padding: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>

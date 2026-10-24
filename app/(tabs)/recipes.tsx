@@ -1,11 +1,17 @@
 import * as Clipboard from 'expo-clipboard';
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import { AttachmentEditor, useAttachmentsFor } from '../../src/components/Attachments';
 import { Badge, ItemCard, itemMenu } from '../../src/components/ItemCard';
 import { SectionHeader, SortToggle } from '../../src/components/SectionHeader';
 import { Body, Button, Chip, EmptyState, ErrorNote, Fab, Input, Label, Loading, Row, Screen, Sheet } from '../../src/components/ui';
 import { MealGenerator } from '../../src/components/MealGenerator';
-import { MEAL_META } from '../../src/data/meals';
+import { MEAL_META, mealByTitle, recipeSearchUrl } from '../../src/data/meals';
+import { mealPhoto } from '../../src/data/photos';
+import { commitAttachments, emptyDraft, loadAttachments, useSignedUrls, type AttachmentDraft } from '../../src/lib/files';
+import { useAuth } from '../../src/providers/AuthProvider';
+import { useSpace } from '../../src/providers/SpaceProvider';
 import { useItems, useSorted, type SortMode } from '../../src/hooks/useItems';
 import { normalizeUrl } from '../../src/lib/format';
 import { fetchLinkPreview } from '../../src/lib/linkPreview';
@@ -22,6 +28,22 @@ export default function RecipesScreen() {
   const [sort, setSort] = useState<SortMode>('new');
   const [tag, setTag] = useState<string | null>(null);
   const [editing, setEditing] = useState<ItemWithLikes | 'new' | null>(null);
+  const { space } = useSpace();
+  const { userId } = useAuth();
+
+  // Обложка рецепта: своё фото → картинка со страницы → фото встроенного блюда → эмодзи
+  const ids = useMemo(() => items.map((i) => i.id), [items]);
+  const { byParent, reload: reloadPhotos } = useAttachmentsFor(ids);
+  const coverPaths = useMemo(() => items.map((i) => byParent[i.id]?.find((a) => a.kind === 'photo')?.storage_path ?? null), [items, byParent]);
+  const coverUrls = useSignedUrls(coverPaths);
+  const coverOf = (item: ItemWithLikes): { uri: string; cacheKey?: string } | null => {
+    const path = byParent[item.id]?.find((a) => a.kind === 'photo')?.storage_path;
+    if (path && coverUrls[path]) return { uri: coverUrls[path], cacheKey: path };
+    if (item.image_url) return null; // ItemCard покажет image_url
+    const meal = mealByTitle(item.title);
+    const ph = meal ? mealPhoto(meal.id) : null;
+    return ph ? { uri: ph.url } : null;
+  };
 
   const sorted = useSorted(items, sort);
   const allTags = useMemo(() => {
@@ -45,7 +67,13 @@ export default function RecipesScreen() {
           recipes={items}
           onOpenSaved={(it) => setEditing(it)}
           onSave={async (idea) => {
-            await add({ title: idea.title, note: idea.description, tags: [MEAL_META[idea.meal].tag] });
+            await add({
+              title: idea.title,
+              note: idea.description,
+              tags: [MEAL_META[idea.meal].tag],
+              image_url: mealPhoto(idea.id)?.url ?? null,
+              url: recipeSearchUrl(idea.title),
+            });
           }}
         />
         {allTags.length > 0 ? (
@@ -74,6 +102,8 @@ export default function RecipesScreen() {
               key={item.id}
               item={item}
               accent={st.fg}
+              image={coverOf(item)}
+              placeholder={{ emoji: mealByTitle(item.title)?.emoji ?? st.emoji, bg: st.bg }}
               onLike={() => toggleLike(item)}
               onDislike={() => toggleDislike(item)}
               onPress={() => setEditing(item)}
@@ -89,9 +119,15 @@ export default function RecipesScreen() {
         visible={editing !== null}
         onClose={() => setEditing(null)}
         knownTags={allTags}
-        onSave={async (d) => {
-          if (editing && editing !== 'new') await update(editing.id, d);
-          else await add(d);
+        onSave={async (d, draft) => {
+          let id: string;
+          if (editing && editing !== 'new') {
+            await update(editing.id, d);
+            id = editing.id;
+          } else id = await add(d);
+          const problem = space && userId ? await commitAttachments(space.id, userId, 'item', id, draft) : null;
+          if (problem) Alert.alert('Фото', problem);
+          reloadPhotos();
           setEditing(null);
         }}
         onDelete={editing && editing !== 'new' ? async () => { await remove(editing.id); setEditing(null); } : undefined}
@@ -113,7 +149,7 @@ function RecipeSheet({
   item: ItemWithLikes | null;
   visible: boolean;
   onClose: () => void;
-  onSave: (d: RecipeData) => Promise<void>;
+  onSave: (d: RecipeData, draft: AttachmentDraft) => Promise<void>;
   onDelete?: () => Promise<void>;
   knownTags: string[];
 }) {
@@ -124,6 +160,7 @@ function RecipeSheet({
   const [image, setImage] = useState('');
   const [note, setNote] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [draft, setDraft] = useState<AttachmentDraft>(emptyDraft());
   const [newTag, setNewTag] = useState('');
   const [busy, setBusy] = useState(false);
   const [fetching, setFetching] = useState(false);
@@ -138,6 +175,12 @@ function RecipeSheet({
     setImage(item?.image_url ?? '');
     setNote(item?.note ?? '');
     setTags(item?.tags ?? []);
+    setDraft(emptyDraft());
+    if (item) {
+      loadAttachments([item.id])
+        .then((list) => setDraft((d) => ({ ...d, existing: list })))
+        .catch(() => undefined);
+    }
     setNewTag('');
     setHint(null);
     setError(null);
@@ -181,7 +224,7 @@ function RecipeSheet({
     const img = image.trim() ? normalizeUrl(image) : null;
     setBusy(true);
     try {
-      await onSave({ title: title.trim(), url: link, image_url: img, note: note.trim(), tags });
+      await onSave({ title: title.trim(), url: link, image_url: img, note: note.trim(), tags }, draft);
     } catch (e) {
       setError(humanError(e));
     } finally {
@@ -226,10 +269,13 @@ function RecipeSheet({
         ) : null}
       </View>
       {image ? (
-        <Image source={{ uri: image }} style={{ width: '100%', height: 180, borderRadius: radius.md, backgroundColor: c.bgAlt, marginBottom: 12 }} />
+        <View style={{ marginBottom: 12 }}>
+          <Image source={{ uri: image }} style={{ width: '100%', height: 180, borderRadius: radius.md, backgroundColor: c.bgAlt }} contentFit="cover" transition={150} />
+          <Button title="Убрать картинку" small variant="ghost" color={st.fg} icon="close" onPress={() => setImage('')} style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }} />
+        </View>
       ) : null}
       <Input label="Название" value={title} onChangeText={setTitle} placeholder="Сырники как у бабушки" maxLength={200} />
-      <Input label="Фото (ссылка на картинку)" value={image} onChangeText={setImage} placeholder="https://…/photo.jpg" autoCapitalize="none" keyboardType="url" />
+      <AttachmentEditor draft={draft} onChange={setDraft} color={st.fg} label="Своё фото блюда" allowFiles={false} allowLinks={false} />
       <Label>Теги</Label>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
         {tagOptions.map((t) => (

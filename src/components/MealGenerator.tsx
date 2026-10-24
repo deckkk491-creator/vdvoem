@@ -3,7 +3,9 @@ import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
-import { MEAL_META, mealsFor, type Meal, type MealIdea } from '../data/meals';
+import { Image } from 'expo-image';
+import { MEAL_META, mealByTitle, mealsFor, recipeSearchUrl, type Meal, type MealIdea } from '../data/meals';
+import { mealPhoto } from '../data/photos';
 import type { ItemWithLikes } from '../lib/types';
 import { radius, sectionStyle, useTheme } from '../theme';
 import { Button, Card, Segmented } from './ui';
@@ -11,7 +13,7 @@ import { Button, Card, Segmented } from './ui';
 const SHOWN = 3;
 
 /** Вариант: идея из встроенного списка или ваш сохранённый рецепт с тегом приёма пищи */
-type Option = { key: string; emoji: string; title: string; text: string; minutes?: number; saved?: ItemWithLikes };
+type Option = { key: string; emoji: string; title: string; text: string; minutes?: number; photo?: string | null; saved?: ItemWithLikes };
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -51,8 +53,25 @@ export function MealGenerator({
     const tag = MEAL_META[meal].tag;
     const mine: Option[] = recipes
       .filter((r) => r.tags.includes(tag))
-      .map((r) => ({ key: `mine-${r.id}`, emoji: '⭐️', title: r.title, text: r.note || 'Из вашей книги рецептов', saved: r }));
-    const builtIn: Option[] = mealsFor(meal).map((m) => ({ key: m.id, emoji: m.emoji, title: m.title, text: m.description, minutes: m.minutes }));
+      .map((r) => {
+        const same = mealByTitle(r.title);
+        return {
+          key: `mine-${r.id}`,
+          emoji: same?.emoji ?? '⭐️',
+          title: r.title,
+          text: r.note || 'Из вашей книги рецептов',
+          photo: r.image_url ?? (same ? mealPhoto(same.id)?.url : null) ?? null,
+          saved: r,
+        };
+      });
+    const builtIn: Option[] = mealsFor(meal).map((m) => ({
+      key: m.id,
+      emoji: m.emoji,
+      title: m.title,
+      text: m.description,
+      minutes: m.minutes,
+      photo: mealPhoto(m.id)?.url ?? null,
+    }));
     return [...mine, ...builtIn];
   }, [meal, recipes]);
 
@@ -86,7 +105,7 @@ export function MealGenerator({
   };
 
   const findRecipe = (title: string) =>
-    WebBrowser.openBrowserAsync(`https://yandex.ru/search/?text=${encodeURIComponent(`рецепт ${title}`)}`).catch(() => undefined);
+    WebBrowser.openBrowserAsync(recipeSearchUrl(title)).catch(() => undefined);
 
   return (
     <Card style={{ marginBottom: 16, padding: 0, overflow: 'hidden' }}>
@@ -114,7 +133,13 @@ export function MealGenerator({
           {shown.map((o, i) => (
             <View key={`${o.key}-${i}`} style={{ backgroundColor: c.bgAlt, borderRadius: radius.md, padding: 12, marginBottom: 10 }}>
               <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-                <Text style={{ fontSize: 30 }}>{o.emoji}</Text>
+                {o.photo ? (
+                  <Image source={{ uri: o.photo }} style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: c.card }} contentFit="cover" transition={150} />
+                ) : (
+                  <View style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: st.bg, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 34 }}>{o.emoji}</Text>
+                  </View>
+                )}
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: c.text, fontWeight: '700', fontSize: 16 }}>{o.title}</Text>
                   <Text style={{ color: c.textMuted, fontSize: 13, marginTop: 2 }} numberOfLines={3}>
@@ -141,7 +166,7 @@ export function MealGenerator({
                         if (!idea) return;
                         try {
                           await onSave(idea);
-                          Alert.alert('Сохранили', `«${idea.title}» — в вашей книге рецептов. Добавь ссылку на рецепт, когда найдёшь.`);
+                          Alert.alert('Сохранили', `«${idea.title}» — в вашей книге рецептов, с фото и ссылкой на поиск рецепта. Нашли любимый рецепт — замени ссылку в карточке.`);
                         } catch (e) {
                           Alert.alert('Не получилось', e instanceof Error ? e.message : 'Попробуй ещё раз');
                         }

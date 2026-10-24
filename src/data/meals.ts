@@ -84,3 +84,14 @@ export const MEAL_IDEAS: MealIdea[] = [
 export function mealsFor(meal: Meal): MealIdea[] {
   return MEAL_IDEAS.filter((m) => m.meal === meal);
 }
+
+/** Встроенное блюдо с таким же названием (для фото у рецептов, сохранённых из генератора) */
+export function mealByTitle(title: string): MealIdea | null {
+  const t = title.trim().toLowerCase();
+  return MEAL_IDEAS.find((m) => m.title.toLowerCase() === t) ?? null;
+}
+
+/** Ссылка на поиск рецепта */
+export function recipeSearchUrl(title: string): string {
+  return `https://yandex.ru/search/?text=${encodeURIComponent(`рецепт ${title}`)}`;
+}
