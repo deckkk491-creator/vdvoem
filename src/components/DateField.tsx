@@ -124,7 +124,6 @@ export function TimeField({
               mode="time"
               display="compact"
               locale="ru-RU"
-              is24Hour
               minuteInterval={5}
               themeVariant={dark ? 'dark' : 'light'}
               accentColor={c.accent}

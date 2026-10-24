@@ -1,17 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, itemMenu, openLink } from '../src/components/ItemCard';
 import { Avatar, useNameOf } from '../src/components/people';
 import { Body, Button, Card, ChipGroup, EmptyState, ErrorNote, Fab, Input, Label, Loading, Row, Sheet } from '../src/components/ui';
+import { useLinkAutofill } from '../src/hooks/useLinkAutofill';
 import { hostOf, normalizeUrl, parseAmount, rub } from '../src/lib/format';
 import { humanError, supabase } from '../src/lib/supabase';
 import type { WishClaim, WishItem } from '../src/lib/types';
 import { useAuth } from '../src/providers/AuthProvider';
 import { useRealtimeRefetch, useSpace } from '../src/providers/SpaceProvider';
-import { sectionStyle, useTheme } from '../src/theme';
+import { radius, sectionStyle, useTheme } from '../src/theme';
 
 const OCCASIONS = ['ДР', 'Новый год', '14 февраля', '8 марта', '23 февраля', 'Годовщина', 'Просто так'] as const;
 
@@ -165,6 +167,9 @@ export default function Wishlists() {
                 onLongPress={isMine ? () => itemMenu(item.title, () => setEditing(item), () => removeItem(item)) : undefined}
               >
                 <Row style={{ alignItems: 'flex-start' }} gap={12}>
+                  {item.image_url ? (
+                    <Image source={{ uri: item.image_url }} style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: c.bgAlt }} contentFit="cover" />
+                  ) : null}
                   <View style={{ flex: 1 }}>
                     {item.occasion ? (
                       <Row gap={6} style={{ flexWrap: 'wrap', marginBottom: 6 }}>
@@ -242,8 +247,16 @@ function WishSheet({ item, visible, onClose, onSaved }: { item: WishItem | null;
   const [price, setPrice] = useState('');
   const [occasion, setOccasion] = useState<string | null>(null);
   const [note, setNote] = useState('');
+  const [image, setImage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Ссылка на товар → название, картинка и цена подтягиваются сами (только в пустые поля)
+  const link = useLinkAutofill((p) => {
+    if (p.title) setTitle((t) => t || p.title!.slice(0, 200));
+    if (p.image) setImage((i) => i || p.image);
+    if (p.price) setPrice((x) => x || String(p.price));
+  });
 
   useEffect(() => {
     if (!visible) return;
@@ -252,17 +265,20 @@ function WishSheet({ item, visible, onClose, onSaved }: { item: WishItem | null;
     setPrice(item?.price != null ? String(item.price) : '');
     setOccasion(item?.occasion ?? null);
     setNote(item?.note ?? '');
+    setImage(item?.image_url ?? null);
     setError(null);
+    link.reset(item?.url ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, item]);
 
   async function save() {
     if (!space || !userId) return;
-    const link = url.trim() ? normalizeUrl(url) : null;
-    if (url.trim() && !link) return setError('Ссылка выглядит неправильно');
+    const normalized = url.trim() ? normalizeUrl(url) : null;
+    if (url.trim() && !normalized) return setError('Ссылка выглядит неправильно');
     const p = price.trim() ? parseAmount(price) : null;
     if (price.trim() && (p === null || p < 0)) return setError('Цена должна быть числом');
     setBusy(true);
-    const data = { title: title.trim(), url: link, price: p, occasion, note: note.trim() };
+    const data = { title: title.trim(), url: normalized, price: p, occasion, note: note.trim(), image_url: image };
     const res = item
       ? await supabase.from('wishlist_items').update(data).eq('id', item.id)
       : await supabase.from('wishlist_items').insert({ ...data, space_id: space.id, owner_id: userId });
@@ -276,10 +292,59 @@ function WishSheet({ item, visible, onClose, onSaved }: { item: WishItem | null;
       visible={visible}
       onClose={onClose}
       title={item ? 'Желание' : 'Новое желание'}
-      footer={<Button title={item ? 'Сохранить' : 'Добавить'} onPress={save} loading={busy} disabled={!title.trim()} color={st.fg} />}
+      footer={<Button title={item ? 'Сохранить' : 'Добавить'} onPress={save} loading={busy} disabled={!title.trim() || link.fetching} color={st.fg} />}
     >
+      <Label>Ссылка на товар (необязательно)</Label>
+      <Row style={{ marginBottom: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Input
+            value={url}
+            onChangeText={setUrl}
+            onBlur={() => url.trim() && link.autofill(url)}
+            onSubmitEditing={() => url.trim() && link.autofill(url)}
+            placeholder="Ozon, WB, сайт магазина…"
+            autoCapitalize="none"
+            keyboardType="url"
+            returnKeyType="done"
+            containerStyle={{ marginBottom: 0 }}
+          />
+        </View>
+        <Button
+          title="Вставить"
+          small
+          variant="secondary"
+          icon="clipboard-outline"
+          onPress={async () => {
+            const v = await link.paste();
+            if (v) setUrl(v);
+          }}
+        />
+      </Row>
+      <View style={{ minHeight: 22, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {link.fetching ? (
+          <>
+            <ActivityIndicator size="small" color={st.fg} />
+            <Text style={{ color: c.textMuted, fontSize: 13 }}>Читаем страницу…</Text>
+          </>
+        ) : link.hint ? (
+          <Text style={{ color: c.textMuted, fontSize: 13 }}>{link.hint}</Text>
+        ) : null}
+      </View>
+      {image ? (
+        <View style={{ marginBottom: 12, alignSelf: 'flex-start' }}>
+          <Image source={{ uri: image }} style={{ width: 120, height: 120, borderRadius: radius.md, backgroundColor: c.bgAlt }} contentFit="cover" />
+          <Pressable
+            onPress={() => setImage(null)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Убрать картинку"
+            style={{ position: 'absolute', top: 6, right: 6, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Ionicons name="close" size={16} color="#fff" />
+          </Pressable>
+        </View>
+      ) : null}
       <Input label="Что хочется" value={title} onChangeText={setTitle} placeholder="Плёночный фотоаппарат" maxLength={200} />
-      <Input label="Ссылка (необязательно)" value={url} onChangeText={setUrl} placeholder="Ozon, WB, сайт магазина…" autoCapitalize="none" keyboardType="url" />
       <Input label="Примерная цена, ₽" value={price} onChangeText={setPrice} placeholder="5 000" keyboardType="decimal-pad" />
       <Label>Повод</Label>
       <ChipGroup options={OCCASIONS} value={(occasion as (typeof OCCASIONS)[number]) ?? null} onChange={(v) => setOccasion(occasion === v ? null : v)} color={st.fg} />

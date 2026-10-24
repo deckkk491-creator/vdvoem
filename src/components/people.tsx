@@ -106,3 +106,34 @@ export function LikeButton({ likes, onPress }: { likes: string[]; onPress: () =>
     </Pressable>
   );
 }
+
+/** «Не нравится»: палец вниз и число голосов; кто именно — в подписи для VoiceOver */
+export function DislikeButton({ dislikes, onPress }: { dislikes: string[]; onPress: () => void }) {
+  const { c } = useTheme();
+  const { userId } = useAuth();
+  const nameOf = useNameOf();
+  const disliked = !!userId && dislikes.includes(userId);
+  const who = dislikes.map((id) => nameOf(id)).join(', ');
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityState={{ selected: disliked }}
+      accessibilityLabel={disliked ? 'Убрать «не нравится»' : `Не нравится${who ? `. Уже не нравится: ${who}` : ''}`}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: disliked ? c.textMuted + '26' : c.bgAlt,
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Ionicons name={disliked ? 'thumbs-down' : 'thumbs-down-outline'} size={16} color={disliked ? c.text : c.textMuted} />
+      {dislikes.length > 0 ? <Text style={{ fontSize: 12, color: c.textMuted, fontWeight: '600' }}>{dislikes.length}</Text> : null}
+    </Pressable>
+  );
+}

@@ -16,7 +16,7 @@ const TYPE_LABEL: Record<MediaType, string> = { movie: 'Фильм', series: 'С
 export default function WatchScreen() {
   const { c } = useTheme();
   const st = sectionStyle(c, 'watch');
-  const { items, loading, error, retry, add, update, remove, toggleLike } = useItems('watch');
+  const { items, loading, error, retry, add, update, remove, toggleLike, toggleDislike } = useItems('watch');
   const [sort, setSort] = useState<SortMode>('likes');
   const [filter, setFilter] = useState<WatchStatus | 'all'>('all');
   const [editing, setEditing] = useState<ItemWithLikes | 'new' | null>(null);
@@ -75,6 +75,7 @@ export default function WatchScreen() {
                 item={item}
                 accent={st.fg}
                 onLike={() => toggleLike(item)}
+              onDislike={() => toggleDislike(item)}
                 onPress={() => setEditing(item)}
                 onLongPress={() => itemMenu(item.title, () => setEditing(item), () => remove(item.id).catch((e) => Alert.alert('Ошибка', humanError(e))))}
                 badge={

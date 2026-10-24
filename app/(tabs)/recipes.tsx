@@ -4,6 +4,8 @@ import { ActivityIndicator, Alert, Image, ScrollView, Text, View } from 'react-n
 import { Badge, ItemCard, itemMenu } from '../../src/components/ItemCard';
 import { SectionHeader, SortToggle } from '../../src/components/SectionHeader';
 import { Body, Button, Chip, EmptyState, ErrorNote, Fab, Input, Label, Loading, Row, Screen, Sheet } from '../../src/components/ui';
+import { MealGenerator } from '../../src/components/MealGenerator';
+import { MEAL_META } from '../../src/data/meals';
 import { useItems, useSorted, type SortMode } from '../../src/hooks/useItems';
 import { normalizeUrl } from '../../src/lib/format';
 import { fetchLinkPreview } from '../../src/lib/linkPreview';
@@ -16,7 +18,7 @@ const BASE_TAGS = ['завтрак', 'обед', 'ужин', 'десерт', 'в
 export default function RecipesScreen() {
   const { c } = useTheme();
   const st = sectionStyle(c, 'recipe');
-  const { items, loading, error, retry, add, update, remove, toggleLike } = useItems('recipe');
+  const { items, loading, error, retry, add, update, remove, toggleLike, toggleDislike } = useItems('recipe');
   const [sort, setSort] = useState<SortMode>('new');
   const [tag, setTag] = useState<string | null>(null);
   const [editing, setEditing] = useState<ItemWithLikes | 'new' | null>(null);
@@ -38,6 +40,13 @@ export default function RecipesScreen() {
           emoji={st.emoji}
           color={st.fg}
           right={items.length > 1 ? <SortToggle value={sort} onChange={setSort} /> : null}
+        />
+        <MealGenerator
+          recipes={items}
+          onOpenSaved={(it) => setEditing(it)}
+          onSave={async (idea) => {
+            await add({ title: idea.title, note: idea.description, tags: [MEAL_META[idea.meal].tag] });
+          }}
         />
         {allTags.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 14 }}>
@@ -66,6 +75,7 @@ export default function RecipesScreen() {
               item={item}
               accent={st.fg}
               onLike={() => toggleLike(item)}
+              onDislike={() => toggleDislike(item)}
               onPress={() => setEditing(item)}
               onLongPress={() => itemMenu(item.title, () => setEditing(item), () => remove(item.id).catch((e) => Alert.alert('Ошибка', humanError(e))))}
               badge={item.tags.length ? item.tags.map((t) => <Badge key={t} label={t} color={st.fg} bg={st.bg} />) : undefined}

@@ -6,6 +6,8 @@ export type LinkPreview = {
   image: string | null;
   description: string | null;
   siteName: string | null;
+  /** Цена товара, если страница её отдаёт (для вишлистов) */
+  price?: number | null;
   error?: string;
 };
 

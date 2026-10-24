@@ -192,6 +192,13 @@ Deno.serve(async (req: Request) => {
     );
     const description = meta["og:description"] ?? meta["twitter:description"] ?? meta["description"] ?? null;
     const siteName = meta["og:site_name"] ?? finalUrl.hostname.replace(/^www\./, "");
+    // Цена товара (для вишлистов): Open Graph / product-теги / JSON-LD offers / microdata
+    const rawPrice =
+      meta["product:price:amount"] ?? meta["og:price:amount"] ?? meta["price"] ??
+      /"offers"\s*:\s*\{[^}]*?"price"\s*:\s*"?([\d.,\s]+)"?/i.exec(html)?.[1] ??
+      /itemprop=["']price["'][^>]*content=["']([\d.,\s]+)["']/i.exec(html)?.[1] ?? null;
+    const priceNum = rawPrice ? Number(String(rawPrice).replace(/\s/g, "").replace(",", ".")) : NaN;
+    const price = Number.isFinite(priceNum) && priceNum > 0 && priceNum < 1e9 ? Math.round(priceNum * 100) / 100 : null;
 
     return json({
       url: finalUrl.toString(),
@@ -199,6 +206,7 @@ Deno.serve(async (req: Request) => {
       image,
       description: description ? description.slice(0, 500) : null,
       siteName,
+      price,
     });
   } catch (e) {
     const aborted = e instanceof DOMException && e.name === "AbortError";

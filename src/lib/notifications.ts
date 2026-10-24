@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { RULE_META, nextDue } from './rule222';
+import { RULE_META, nextDue, rhythmLabel, rhythmOf } from './rule222';
 import type { RuleEvent, RuleKind, Space } from './types';
 
 Notifications.setNotificationHandler({
@@ -70,7 +70,8 @@ export async function syncRuleReminders(space: Space | null, events: RuleEvent[]
 
     const kinds: RuleKind[] = ['date', 'place', 'country'];
     for (const kind of kinds) {
-      const { due } = nextDue(kind, space.rule222_start, events);
+      const rhythm = rhythmOf(space);
+      const { due } = nextDue(kind, space.rule222_start, events, rhythm);
       const remind = new Date(due);
       remind.setDate(remind.getDate() - (kind === 'country' ? 30 : 2));
       remind.setHours(10, 0, 0, 0);
@@ -82,7 +83,7 @@ export async function syncRuleReminders(space: Space | null, events: RuleEvent[]
       }
       await Notifications.scheduleNotificationAsync({
         identifier: `${PREFIX}${kind}`,
-        content: { title: `Правило 2-2-2 · ${RULE_META[kind].title}`, body: BODY[kind] },
+        content: { title: `Правило ${rhythmLabel(rhythmOf(space))} · ${RULE_META[kind].title}`, body: BODY[kind] },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: remind,

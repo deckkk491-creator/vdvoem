@@ -55,6 +55,12 @@ do $$ begin
   );
 exception when duplicate_object then null; end $$;
 
+-- Вишлист: картинка товара (подтягивается по ссылке)
+alter table public.wishlist_items add column if not exists image_url text;
+do $$ begin
+  alter table public.wishlist_items add constraint wishlist_image_len check (image_url is null or char_length(image_url) <= 2000);
+exception when duplicate_object then null; end $$;
+
 -- Поездки: дата окончания
 alter table public.items add column if not exists end_date date;
 
@@ -66,6 +72,12 @@ exception when duplicate_object then null; end $$;
 drop policy if exists likes_update on public.item_likes;
 create policy likes_update on public.item_likes for update to authenticated
   using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Отметки 2-2-2 можно дополнять: впечатления, дата, название
+drop policy if exists rule_update on public.rule_events;
+create policy rule_update on public.rule_events for update to authenticated
+  using (public.is_space_member(space_id)) with check (public.is_space_member(space_id));
+grant update (title, note, done_on) on public.rule_events to authenticated;
 
 -- ---------------------------------------------------------------------
 --  Календарь: события, задачи и важные даты

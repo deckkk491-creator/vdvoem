@@ -5,7 +5,7 @@ import { ActionSheetIOS, Alert, Image, Platform, Pressable, Text, View } from 'r
 import { formatDate, hostOf } from '../lib/format';
 import type { ItemWithLikes } from '../lib/types';
 import { radius, useTheme } from '../theme';
-import { AddedBy, LikeButton } from './people';
+import { AddedBy, DislikeButton, LikeButton } from './people';
 import { Card } from './ui';
 
 export function openLink(url: string | null | undefined) {
@@ -41,16 +41,21 @@ export function itemMenu(title: string, onEdit: () => void, onDelete: () => void
 export function ItemCard({
   item,
   onLike,
+  onDislike,
   onPress,
   onLongPress,
   accent,
   badge,
   meta,
   footerExtra,
+  extra,
   showImage = true,
 }: {
+  /** Дополнительный блок под текстом карточки (например, вложения) */
+  extra?: React.ReactNode;
   item: ItemWithLikes;
   onLike: () => void;
+  onDislike?: () => void;
   onPress?: () => void;
   onLongPress?: () => void;
   accent: string;
@@ -90,12 +95,14 @@ export function ItemCard({
                 </Text>
               </Pressable>
             ) : null}
+            {extra}
           </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
           <AddedBy userId={item.created_by} date={formatDate(item.created_at)} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             {footerExtra}
+            {onDislike ? <DislikeButton dislikes={item.dislikes} onPress={onDislike} /> : null}
             <LikeButton likes={item.likes} onPress={onLike} />
           </View>
         </View>

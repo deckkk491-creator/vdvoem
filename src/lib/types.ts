@@ -89,6 +89,7 @@ export type WishItem = {
   price: number | null;
   occasion: string | null;
   note: string;
+  image_url: string | null;
   created_at: string;
 };
 

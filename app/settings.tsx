@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileForm } from '../src/components/ProfileForm';
+import { ThemePicker } from '../src/components/ThemePicker';
 import { Body, Button, Card, ErrorNote, Input, Label, Row, Sheet } from '../src/components/ui';
 import { PRIVACY_URL } from '../src/lib/env';
 import { humanError, supabase } from '../src/lib/supabase';
@@ -149,6 +150,11 @@ export default function Settings() {
           <Button title="Изменить профиль" small variant="secondary" icon="person-outline" onPress={() => setProfileOpen(true)} />
           <Button title="Выйти из аккаунта" small variant="ghost" icon="log-out-outline" onPress={() => signOut()} />
         </Row>
+      </Card>
+
+      <Label>Оформление</Label>
+      <Card style={{ marginBottom: 16 }}>
+        <ThemePicker />
       </Card>
 
       <Label>О приложении</Label>
