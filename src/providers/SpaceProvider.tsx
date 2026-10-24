@@ -47,6 +47,7 @@ const TABLES: RealtimeTable[] = [
   'calendar_events',
   'messages',
   'message_reads',
+  'message_reactions',
   'attachments',
 ];
 
@@ -271,6 +272,17 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
     // Сервер вернёт пустой список, если в пространстве есть кто-то ещё.
     const { data } = await supabase.rpc('space_file_paths', { p_space: currentId });
     const files = ((data ?? []) as string[]).filter(Boolean);
+    // Фото своих желаний удалятся вместе с вишлистом — убираем файлы, пока ещё есть доступ к пространству
+    if (userId) {
+      const { data: wishFiles } = await supabase
+        .from('attachments')
+        .select('storage_path')
+        .eq('space_id', currentId)
+        .eq('parent_type', 'wish')
+        .eq('created_by', userId);
+      const own = ((wishFiles ?? []) as { storage_path: string | null }[]).map((a) => a.storage_path).filter((x): x is string => !!x && !files.includes(x));
+      if (own.length) await removeFiles(own).catch(() => undefined);
+    }
     const { error } = await supabase.rpc('leave_space', { p_space: currentId });
     if (error) throw error;
     if (files.length) await removeFiles(files);
@@ -282,7 +294,7 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
     if (remaining[0]) await AsyncStorage.setItem(STORAGE_KEY, remaining[0].id).catch(() => undefined);
     else await AsyncStorage.removeItem(STORAGE_KEY).catch(() => undefined);
     await loadSpaces();
-  }, [currentId, spaces, loadSpaces]);
+  }, [currentId, spaces, loadSpaces, userId]);
 
   const updateSpace = useCallback<SpaceState['updateSpace']>(
     async (patch) => {

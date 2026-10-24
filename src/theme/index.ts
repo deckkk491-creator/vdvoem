@@ -153,8 +153,82 @@ export const ACCENTS: Record<AccentKey, { title: string; light: AccentSet; dark:
 
 export const ACCENT_KEYS = Object.keys(ACCENTS) as AccentKey[];
 
-export type ThemePrefs = { accent: AccentKey; mode: ThemeMode };
-const DEFAULT_PREFS: ThemePrefs = { accent: 'terracotta', mode: 'system' };
+/* ------------------------- Цвет подложек ------------------------- */
+
+export type SurfaceKey = 'warm' | 'neutral' | 'cool' | 'rose' | 'sage' | 'lilac';
+type SurfaceSet = Pick<Palette, 'bg' | 'bgAlt' | 'card' | 'cardPressed' | 'border'>;
+
+/*
+ * Подложки: фон экрана, карточки и поля. Яркость как у тёплых по умолчанию,
+ * поэтому текст сохраняет контраст WCAG AA (проверено скриптом, как и для тёплых).
+ */
+export const SURFACES: Record<SurfaceKey, { title: string; light: SurfaceSet; dark: SurfaceSet }> = {
+  warm: {
+    title: 'Тёплые',
+    light: { bg: '#FBF4EC', bgAlt: '#F5EADF', card: '#FFFCF8', cardPressed: '#F7EFE6', border: '#EADBCB' },
+    dark: { bg: '#17110E', bgAlt: '#1E1612', card: '#241B16', cardPressed: '#2D221C', border: '#3A2D25' },
+  },
+  neutral: {
+    title: 'Нейтральные',
+    light: { bg: '#F5F5F4', bgAlt: '#ECEBE9', card: '#FFFFFF', cardPressed: '#F2F1EF', border: '#E0DEDA' },
+    dark: { bg: '#121212', bgAlt: '#1A1A1A', card: '#222222', cardPressed: '#2A2A2A', border: '#343434' },
+  },
+  cool: {
+    title: 'Прохладные',
+    light: { bg: '#F1F5F9', bgAlt: '#E6ECF2', card: '#FBFDFF', cardPressed: '#EEF3F8', border: '#D6E0EA' },
+    dark: { bg: '#0E141B', bgAlt: '#141C25', card: '#1B2530', cardPressed: '#222E3B', border: '#2D3B4A' },
+  },
+  rose: {
+    title: 'Пудровые',
+    light: { bg: '#FBF1F3', bgAlt: '#F4E4E8', card: '#FFFAFB', cardPressed: '#F7ECEF', border: '#EBD3DA' },
+    dark: { bg: '#1A1014', bgAlt: '#22151B', card: '#2A1B22', cardPressed: '#33222A', border: '#432D37' },
+  },
+  sage: {
+    title: 'Оливковые',
+    light: { bg: '#F3F5EE', bgAlt: '#E8ECE0', card: '#FCFDF9', cardPressed: '#EFF2E8', border: '#DADFCC' },
+    dark: { bg: '#12150F', bgAlt: '#181C14', card: '#20251B', cardPressed: '#282E22', border: '#353C2D' },
+  },
+  lilac: {
+    title: 'Сиреневые',
+    light: { bg: '#F5F2FA', bgAlt: '#EBE6F3', card: '#FDFBFF', cardPressed: '#F1EDF7', border: '#DDD5EA' },
+    dark: { bg: '#141119', bgAlt: '#1B1722', card: '#231E2C', cardPressed: '#2B2536', border: '#392F47' },
+  },
+};
+export const SURFACE_KEYS = Object.keys(SURFACES) as SurfaceKey[];
+
+/* ------------------------- Фон экранов ------------------------- */
+
+export type BackgroundKey = 'none' | 'sunrise' | 'sea' | 'forest' | 'lavender' | 'night' | 'hearts' | 'paper' | 'photo';
+
+/** Готовые фоны. tone — светлая или тёмная картинка: под неё подбирается затемнение */
+export const BACKGROUNDS: { key: Exclude<BackgroundKey, 'none' | 'photo'>; title: string; tone: 'light' | 'dark'; source: number }[] = [
+  { key: 'sunrise', title: 'Рассвет', tone: 'light', source: require('../../assets/backgrounds/sunrise.jpg') },
+  { key: 'sea', title: 'Море', tone: 'light', source: require('../../assets/backgrounds/sea.jpg') },
+  { key: 'forest', title: 'Лес', tone: 'light', source: require('../../assets/backgrounds/forest.jpg') },
+  { key: 'lavender', title: 'Лаванда', tone: 'light', source: require('../../assets/backgrounds/lavender.jpg') },
+  { key: 'night', title: 'Ночь', tone: 'dark', source: require('../../assets/backgrounds/night.jpg') },
+  { key: 'hearts', title: 'Сердечки', tone: 'light', source: require('../../assets/backgrounds/hearts.jpg') },
+  { key: 'paper', title: 'Бумага', tone: 'light', source: require('../../assets/backgrounds/paper.jpg') },
+];
+
+function isSurface(v: unknown): v is SurfaceKey {
+  return typeof v === 'string' && v in SURFACES;
+}
+function isBackground(v: unknown): v is BackgroundKey {
+  return v === 'none' || v === 'photo' || BACKGROUNDS.some((b) => b.key === v);
+}
+
+export type ThemePrefs = {
+  accent: AccentKey;
+  mode: ThemeMode;
+  /** Цвет подложек (хранится на телефоне) */
+  surface: SurfaceKey;
+  /** Фон экранов (хранится на телефоне) */
+  background: BackgroundKey;
+  /** Своё фото на фон: файл в памяти приложения */
+  bgPhoto: string | null;
+};
+const DEFAULT_PREFS: ThemePrefs = { accent: 'terracotta', mode: 'system', surface: 'warm', background: 'none', bgPhoto: null };
 const PREFS_KEY = 'vdvoem.theme';
 
 type ThemeCtx = { prefs: ThemePrefs; setPrefs: (p: ThemePrefs) => void };
@@ -179,7 +253,13 @@ export function ThemeProvider({ remote, children }: { remote?: { accent?: string
       .then((raw) => {
         if (!raw) return;
         const p = JSON.parse(raw) as Partial<ThemePrefs>;
-        setPrefsState({ accent: isAccent(p.accent) ? p.accent : 'terracotta', mode: isMode(p.mode) ? p.mode : 'system' });
+        setPrefsState((cur) => ({
+          accent: isAccent(p.accent) ? p.accent : cur.accent,
+          mode: isMode(p.mode) ? p.mode : cur.mode,
+          surface: isSurface(p.surface) ? p.surface : 'warm',
+          background: isBackground(p.background) && (p.background !== 'photo' || !!p.bgPhoto) ? p.background : 'none',
+          bgPhoto: typeof p.bgPhoto === 'string' ? p.bgPhoto : null,
+        }));
       })
       .catch(() => undefined);
   }, []);
@@ -188,9 +268,12 @@ export function ThemeProvider({ remote, children }: { remote?: { accent?: string
   const rMode = remote?.mode;
   useEffect(() => {
     if (!isAccent(rAccent) || !isMode(rMode)) return;
-    const next = { accent: rAccent, mode: rMode };
-    setPrefsState(next);
-    AsyncStorage.setItem(PREFS_KEY, JSON.stringify(next)).catch(() => undefined);
+    // С сервера приходят только цвет и тема; подложки и фон — настройки этого телефона
+    setPrefsState((cur) => {
+      const next = { ...cur, accent: rAccent, mode: rMode };
+      AsyncStorage.setItem(PREFS_KEY, JSON.stringify(next)).catch(() => undefined);
+      return next;
+    });
   }, [rAccent, rMode]);
 
   const value = useMemo<ThemeCtx>(
@@ -214,7 +297,8 @@ export function buildTheme(prefs: ThemePrefs, systemDark: boolean): Theme {
   const isDark = prefs.mode === 'system' ? systemDark : prefs.mode === 'dark';
   const base = isDark ? dark : light;
   const a = ACCENTS[prefs.accent] ?? ACCENTS.terracotta;
-  return { c: { ...base, ...(isDark ? a.dark : a.light) }, dark: isDark };
+  const sf = SURFACES[prefs.surface] ?? SURFACES.warm;
+  return { c: { ...base, ...(isDark ? sf.dark : sf.light), ...(isDark ? a.dark : a.light) }, dark: isDark };
 }
 
 export function useTheme(): Theme {
@@ -223,7 +307,7 @@ export function useTheme(): Theme {
   return useMemo(() => buildTheme(prefs, scheme === 'dark'), [prefs, scheme]);
 }
 
-export type SectionKey = 'watch' | 'recipe' | 'weekend' | 'shopping' | 'savings' | 'wishlist' | 'rule' | 'calendar' | 'chat' | 'dates';
+export type SectionKey = 'watch' | 'recipe' | 'weekend' | 'shopping' | 'savings' | 'wishlist' | 'rule' | 'calendar' | 'chat' | 'dates' | 'events' | 'tasks';
 
 /** Цвет и эмодзи каждого раздела — у каждого свой характер */
 export function sectionStyle(c: Palette, key: SectionKey): { fg: string; bg: string; emoji: string } {
@@ -248,5 +332,9 @@ export function sectionStyle(c: Palette, key: SectionKey): { fg: string; bg: str
       return { fg: c.sage, bg: c.sageSoft, emoji: '💬' };
     case 'dates':
       return { fg: c.plum, bg: c.plumSoft, emoji: '💞' };
+    case 'events':
+      return { fg: c.sky, bg: c.skySoft, emoji: '📌' };
+    case 'tasks':
+      return { fg: c.honey, bg: c.honeySoft, emoji: '✅' };
   }
 }

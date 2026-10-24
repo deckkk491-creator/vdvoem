@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, Switch, Text, View } from 'react-native';
 import { useAttachmentsFor } from '../../src/components/Attachments';
-import { AgendaCard, TaskCard, kindStyle } from '../../src/components/calendar/EntryCards';
-import { EventSheet } from '../../src/components/calendar/EventSheet';
+import { useCalendarSheets } from '../../src/components/calendar/CalendarSheets';
+import { AgendaCard, kindStyle } from '../../src/components/calendar/EntryCards';
+import { TasksPanel, openTaskCount } from '../../src/components/calendar/TasksPanel';
 import { MonthGrid, dayTitle, type DayMark } from '../../src/components/calendar/MonthGrid';
 import { itemMenu } from '../../src/components/ItemCard';
 import { SectionHeader } from '../../src/components/SectionHeader';
-import { Body, Card, Chip, EmptyState, ErrorNote, Fab, Label, Loading, Screen, Segmented } from '../../src/components/ui';
+import { Body, Card, EmptyState, ErrorNote, Fab, Label, Loading, Screen, Segmented } from '../../src/components/ui';
 import { addDays, expandEntries, useCalendar, type Entry } from '../../src/hooks/useCalendar';
 import {
   deviceCalendarSupported,
@@ -21,14 +22,11 @@ import {
 } from '../../src/lib/deviceCalendar';
 import { parseDate, todayISO, toISODate } from '../../src/lib/format';
 import { humanError } from '../../src/lib/supabase';
-import type { CalendarEvent, CalendarKind } from '../../src/lib/types';
-import { useAuth } from '../../src/providers/AuthProvider';
+import type { CalendarEvent } from '../../src/lib/types';
 import { useSpace } from '../../src/providers/SpaceProvider';
 import { sectionStyle, useTheme } from '../../src/theme';
 
 type Mode = 'calendar' | 'tasks';
-type TaskFilter = 'all' | 'shared' | 'mine' | 'done' | `user:${string}`;
-type Editing = { event: CalendarEvent | null; kind: CalendarKind; date: string | null };
 
 /** Насколько вперёд смотрим в списке «Скоро» */
 const SOON_DAYS = 60;
@@ -37,9 +35,9 @@ const SOON_LIMIT = 5;
 export default function CalendarScreen() {
   const { c } = useTheme();
   const st = sectionStyle(c, 'calendar');
-  const { space, members, people } = useSpace();
-  const { userId } = useAuth();
-  const { events, weekend, loading, error, loadedSpace, retry, save, remove, take, release, setDone } = useCalendar();
+  const { space } = useSpace();
+  const cal = useCalendar();
+  const { events, weekend, loading, error, loadedSpace, retry, setDone } = cal;
 
   const today = todayISO();
   const [mode, setMode] = useState<Mode>('calendar');
@@ -48,15 +46,8 @@ export default function CalendarScreen() {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [selected, setSelected] = useState(today);
-  const [filter, setFilter] = useState<TaskFilter>('all');
-  const [editing, setEditing] = useState<Editing | null>(null);
 
   const spaceId = space?.id ?? null;
-  // При смене пространства сбрасываем фильтр по участнику
-  useEffect(() => {
-    setFilter('all');
-    setEditing(null);
-  }, [spaceId]);
 
   /* ---------------- Календарь ---------------- */
 
@@ -94,66 +85,22 @@ export default function CalendarScreen() {
     return out;
   }, [agenda.length, events, weekend, today]);
 
-  /* ---------------- Задачи ---------------- */
-
-  const others = useMemo(() => members.filter((m) => m.user_id !== userId), [members, userId]);
-  const allTasks = useMemo(() => events.filter((e) => e.kind === 'task'), [events]);
-
-  const tasks = useMemo(() => {
-    let list: CalendarEvent[];
-    if (filter === 'done') {
-      list = allTasks.filter((t) => t.done);
-      return list.sort((a, b) => (b.done_at ?? '').localeCompare(a.done_at ?? ''));
-    }
-    const open = allTasks.filter((t) => !t.done);
-    if (filter === 'shared') list = open.filter((t) => !t.assignee);
-    else if (filter === 'mine') list = open.filter((t) => !!userId && t.assignee === userId);
-    else if (filter.startsWith('user:')) {
-      const id = filter.slice(5);
-      list = open.filter((t) => t.assignee === id);
-    } else list = open;
-    // Сначала задачи со сроком (ближайшие выше), потом без срока — новые выше
-    return [...list].sort((a, b) => {
-      if (a.starts_on && b.starts_on) return a.starts_on.localeCompare(b.starts_on);
-      if (a.starts_on) return -1;
-      if (b.starts_on) return 1;
-      return b.created_at.localeCompare(a.created_at);
-    });
-  }, [allTasks, filter, userId]);
-
-  const counts = useMemo(() => {
-    const open = allTasks.filter((t) => !t.done);
-    return {
-      all: open.length,
-      shared: open.filter((t) => !t.assignee).length,
-      mine: open.filter((t) => !!userId && t.assignee === userId).length,
-      done: allTasks.length - open.length,
-    };
-  }, [allTasks, userId]);
+  const openTasks = useMemo(() => openTaskCount(events), [events]);
 
   /* ---------------- Вложения видимых записей ---------------- */
 
   const visibleIds = useMemo(() => {
     const ids = new Set<string>();
-    if (mode === 'tasks') tasks.forEach((t) => ids.add(t.id));
-    else for (const e of [...agenda, ...soon]) if (e.type === 'event') ids.add(e.event.id);
+    if (mode === 'calendar') for (const e of [...agenda, ...soon]) if (e.type === 'event') ids.add(e.event.id);
     return Array.from(ids);
-  }, [mode, tasks, agenda, soon]);
+  }, [mode, agenda, soon]);
   const { byParent, reload: reloadAttachments } = useAttachmentsFor(visibleIds);
 
   /* ---------------- Действия ---------------- */
 
-  const openEvent = (ev: CalendarEvent) => setEditing({ event: ev, kind: ev.kind, date: ev.starts_on });
-  const openNew = () =>
-    setEditing({ event: null, kind: mode === 'tasks' ? 'task' : 'event', date: mode === 'tasks' ? null : selected });
-
-  const deleteEvent = (ev: CalendarEvent) => remove(ev).catch((e) => Alert.alert('Ошибка', humanError(e)));
-  const menuFor = (ev: CalendarEvent) => itemMenu(ev.title, () => openEvent(ev), () => deleteEvent(ev));
-
-  const onEntryPress = (e: Entry) => {
-    if (e.type === 'weekend') router.push('/(tabs)/weekend');
-    else openEvent(e.event);
-  };
+  const sheets = useCalendarSheets(cal, { onSaved: reloadAttachments, spaceId });
+  const openNew = () => sheets.openNew(mode === 'tasks' ? 'task' : 'event', mode === 'tasks' ? null : selected);
+  const menuFor = (ev: CalendarEvent) => itemMenu(ev.title, () => sheets.editEvent(ev), () => sheets.deleteEvent(ev));
 
   const changeMonth = (first: Date, selectToday?: boolean) => {
     setMonth(first);
@@ -256,7 +203,7 @@ export default function CalendarScreen() {
         <Segmented
           options={[
             { value: 'calendar', label: 'Календарь' },
-            { value: 'tasks', label: counts.all ? `Задачи · ${counts.all}` : 'Задачи' },
+            { value: 'tasks', label: openTasks ? `Задачи · ${openTasks}` : 'Задачи' },
           ]}
           value={mode}
           onChange={setMode}
@@ -299,7 +246,7 @@ export default function CalendarScreen() {
                   entry={e}
                   today={today}
                   attachments={e.type === 'event' ? byParent[e.event.id] : undefined}
-                  onPress={() => onEntryPress(e)}
+                  onPress={() => sheets.openEntry(e)}
                   onLongPress={e.type === 'event' ? () => menuFor(e.event) : undefined}
                   onToggleDone={e.type === 'event' && e.event.kind === 'task' ? () => setDone(e.event, !e.event.done) : undefined}
                 />
@@ -321,7 +268,7 @@ export default function CalendarScreen() {
                         today={today}
                         showDate
                         attachments={e.type === 'event' ? byParent[e.event.id] : undefined}
-                        onPress={() => onEntryPress(e)}
+                        onPress={() => sheets.openEntry(e)}
                         onLongPress={e.type === 'event' ? () => menuFor(e.event) : undefined}
                       />
                     ))}
@@ -333,67 +280,11 @@ export default function CalendarScreen() {
             {deviceCalendarSupported ? <DeviceCalendarCard on={deviceOn} onChange={toggleDevice} color={st.fg} /> : null}
           </>
         ) : (
-          <>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 14 }}>
-              <Chip label={`Все${counts.all ? ` · ${counts.all}` : ''}`} active={filter === 'all'} onPress={() => setFilter('all')} color={st.fg} />
-              <Chip label={`Общие${counts.shared ? ` · ${counts.shared}` : ''}`} active={filter === 'shared'} onPress={() => setFilter('shared')} color={st.fg} />
-              <Chip label={`Мои${counts.mine ? ` · ${counts.mine}` : ''}`} active={filter === 'mine'} onPress={() => setFilter('mine')} color={st.fg} />
-              {others.map((m) => (
-                <Chip
-                  key={m.user_id}
-                  label={people[m.user_id]?.display_name || 'Партнёр'}
-                  active={filter === `user:${m.user_id}`}
-                  onPress={() => setFilter(`user:${m.user_id}`)}
-                  color={st.fg}
-                />
-              ))}
-              <Chip label={`Сделано${counts.done ? ` · ${counts.done}` : ''}`} active={filter === 'done'} onPress={() => setFilter('done')} color={c.sage} />
-            </ScrollView>
-            {loading && !events.length ? (
-              <Loading />
-            ) : allTasks.length === 0 ? (
-              <EmptyState
-                emoji="✅"
-                title="Задач пока нет"
-                text="Поставь задачу вроде «Отнести кошку к ветеринару» — партнёр увидит её и сможет нажать «Я сделаю»."
-                action="Поставить задачу"
-                onAction={() => setEditing({ event: null, kind: 'task', date: null })}
-                color={st.fg}
-              />
-            ) : tasks.length === 0 ? (
-              <Card tint={c.bgAlt} style={{ borderColor: 'transparent', padding: 14 }}>
-                <Body muted style={{ fontSize: 14 }}>
-                  {filter === 'done' ? 'Сделанных задач пока нет.' : 'Здесь пусто — всё разобрано 🎉'}
-                </Body>
-              </Card>
-            ) : (
-              tasks.map((t) => (
-                <TaskCard
-                  key={t.id}
-                  task={t}
-                  attachments={byParent[t.id]}
-                  onPress={() => openEvent(t)}
-                  onLongPress={() => menuFor(t)}
-                  onTake={() => take(t)}
-                  onRelease={() => release(t)}
-                  onDone={(d) => setDone(t, d)}
-                />
-              ))
-            )}
-          </>
+          <TasksPanel cal={cal} onOpen={(t) => sheets.openEvent(t)} onLongPress={menuFor} onNew={() => sheets.openNew('task', null)} />
         )}
       </Screen>
       <Fab onPress={openNew} color={st.fg} />
-      <EventSheet
-        visible={editing !== null}
-        event={editing?.event ?? null}
-        initialKind={editing?.kind}
-        initialDate={editing?.date ?? null}
-        onClose={() => setEditing(null)}
-        save={save}
-        remove={remove}
-        onSaved={reloadAttachments}
-      />
+      {sheets.sheets}
     </View>
   );
 }

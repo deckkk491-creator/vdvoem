@@ -13,7 +13,7 @@ import { ThemeProvider, useTheme } from '../src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
-const IN_APP = ['(tabs)', 'wishlists', 'rule222', 'settings', 'onboarding', 'savings', 'dates', 'chat'];
+const IN_APP = ['(tabs)', 'wishlists', 'rule222', 'settings', 'onboarding', 'savings', 'dates', 'chat', 'events', 'tasks'];
 
 type Target = '/setup' | '/sign-in' | '/onboarding' | '/(tabs)/calendar' | null;
 
@@ -86,6 +86,8 @@ function Shell() {
         <Stack.Screen name="savings" />
         <Stack.Screen name="dates" options={{ headerShown: true, title: 'Важные даты' }} />
         <Stack.Screen name="chat" options={{ headerShown: true, title: 'Чат' }} />
+        <Stack.Screen name="events" options={{ headerShown: true, title: 'События' }} />
+        <Stack.Screen name="tasks" options={{ headerShown: true, title: 'Задачи' }} />
       </Stack>
     </>
   );

@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React, { memo } from 'react';
+import React, { memo, useRef } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { formatSize } from '../../lib/files';
 import type { Profile } from '../../lib/types';
 import { isImageMessage, type ChatItem } from '../../hooks/useMessages';
 import { radius, useTheme } from '../../theme';
 import { Avatar } from '../people';
+import { ReactionChips } from './MessageMenu';
+import type { ReactionSummary } from '../../hooks/useReactions';
 
 const AVATAR = 28;
 const MAX_IMAGE_HEIGHT = 320;
@@ -44,9 +46,14 @@ export type BubbleProps = {
   receipt: 'read' | 'delivered' | null;
   onPress: (item: ChatItem) => void;
   onLongPress: (item: ChatItem) => void;
+  /** Реакции на сообщение */
+  reactions?: ReactionSummary[];
+  /** Поставить или убрать свою реакцию (двойное нажатие — ❤️) */
+  onReact?: (item: ChatItem, emoji: string) => void;
 };
 
-function BubbleBase({ item, mine, firstInGroup, lastInGroup, sender, senderName, imageUrl, receipt, onPress, onLongPress }: BubbleProps) {
+function BubbleBase({ item, mine, firstInGroup, lastInGroup, sender, senderName, imageUrl, receipt, onPress, onLongPress, reactions, onReact }: BubbleProps) {
+  const lastTap = useRef(0);
   const { c } = useTheme();
   const { width: screenW } = useWindowDimensions();
   const local = item.local;
@@ -94,7 +101,17 @@ function BubbleBase({ item, mine, firstInGroup, lastInGroup, sender, senderName,
           </View>
         ) : null}
         <Pressable
-          onPress={() => onPress(item)}
+          onPress={() => {
+            // Двойное нажатие на текст — ❤️, как в Telegram
+            const now = Date.now();
+            if (!local && !isImage && !isDoc && onReact && now - lastTap.current < 300) {
+              lastTap.current = 0;
+              onReact(item, '❤️');
+              return;
+            }
+            lastTap.current = now;
+            onPress(item);
+          }}
           onLongPress={() => onLongPress(item)}
           delayLongPress={300}
           accessibilityRole={isImage ? 'imagebutton' : isDoc || failed ? 'button' : undefined}
@@ -161,6 +178,11 @@ function BubbleBase({ item, mine, firstInGroup, lastInGroup, sender, senderName,
           ) : null}
         </Pressable>
       </View>
+      {reactions?.length && onReact ? (
+        <View style={{ marginLeft: mine ? 0 : AVATAR + 8 }}>
+          <ReactionChips reactions={reactions} mine={mine} onToggle={(e) => onReact(item, e)} />
+        </View>
+      ) : null}
       {failed ? (
         <Pressable
           onPress={() => onPress(item)}

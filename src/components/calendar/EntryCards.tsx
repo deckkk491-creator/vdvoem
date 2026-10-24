@@ -153,7 +153,7 @@ export function AgendaCard({
           {ev.url ? <LinkRow url={ev.url} color={k.fg} /> : null}
           {attachments?.length ? (
             <View style={{ marginTop: 8 }}>
-              <AttachmentStrip attachments={attachments} size={56} />
+              <AttachmentStrip attachments={attachments} size={56} interactive={false} />
             </View>
           ) : null}
         </View>
@@ -279,7 +279,7 @@ export function TaskCard({
           {task.url ? <LinkRow url={task.url} color={k.fg} /> : null}
           {attachments?.length ? (
             <View style={{ marginTop: 8 }}>
-              <AttachmentStrip attachments={attachments} size={56} />
+              <AttachmentStrip attachments={attachments} size={56} interactive={false} />
             </View>
           ) : null}
         </View>

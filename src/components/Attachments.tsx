@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, Dimensions, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Animated, Dimensions, Modal, PanResponder, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   formatSize,
@@ -55,40 +55,87 @@ export function PhotoViewer({ urls, index, onClose }: { urls: string[]; index: n
   const insets = useSafeAreaInsets();
   const { width, height } = Dimensions.get('window');
   const [page, setPage] = useState(0);
+  const dragY = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (index !== null) setPage(index);
-  }, [index]);
+    if (index !== null) {
+      setPage(index);
+      dragY.setValue(0);
+    }
+  }, [index, dragY]);
+
+  // Смахнуть фото вниз или вверх — закрыть. Касания не уходят в карточку под просмотром.
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 12 && Math.abs(g.dy) > Math.abs(g.dx) * 1.5,
+        onPanResponderTerminationRequest: () => true,
+        onPanResponderMove: (_e, g) => dragY.setValue(g.dy),
+        onPanResponderRelease: (_e, g) => {
+          if (Math.abs(g.dy) > 110 || Math.abs(g.vy) > 1.2) {
+            Animated.timing(dragY, { toValue: g.dy > 0 ? height : -height, duration: 160, useNativeDriver: true }).start(() => onClose());
+          } else {
+            Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start();
+          }
+        },
+        onPanResponderTerminate: () => Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start(),
+      }),
+    [dragY, height, onClose],
+  );
+  const fade = dragY.interpolate({ inputRange: [-height / 2, 0, height / 2], outputRange: [0.4, 1, 0.4], extrapolate: 'clamp' });
+
   return (
-    <Modal visible={index !== null} animationType="fade" onRequestClose={onClose} transparent={false}>
-      <View style={{ flex: 1, backgroundColor: '#000' }}>
+    <Modal
+      visible={index !== null}
+      animationType="fade"
+      onRequestClose={onClose}
+      transparent
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+      supportedOrientations={['portrait', 'landscape']}
+    >
+      <Animated.View style={{ flex: 1, backgroundColor: '#000', opacity: fade }} {...pan.panHandlers}>
         {index !== null ? (
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            contentOffset={{ x: index * width, y: 0 }}
-            onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
-          >
-            {urls.map((u) => (
-              <Image key={u} source={{ uri: u }} style={{ width, height }} contentFit="contain" transition={150} />
-            ))}
-          </ScrollView>
+          <Animated.View style={{ flex: 1, transform: [{ translateY: dragY }] }}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              contentOffset={{ x: index * width, y: 0 }}
+              onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
+            >
+              {urls.map((u) => (
+                <Image key={u} source={{ uri: u }} style={{ width, height }} contentFit="contain" transition={150} />
+              ))}
+            </ScrollView>
+          </Animated.View>
         ) : null}
         <Pressable
           onPress={onClose}
           accessibilityRole="button"
-          accessibilityLabel="Закрыть"
-          hitSlop={12}
-          style={{ position: 'absolute', top: insets.top + 8, right: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+          accessibilityLabel="Закрыть фото"
+          hitSlop={16}
+          style={({ pressed }) => ({
+            position: 'absolute',
+            top: insets.top + 10,
+            right: 16,
+            height: 44,
+            paddingHorizontal: 16,
+            borderRadius: 22,
+            backgroundColor: pressed ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.22)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            gap: 6,
+          })}
         >
-          <Ionicons name="close" size={24} color="#fff" />
+          <Ionicons name="close" size={22} color="#fff" />
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Закрыть</Text>
         </Pressable>
-        {urls.length > 1 ? (
-          <Text style={{ position: 'absolute', bottom: insets.bottom + 16, alignSelf: 'center', color: '#fff', fontWeight: '600' }}>
-            {page + 1} / {urls.length}
-          </Text>
-        ) : null}
-      </View>
+        <Text style={{ position: 'absolute', bottom: insets.bottom + 16, alignSelf: 'center', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>
+          {urls.length > 1 ? `${page + 1} / ${urls.length} · ` : ''}смахни вниз, чтобы закрыть
+        </Text>
+      </Animated.View>
     </Modal>
   );
 }
@@ -103,7 +150,16 @@ export async function openStoredFile(path: string) {
 }
 
 /** Фото — лентой миниатюр, файлы и ссылки — плашками */
-export function AttachmentStrip({ attachments, size = 76 }: { attachments: Attachment[] | undefined; size?: number }) {
+export function AttachmentStrip({
+  attachments,
+  size = 76,
+  interactive = true,
+}: {
+  attachments: Attachment[] | undefined;
+  size?: number;
+  /** false — только миниатюры: нажатие уходит в карточку (в списках), просмотр открывается из карточки записи */
+  interactive?: boolean;
+}) {
   const { c } = useTheme();
   const list = attachments ?? [];
   const photos = list.filter((a) => a.kind === 'photo' && a.storage_path);
@@ -113,7 +169,7 @@ export function AttachmentStrip({ attachments, size = 76 }: { attachments: Attac
   const [viewer, setViewer] = useState<number | null>(null);
   if (!list.length) return null;
   return (
-    <View style={{ marginTop: 10, gap: 8 }}>
+    <View style={{ marginTop: 10, gap: 8 }} pointerEvents={interactive ? 'auto' : 'none'}>
       {photos.length ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
           {photos.map((p, i) => {
@@ -160,7 +216,7 @@ export function AttachmentStrip({ attachments, size = 76 }: { attachments: Attac
           ))}
         </View>
       ) : null}
-      <PhotoViewer urls={photoUrls} index={viewer} onClose={() => setViewer(null)} />
+      {interactive ? <PhotoViewer urls={photoUrls} index={viewer} onClose={() => setViewer(null)} /> : null}
     </View>
   );
 }

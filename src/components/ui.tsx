@@ -19,6 +19,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fonts, radius, space, TAB_BAR_HEIGHT, TAP, useTheme } from '../theme';
 
+import { AppBackground } from './AppBackground';
+
 export type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 /* ------------------------------ Typography ------------------------------ */
@@ -39,16 +41,18 @@ export function Body({
   faint,
   style,
   numberOfLines,
+  selectable,
 }: {
   children: React.ReactNode;
   muted?: boolean;
   faint?: boolean;
   style?: StyleProp<TextStyle>;
   numberOfLines?: number;
+  selectable?: boolean;
 }) {
   const { c } = useTheme();
   return (
-    <Text numberOfLines={numberOfLines} style={[{ fontSize: 15, lineHeight: 21, color: faint ? c.textFaint : muted ? c.textMuted : c.text }, style]}>
+    <Text numberOfLines={numberOfLines} selectable={selectable} style={[{ fontSize: 15, lineHeight: 21, color: faint ? c.textFaint : muted ? c.textMuted : c.text }, style]}>
       {children}
     </Text>
   );
@@ -79,11 +83,20 @@ export function Screen({
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const inner = [{ paddingHorizontal: padded ? space.lg : 0, paddingTop: insets.top + space.md, paddingBottom: insets.bottom + 120 }, style];
-  if (!scroll) return <View style={[{ flex: 1, backgroundColor: c.bg }, ...inner]}>{children}</View>;
+  if (!scroll)
+    return (
+      <View style={{ flex: 1, backgroundColor: c.bg }}>
+        <AppBackground />
+        <View style={[{ flex: 1 }, ...inner]}>{children}</View>
+      </View>
+    );
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={inner} keyboardShouldPersistTaps="handled">
-      {children}
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <AppBackground />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={inner} keyboardShouldPersistTaps="handled">
+        {children}
+      </ScrollView>
+    </View>
   );
 }
 

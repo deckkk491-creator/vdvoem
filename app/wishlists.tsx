@@ -4,16 +4,19 @@ import { Image } from 'expo-image';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AttachmentEditor, AttachmentStrip, useAttachmentsFor } from '../src/components/Attachments';
 import { Badge, itemMenu, openLink } from '../src/components/ItemCard';
 import { Avatar, useNameOf } from '../src/components/people';
 import { Body, Button, Card, ChipGroup, EmptyState, ErrorNote, Fab, Input, Label, Loading, Row, Sheet } from '../src/components/ui';
 import { useLinkAutofill } from '../src/hooks/useLinkAutofill';
+import { commitAttachments, deleteWithFiles, emptyDraft, loadAttachments, useSignedUrls, type AttachmentDraft } from '../src/lib/files';
 import { hostOf, normalizeUrl, parseAmount, rub } from '../src/lib/format';
 import { humanError, supabase } from '../src/lib/supabase';
 import type { WishClaim, WishItem } from '../src/lib/types';
 import { useAuth } from '../src/providers/AuthProvider';
 import { useRealtimeRefetch, useSpace } from '../src/providers/SpaceProvider';
 import { radius, sectionStyle, useTheme } from '../src/theme';
+import { AppBackground } from '../src/components/AppBackground';
 
 const OCCASIONS = ['ДР', 'Новый год', '14 февраля', '8 марта', '23 февраля', 'Годовщина', 'Просто так'] as const;
 
@@ -61,6 +64,11 @@ export default function Wishlists() {
   const list = useMemo(() => items.filter((i) => i.owner_id === owner), [items, owner]);
   const claimOf = useCallback((id: string) => claims.find((x) => x.item_id === id), [claims]);
 
+  // Свои фото желаний: первое — обложка карточки, остальные лентой
+  const { byParent, reload: reloadPhotos } = useAttachmentsFor(useMemo(() => list.map((i) => i.id), [list]));
+  const coverPaths = useMemo(() => list.map((i) => byParent[i.id]?.find((a) => a.kind === 'photo')?.storage_path ?? null), [list, byParent]);
+  const coverUrls = useSignedUrls(coverPaths);
+
   async function toggleClaim(item: WishItem) {
     if (!userId || !space) return;
     const cl = claimOf(item.id);
@@ -77,13 +85,17 @@ export default function Wishlists() {
   }
 
   async function removeItem(item: WishItem) {
-    const { error: e } = await supabase.from('wishlist_items').delete().eq('id', item.id);
-    if (e) Alert.alert('Ошибка', humanError(e));
+    try {
+      await deleteWithFiles(item.id, () => supabase.from('wishlist_items').delete().eq('id', item.id));
+    } catch (e) {
+      Alert.alert('Ошибка', humanError(e));
+    }
     load();
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <AppBackground />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 120 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 16 }}>
           {members.map((m) => {
@@ -167,9 +179,22 @@ export default function Wishlists() {
                 onLongPress={isMine ? () => itemMenu(item.title, () => setEditing(item), () => removeItem(item)) : undefined}
               >
                 <Row style={{ alignItems: 'flex-start' }} gap={12}>
-                  {item.image_url ? (
-                    <Image source={{ uri: item.image_url }} style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: c.bgAlt }} contentFit="cover" />
-                  ) : null}
+                  {(() => {
+                    const photos = byParent[item.id]?.filter((a) => a.kind === 'photo') ?? [];
+                    const cover = photos[0]?.storage_path ? coverUrls[photos[0].storage_path] : null;
+                    const uri = cover ?? item.image_url;
+                    return uri ? (
+                      <Image
+                        source={cover ? { uri, cacheKey: photos[0].storage_path! } : { uri }}
+                        style={{ width: 88, height: 88, borderRadius: radius.sm, backgroundColor: c.bgAlt }}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <View style={{ width: 88, height: 88, borderRadius: radius.sm, backgroundColor: st.bg, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ fontSize: 34 }}>🎁</Text>
+                      </View>
+                    );
+                  })()}
                   <View style={{ flex: 1 }}>
                     {item.occasion ? (
                       <Row gap={6} style={{ flexWrap: 'wrap', marginBottom: 6 }}>
@@ -194,6 +219,9 @@ export default function Wishlists() {
                     ) : null}
                   </View>
                 </Row>
+                {(byParent[item.id]?.filter((a) => a.kind === 'photo').length ?? 0) > 1 ? (
+                  <AttachmentStrip attachments={byParent[item.id]} size={64} />
+                ) : null}
                 {!isMine ? (
                   <Row style={{ marginTop: 12, justifyContent: 'space-between' }}>
                     {cl ? (
@@ -231,6 +259,7 @@ export default function Wishlists() {
         onSaved={() => {
           setEditing(null);
           load();
+          reloadPhotos();
         }}
       />
     </View>
@@ -248,6 +277,7 @@ function WishSheet({ item, visible, onClose, onSaved }: { item: WishItem | null;
   const [occasion, setOccasion] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [image, setImage] = useState<string | null>(null);
+  const [draft, setDraft] = useState<AttachmentDraft>(emptyDraft());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -266,8 +296,14 @@ function WishSheet({ item, visible, onClose, onSaved }: { item: WishItem | null;
     setOccasion(item?.occasion ?? null);
     setNote(item?.note ?? '');
     setImage(item?.image_url ?? null);
+    setDraft(emptyDraft());
     setError(null);
     link.reset(item?.url ?? null);
+    if (item) {
+      loadAttachments([item.id])
+        .then((list) => setDraft((d) => ({ ...d, existing: list })))
+        .catch(() => undefined);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, item]);
 
@@ -280,10 +316,16 @@ function WishSheet({ item, visible, onClose, onSaved }: { item: WishItem | null;
     setBusy(true);
     const data = { title: title.trim(), url: normalized, price: p, occasion, note: note.trim(), image_url: image };
     const res = item
-      ? await supabase.from('wishlist_items').update(data).eq('id', item.id)
-      : await supabase.from('wishlist_items').insert({ ...data, space_id: space.id, owner_id: userId });
+      ? await supabase.from('wishlist_items').update(data).eq('id', item.id).select('id').single()
+      : await supabase.from('wishlist_items').insert({ ...data, space_id: space.id, owner_id: userId }).select('id').single();
+    if (res.error) {
+      setBusy(false);
+      return setError(humanError(res.error));
+    }
+    const id = (res.data as { id: string }).id;
+    const problem = await commitAttachments(space.id, userId, 'wish', id, draft);
     setBusy(false);
-    if (res.error) return setError(humanError(res.error));
+    if (problem) Alert.alert('Фото', problem);
     onSaved();
   }
 
@@ -344,6 +386,7 @@ function WishSheet({ item, visible, onClose, onSaved }: { item: WishItem | null;
           </Pressable>
         </View>
       ) : null}
+      <AttachmentEditor draft={draft} onChange={setDraft} color={st.fg} label="Фото" allowFiles={false} allowLinks={false} />
       <Input label="Что хочется" value={title} onChangeText={setTitle} placeholder="Плёночный фотоаппарат" maxLength={200} />
       <Input label="Примерная цена, ₽" value={price} onChangeText={setPrice} placeholder="5 000" keyboardType="decimal-pad" />
       <Label>Повод</Label>

@@ -3,14 +3,15 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Dimensions, Linking, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Dimensions, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AttachmentEditor, AttachmentStrip, useAttachmentsFor } from '../src/components/Attachments';
+import { AppBackground } from '../src/components/AppBackground';
 import { DateField } from '../src/components/DateField';
 import { Avatar } from '../src/components/people';
 import { Body, Button, Card, Chip, EmptyState, ErrorNote, H2, Input, Loading, ProgressBar, Row, Segmented, Sheet } from '../src/components/ui';
 import { countryPhotos } from '../src/data/countryPhotos';
-import { COUNTRY_IDEAS, DATE_IDEAS, PLACE_IDEAS, type CountryIdea, type DateIdea, type PlaceIdea } from '../src/data/ideas';
+import { COUNTRY_CARDS, COUNTRY_IDEAS, DATE_IDEAS, PLACE_IDEAS, type CountryCard, type CountryIdea, type DateIdea, type PlaceIdea } from '../src/data/ideas';
 import { commitAttachments, deleteWithFiles, emptyDraft, type AttachmentDraft } from '../src/lib/files';
 import { formatDate, normalizeUrl, relativeDays, todayISO } from '../src/lib/format';
 import { openMapSearch } from '../src/lib/maps';
@@ -120,7 +121,9 @@ export default function Rule222() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40 }}>
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+    <AppBackground />
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40 }}>
       <Card tint={st.bg} style={{ borderColor: 'transparent', marginBottom: 16 }}>
         <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View style={{ flex: 1, paddingRight: 12 }}>
@@ -253,6 +256,7 @@ export default function Rule222() {
         }}
       />
     </ScrollView>
+    </View>
   );
 }
 
@@ -387,18 +391,32 @@ function IdeaCard({ item, onReplace, onSave, onDone }: { item: AnyIdea; onReplac
   );
 }
 
-/** Фото достопримечательностей страны — листаются пальцем, с подписью и автором */
+/** Фото достопримечательностей страны — листаются пальцем. Нажатие на фото — визитка страны. */
 function CountryGallery({ countryId, flag }: { countryId: string; flag: string }) {
   const { c } = useTheme();
   const st = sectionStyle(c, 'rule');
   const photos = useMemo(() => countryPhotos(countryId), [countryId]);
+  const info = COUNTRY_CARDS[countryId];
   const width = Dimensions.get('window').width - 32; // ширина карточки = экран минус отступы
   const [page, setPage] = useState(0);
+  const [showInfo, setShowInfo] = useState(false);
+  useEffect(() => {
+    setShowInfo(false);
+    setPage(0);
+  }, [countryId]);
+
+  const height = 220;
+  const toggle = () => {
+    if (!info) return;
+    Haptics.selectionAsync().catch(() => undefined);
+    setShowInfo((v) => !v);
+  };
+
   if (!photos.length) {
     return (
-      <View style={{ backgroundColor: st.bg, paddingVertical: 16, alignItems: 'center' }}>
-        <Text style={{ fontSize: 44 }}>{flag}</Text>
-      </View>
+      <Pressable onPress={toggle} style={{ backgroundColor: st.bg, minHeight: info ? height : 0, paddingVertical: 16, alignItems: 'center', justifyContent: 'center' }}>
+        {showInfo && info ? <CountryInfo info={info} /> : <Text style={{ fontSize: 44 }}>{flag}</Text>}
+      </Pressable>
     );
   }
   const p = photos[Math.min(page, photos.length - 1)];
@@ -411,38 +429,78 @@ function CountryGallery({ countryId, flag }: { countryId: string; flag: string }
         onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
       >
         {photos.map((ph) => (
-          <Image
+          <Pressable
             key={ph.url}
-            source={{ uri: ph.url }}
-            style={{ width, height: 190, backgroundColor: st.bg }}
-            contentFit="cover"
-            transition={200}
-            accessibilityLabel={ph.caption}
-          />
+            onPress={toggle}
+            accessibilityRole="button"
+            accessibilityLabel={`${ph.caption}. Нажми, чтобы ${showInfo ? 'скрыть' : 'показать'} визитку страны`}
+          >
+            <Image source={{ uri: ph.url }} style={{ width, height, backgroundColor: st.bg }} contentFit="cover" transition={200} />
+          </Pressable>
         ))}
       </ScrollView>
-      <View style={{ position: 'absolute', left: 10, bottom: 10, right: 10, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <View style={{ backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 4, maxWidth: '80%' }}>
-          <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }} numberOfLines={1}>
-            {p.caption}
-          </Text>
-          <Text
-            style={{ color: '#fff', fontSize: 10, opacity: 0.85 }}
-            numberOfLines={1}
-            onPress={() => WebBrowser.openBrowserAsync(p.source).catch(() => undefined)}
-            accessibilityRole="link"
+      {showInfo && info ? (
+        <Pressable onPress={toggle} style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.72)', padding: 14, justifyContent: 'center' }]} accessibilityRole="button" accessibilityLabel="Скрыть визитку страны">
+          <CountryInfo info={info} />
+        </Pressable>
+      ) : (
+        <>
+          {info ? (
+            <View pointerEvents="none" style={{ position: 'absolute', top: 10, right: 10, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <Ionicons name="information-circle-outline" size={15} color="#fff" />
+              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>О стране</Text>
+            </View>
+          ) : null}
+          <View
+            pointerEvents="box-none"
+            style={{ position: 'absolute', left: 10, bottom: 10, right: 10, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}
           >
-            Фото: {p.author} · {p.license}
+            <View style={{ backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 4, maxWidth: '80%' }}>
+              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }} numberOfLines={1}>
+                {p.caption}
+              </Text>
+              <Text
+                style={{ color: '#fff', fontSize: 10, opacity: 0.85 }}
+                numberOfLines={1}
+                onPress={() => WebBrowser.openBrowserAsync(p.source).catch(() => undefined)}
+                accessibilityRole="link"
+              >
+                Фото: {p.author} · {p.license}
+              </Text>
+            </View>
+            {photos.length > 1 ? (
+              <View pointerEvents="none" style={{ flexDirection: 'row', gap: 4, paddingBottom: 4 }}>
+                {photos.map((_, i) => (
+                  <View key={i} style={{ width: i === page ? 14 : 6, height: 6, borderRadius: 3, backgroundColor: i === page ? '#fff' : 'rgba(255,255,255,0.55)' }} />
+                ))}
+              </View>
+            ) : null}
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+/** Визитка страны: четыре коротких строки поверх фото */
+function CountryInfo({ info }: { info: CountryCard }) {
+  const rows: [string, string, string][] = [
+    ['🗓', 'Сезон', info.season],
+    ['🏖', 'Отдых', info.rest],
+    ['🍽', 'Еда', info.food],
+    ['🏛', 'Архитектура', info.architecture],
+  ];
+  return (
+    <View style={{ gap: 7 }}>
+      {rows.map(([icon, label, text]) => (
+        <View key={label} style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
+          <Text style={{ fontSize: 15, width: 20 }}>{icon}</Text>
+          <Text style={{ flex: 1, color: '#fff', fontSize: 13, lineHeight: 17 }} numberOfLines={2}>
+            <Text style={{ fontWeight: '800' }}>{label}: </Text>
+            {text}
           </Text>
         </View>
-        {photos.length > 1 ? (
-          <View style={{ flexDirection: 'row', gap: 4, paddingBottom: 4 }}>
-            {photos.map((_, i) => (
-              <View key={i} style={{ width: i === page ? 14 : 6, height: 6, borderRadius: 3, backgroundColor: i === page ? '#fff' : 'rgba(255,255,255,0.55)' }} />
-            ))}
-          </View>
-        ) : null}
-      </View>
+      ))}
     </View>
   );
 }
@@ -479,7 +537,12 @@ function SaveIdeaSheet({ item, onClose }: { item: AnyIdea | null; onClose: () =>
     setDraft(emptyDraft());
     if (item.kind === 'country') {
       setTitle(`Поездка: ${item.idea.name} ${item.idea.flag}`);
-      setNote(`${item.idea.description} Лучшее время: ${item.idea.bestSeason}.`);
+      const info = COUNTRY_CARDS[item.idea.id];
+      setNote(
+        info
+          ? [item.idea.description, `Сезон: ${info.season}.`, `Отдых: ${info.rest}.`, `Еда: ${info.food}.`, `Архитектура: ${info.architecture}.`].join('\n')
+          : `${item.idea.description} Лучшее время: ${item.idea.bestSeason}.`,
+      );
       setPlace(item.idea.name);
     } else if (item.kind === 'place') {
       setTitle(item.idea.title);

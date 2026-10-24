@@ -6,6 +6,8 @@ import { Avatar } from '../../src/components/people';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { Body, Card, Label, Row, Screen } from '../../src/components/ui';
 import { useUnreadCount } from '../../src/hooks/useUnread';
+import { useCalendar } from '../../src/hooks/useCalendar';
+import { openTaskCount } from '../../src/components/calendar/TasksPanel';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useSpace } from '../../src/providers/SpaceProvider';
 import { sectionStyle, useTheme, type SectionKey } from '../../src/theme';
@@ -17,8 +19,17 @@ export default function UsScreen() {
   const st = sectionStyle(c, 'rule');
 
   const unread = useUnreadCount();
-  const tiles: { key: SectionKey; title: string; text: string; href: '/wishlists' | '/rule222' | '/savings' | '/dates' | '/chat' }[] = [
+  const { events } = useCalendar();
+  const openTasks = openTaskCount(events);
+  const tiles: { key: SectionKey; title: string; text: string; href: '/wishlists' | '/rule222' | '/savings' | '/dates' | '/chat' | '/events' | '/tasks' }[] = [
     { key: 'chat', title: unread ? `Чат · ${unread} новых` : 'Чат', text: 'Сообщения, фото и документы только для вас', href: '/chat' },
+    { key: 'events', title: 'События', text: 'Все планы списком: что впереди и что уже было', href: '/events' },
+    {
+      key: 'tasks',
+      title: openTasks ? `Задачи · ${openTasks}` : 'Задачи',
+      text: 'Общие дела: кто что берёт и что уже сделано',
+      href: '/tasks',
+    },
     { key: 'dates', title: 'Важные даты', text: 'Годовщины, дни рождения и всё, что нельзя забыть', href: '/dates' },
     { key: 'savings', title: 'Копилка', text: 'Копим на мечты вместе', href: '/savings' },
     { key: 'wishlist', title: 'Вишлисты', text: 'Что подарить друг другу — и тайно забронировать подарок', href: '/wishlists' },

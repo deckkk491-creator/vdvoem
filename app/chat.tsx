@@ -12,12 +12,15 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Keyboard, KeyboardAvoidingView, Linking, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PhotoViewer, openStoredFile } from '../src/components/Attachments';
+import { AppBackground } from '../src/components/AppBackground';
 import { ChatEmpty } from '../src/components/chat/ChatEmpty';
 import { Composer, type ComposerHandle } from '../src/components/chat/Composer';
 import { DaySeparator, MessageBubble } from '../src/components/chat/MessageBubble';
 import { useNameOf } from '../src/components/people';
 import { EmptyState, ErrorNote, Loading } from '../src/components/ui';
 import { isImageMessage, timeOf, useMessages, type ChatItem } from '../src/hooks/useMessages';
+import { useReactions } from '../src/hooks/useReactions';
+import { MessageMenu, type MenuAction } from '../src/components/chat/MessageMenu';
 import { markChatRead } from '../src/hooks/useUnread';
 import { useSignedUrls, type LocalFile } from '../src/lib/files';
 import { formatDate, toISODate } from '../src/lib/format';
@@ -120,6 +123,9 @@ export default function ChatScreen() {
   const chat = useMessages();
   const { items, loading, error, retry, hasOlder, loadingOlder, loadOlder, send, retrySend, discard, remove, receipt, latestIncomingId, previewUri } = chat;
   const spaceId = space?.id ?? null;
+  const serverIds = useMemo(() => items.filter((m) => !m.local).map((m) => m.id), [items]);
+  const { byMessage, myReaction, react } = useReactions(spaceId, serverIds);
+  const [menuFor, setMenuFor] = useState<ChatItem | null>(null);
 
   const list = useRef<FlatList<Row>>(null);
   const composer = useRef<ComposerHandle>(null);
@@ -128,6 +134,7 @@ export default function ChatScreen() {
   // Закрываем просмотр фото при смене пространства
   useEffect(() => {
     setViewer(null);
+    setMenuFor(null);
   }, [spaceId]);
 
   /* ------------------------- Заголовок ------------------------- */
@@ -288,20 +295,37 @@ export default function ChatScreen() {
         ]);
         return;
       }
-      const actions: { text: string; destructive?: boolean; onPress: () => void }[] = [];
-      if (m.body.trim()) actions.push({ text: 'Скопировать', onPress: () => copy(m) });
-      if (m.sender_id === userId) actions.push({ text: 'Удалить', destructive: true, onPress: () => confirmDelete(m) });
-      // Жалоба разработчику и выход из пространства (App Store Guideline 1.2: пожаловаться и заблокировать)
-      else {
-        actions.push({ text: 'Пожаловаться', onPress: () => report(m) });
-        actions.push({ text: 'Выйти из пространства', destructive: true, onPress: () => confirmLeave() });
-      }
-      if (!actions.length) return;
       Haptics.selectionAsync().catch(() => undefined);
-      showActions(undefined, actions);
+      setMenuFor(m);
     },
-    [retrySend, discard, copy, confirmDelete, report, confirmLeave, userId],
+    [retrySend, discard],
   );
+
+  const menuActions = useMemo<MenuAction[]>(() => {
+    const m = menuFor;
+    if (!m) return [];
+    const out: MenuAction[] = [];
+    if (m.body.trim()) out.push({ text: 'Скопировать', icon: 'copy-outline', onPress: () => copy(m) });
+    if (m.sender_id === userId) out.push({ text: 'Удалить', icon: 'trash-outline', destructive: true, onPress: () => confirmDelete(m) });
+    // Жалоба разработчику и выход из пространства (App Store Guideline 1.2: пожаловаться и заблокировать)
+    else {
+      out.push({ text: 'Пожаловаться', icon: 'flag-outline', onPress: () => report(m) });
+      out.push({ text: 'Выйти из пространства', icon: 'exit-outline', destructive: true, onPress: () => confirmLeave() });
+    }
+    return out;
+  }, [menuFor, userId, copy, confirmDelete, report, confirmLeave]);
+
+  const menuPreview = (m: ChatItem | null): string => {
+    if (!m) return '';
+    if (m.body.trim()) return m.body;
+    if (isImageMessage(m)) return '📷 Фото';
+    return m.attachment_name ? `📎 ${m.attachment_name}` : '';
+  };
+
+  const onReact = useCallback((m: ChatItem, emoji: string) => {
+    if (m.local) return;
+    react(m.id, emoji);
+  }, [react]);
 
   const onSend = useCallback(
     (text: string, files: LocalFile[]) => {
@@ -328,9 +352,11 @@ export default function ChatScreen() {
           receipt={row.receipt}
           onPress={onPress}
           onLongPress={onLongPress}
+          reactions={byMessage[row.item.id]}
+          onReact={onReact}
         />
       ),
-    [onPress, onLongPress],
+    [onPress, onLongPress, byMessage, onReact],
   );
 
   /* ------------------------- Экран ------------------------- */
@@ -402,6 +428,7 @@ export default function ChatScreen() {
         <FlatList
           ref={list}
           data={rows}
+          extraData={byMessage}
           keyExtractor={(r) => r.key}
           renderItem={renderItem}
           inverted
@@ -440,10 +467,20 @@ export default function ChatScreen() {
       // Высота нативного заголовка (44) + статус-бар
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 44 : 0}
     >
+      <AppBackground />
       {header}
       {content}
       <Composer ref={composer} onSend={onSend} bottomInset={keyboardShown ? 0 : insets.bottom} disabled={!userId} />
       <PhotoViewer urls={viewer?.urls ?? []} index={viewer?.index ?? null} onClose={() => setViewer(null)} />
+      <MessageMenu
+        visible={menuFor !== null}
+        mine={!!menuFor && menuFor.sender_id === userId}
+        preview={menuPreview(menuFor)}
+        current={menuFor ? myReaction(menuFor.id) : null}
+        actions={menuActions}
+        onReact={(e) => menuFor && react(menuFor.id, e)}
+        onClose={() => setMenuFor(null)}
+      />
     </KeyboardAvoidingView>
   );
 }

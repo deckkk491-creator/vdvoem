@@ -1,15 +1,15 @@
-import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import React, { useMemo } from 'react';
+import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { EventSheet } from '../src/components/calendar/EventSheet';
+import { useCalendarSheets } from '../src/components/calendar/CalendarSheets';
 import { itemMenu } from '../src/components/ItemCard';
 import { Body, Card, EmptyState, ErrorNote, Fab, Label, Loading } from '../src/components/ui';
 import { anniversaryLabel, daysBetween, daysUntilLabel, nextOccurrence, useCalendar } from '../src/hooks/useCalendar';
 import { formatDate, todayISO } from '../src/lib/format';
-import { humanError } from '../src/lib/supabase';
 import type { CalendarEvent } from '../src/lib/types';
 import { useSpace } from '../src/providers/SpaceProvider';
 import { radius, sectionStyle, useTheme } from '../src/theme';
+import { AppBackground } from '../src/components/AppBackground';
 
 type Row = { ev: CalendarEvent; occ: string; days: number };
 
@@ -18,8 +18,9 @@ export default function DatesScreen() {
   const st = sectionStyle(c, 'dates');
   const insets = useSafeAreaInsets();
   const { space } = useSpace();
-  const { events, loading, error, retry, save, remove } = useCalendar();
-  const [editing, setEditing] = useState<CalendarEvent | 'new' | null>(null);
+  const cal = useCalendar();
+  const { events, loading, error, retry } = cal;
+  const sheets = useCalendarSheets(cal, { spaceId: space?.id ?? null, fixedKind: 'date' });
   const today = todayISO();
 
   // Ближайшие сверху; прошедшие разовые даты — в конце, свежие выше
@@ -37,7 +38,6 @@ export default function DatesScreen() {
   }, [events, today]);
 
   const total = rows.upcoming.length + rows.past.length;
-  const deleteDate = (ev: CalendarEvent) => remove(ev).catch((e) => Alert.alert('Ошибка', humanError(e)));
 
   const renderRow = (r: Row) => {
     const anniversary = anniversaryLabel(r.ev, r.occ, today);
@@ -46,8 +46,8 @@ export default function DatesScreen() {
       <Card
         key={r.ev.id}
         tint={isToday ? st.bg : undefined}
-        onPress={() => setEditing(r.ev)}
-        onLongPress={() => itemMenu(r.ev.title, () => setEditing(r.ev), () => deleteDate(r.ev))}
+        onPress={() => sheets.openEvent(r.ev, r.occ)}
+        onLongPress={() => itemMenu(r.ev.title, () => sheets.editEvent(r.ev), () => sheets.deleteEvent(r.ev))}
         style={{ marginBottom: 12, padding: 14 }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -81,6 +81,7 @@ export default function DatesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <AppBackground />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 110 }}>
         {!space ? (
           <EmptyState emoji="💞" title="Нет пространства" text="Создай пространство или присоединись по коду, чтобы хранить общие даты." />
@@ -100,7 +101,7 @@ export default function DatesScreen() {
                 title="Пока ни одной даты"
                 text="Добавь «День знакомства», «Годовщину свадьбы» или «День рождения Кати» — здесь будет видно, сколько осталось до каждой."
                 action="Добавить дату"
-                onAction={() => setEditing('new')}
+                onAction={() => sheets.openNew('date', null)}
                 color={st.fg}
               />
             ) : (
@@ -117,15 +118,8 @@ export default function DatesScreen() {
           </>
         )}
       </ScrollView>
-      {space && total > 0 ? <Fab onPress={() => setEditing('new')} color={st.fg} overTabBar={false} /> : null}
-      <EventSheet
-        visible={editing !== null}
-        event={editing === 'new' ? null : editing}
-        fixedKind="date"
-        onClose={() => setEditing(null)}
-        save={save}
-        remove={remove}
-      />
+      {space && total > 0 ? <Fab onPress={() => sheets.openNew('date', null)} color={st.fg} overTabBar={false} /> : null}
+      {sheets.sheets}
     </View>
   );
 }

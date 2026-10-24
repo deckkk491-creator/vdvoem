@@ -127,6 +127,7 @@ export type RealtimeTable =
   | 'calendar_events'
   | 'messages'
   | 'message_reads'
+  | 'message_reactions'
   | 'attachments';
 
 export type CalendarKind = 'event' | 'task' | 'date';
@@ -166,9 +167,11 @@ export type Message = {
   created_at: string;
 };
 
+export type MessageReaction = { message_id: string; space_id: string; user_id: string; emoji: string; created_at: string };
+
 export type MessageRead = { space_id: string; user_id: string; last_read_at: string };
 
-export type AttachmentParent = 'item' | 'event' | 'rule_event';
+export type AttachmentParent = 'item' | 'event' | 'rule_event' | 'wish';
 export type AttachmentKind = 'photo' | 'file' | 'link';
 
 export type Attachment = {
