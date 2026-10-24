@@ -4,7 +4,8 @@
 
 ## Стек и сборка
 - Expo SDK 58, expo-router 58, React Native 0.88, React 19.3, TypeScript 6 strict.
-- Вкладки: Календарь, Кино, Еда, Выходные, Покупки, Мы. Копилка, Вишлисты, Важные даты, 2-2-2 и Чат — экраны из «Мы»; чат также кнопкой в шапке.
+- Вкладки: Календарь, Кино, Еда, Выходные, Покупки, Мы. События, Задачи, Копилка, Вишлисты, Важные даты, 2-2-2 и Чат — экраны из «Мы»; чат также кнопкой в шапке.
+- Нажатие на запись календаря всегда открывает карточку (`EntryDetailSheet`), редактирование — кнопкой «Изменить». Общая логика окон — `useCalendarSheets`.
 - Бэкенд: Supabase (Postgres + RLS, вход по 6-значному коду из письма, realtime).
 - Сборка только в облаке EAS: у владельца MacBook Air 2019, Xcode 26 на нём не ставится.
 - Bundle ID: `com.deckkk491.vdvoem`.
@@ -13,12 +14,15 @@
 ## Где что лежит
 - `supabase/migrations/0001_init.sql` — схема, RLS и RPC: `create_space`, `join_space`, `leave_space`, `delete_my_data`.
 - `supabase/migrations/0002_calendar_chat_files.sql` — календарь/задачи/важные даты, чат, вложения, бакет `space-files`, дизлайки, ритм 2-2-2, личная тема, RPC `mark_chat_read`, `my_file_paths`, `space_file_paths`. Применена 24.10.2026.
-- CI job `database` прогоняет 0001+0002 и `supabase/tests/rls_v2_test.sql` на чистом Postgres (заглушки auth/storage).
+- `supabase/migrations/0003_reactions_wish_photos.sql` — реакции в чате (`message_reactions`, одна на человека), фото к желаниям (вложения `parent_type='wish'`, только владелец). Применена 24.10.2026.
+- CI job `database` прогоняет 0001–0003 и `supabase/tests/rls_v2_test.sql`, `rls_v3_test.sql` на чистом Postgres (заглушки auth/storage).
 - `supabase/tests/` — проверки RLS. Отметку «я подарю» владелец вишлиста не видит.
 - `supabase/functions/` — `link-preview` (Open Graph для рецептов) и `delete-account` (удаление пользователя через service role).
 - `src/theme/index.ts` — единственный источник цветов. Контраст проверен на WCAG AA.
 - `src/lib/supabase.ts` — `humanError` переводит ошибки сервера на русский.
-- `src/data/ideas.ts` — идеи для правила 2-2-2.
+- `src/data/ideas.ts` — идеи для правила 2-2-2 и визитки стран (`COUNTRY_CARDS`).
+- `src/data/mealPhotos.json`, `ideaPhotos.json` — фото блюд и идей с Wikimedia Commons (свободные лицензии, автор подписан); собраны `scripts/fetch_photos.py` (Википедию из облака не видно — запускали в Chrome пользователя).
+- `src/theme/index.ts` — также подложки (`SURFACES`) и фоны (`BACKGROUNDS`, картинки в `assets/backgrounds`); подложки и фон хранятся только на телефоне.
 - `docs/` — GitHub Pages: политика и поддержка (https://deckkk491-creator.github.io/vdvoem/).
 - `store/` — тексты для App Store Connect, App Privacy, заметки для ревью.
 
