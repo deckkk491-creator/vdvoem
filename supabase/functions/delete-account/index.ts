@@ -41,10 +41,19 @@ Deno.serve(async (req: Request) => {
   if (userErr || !userData?.user) return json({ error: "unauthorized" }, 401);
   const userId = userData.user.id;
 
+  const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
+
+  // Файлы пользователя (фото, документы, вложения чата) — до удаления записей, пока пути известны
+  const { data: paths } = await userClient.rpc("my_file_paths");
+  const files = ((paths ?? []) as string[]).filter(Boolean);
+  for (let i = 0; i < files.length; i += 100) {
+    const { error: rmErr } = await admin.storage.from("space-files").remove(files.slice(i, i + 100));
+    if (rmErr) console.warn("storage remove", rmErr.message);
+  }
+
   const { error: rpcErr } = await userClient.rpc("delete_my_data");
   if (rpcErr) return json({ error: "delete_data_failed", details: rpcErr.message }, 500);
 
-  const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
   const { error: delErr } = await admin.auth.admin.deleteUser(userId);
   if (delErr) return json({ error: "delete_user_failed", details: delErr.message }, 500);
 

@@ -8,10 +8,10 @@ import { TAB_BAR_HEIGHT, space, useTheme } from '../../src/theme';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TABS: { name: string; title: string; icon: IconName; iconActive: IconName }[] = [
+  { name: 'calendar', title: 'Календарь', icon: 'calendar-outline', iconActive: 'calendar' },
   { name: 'watch', title: 'Кино', icon: 'film-outline', iconActive: 'film' },
   { name: 'recipes', title: 'Еда', icon: 'restaurant-outline', iconActive: 'restaurant' },
   { name: 'weekend', title: 'Выходные', icon: 'leaf-outline', iconActive: 'leaf' },
-  { name: 'savings', title: 'Копилка', icon: 'wallet-outline', iconActive: 'wallet' },
   { name: 'shopping', title: 'Покупки', icon: 'basket-outline', iconActive: 'basket' },
   { name: 'us', title: 'Мы', icon: 'heart-outline', iconActive: 'heart' },
 ];

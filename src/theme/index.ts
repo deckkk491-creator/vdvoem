@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform, useColorScheme } from 'react-native';
 
 export type Palette = {
@@ -99,13 +101,129 @@ export const TAB_BAR_HEIGHT = 58;
 
 export type Theme = { c: Palette; dark: boolean };
 
-export function useTheme(): Theme {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-  return { c: isDark ? dark : light, dark: isDark };
+/* ------------------------- Личная тема оформления ------------------------- */
+
+export type AccentKey = 'terracotta' | 'lavender' | 'mint' | 'ocean' | 'berry' | 'sun' | 'graphite';
+export type ThemeMode = 'system' | 'light' | 'dark';
+
+type AccentSet = { accent: string; accentSoft: string; onAccent: string };
+
+/*
+ * Акцентные цвета. Пары проверены на WCAG AA: onAccent на accent ≥ 4.5:1,
+ * accent на accentSoft ≥ 4.5:1 (в светлой теме — белый текст на насыщенном цвете,
+ * в тёмной — тёмный текст на светлом).
+ */
+export const ACCENTS: Record<AccentKey, { title: string; light: AccentSet; dark: AccentSet }> = {
+  terracotta: {
+    title: 'Терракота',
+    light: { accent: '#B04620', accentSoft: '#FBE1D5', onAccent: '#FFFFFF' },
+    dark: { accent: '#F07A52', accentSoft: '#3D2219', onAccent: '#1A0F0A' },
+  },
+  lavender: {
+    title: 'Лаванда',
+    light: { accent: '#6B4FA8', accentSoft: '#ECE5F7', onAccent: '#FFFFFF' },
+    dark: { accent: '#B9A2EE', accentSoft: '#2C2340', onAccent: '#160F24' },
+  },
+  mint: {
+    title: 'Мята',
+    light: { accent: '#2F7466', accentSoft: '#D9EFEA', onAccent: '#FFFFFF' },
+    dark: { accent: '#7FD1BE', accentSoft: '#1B302B', onAccent: '#0B1A16' },
+  },
+  ocean: {
+    title: 'Океан',
+    light: { accent: '#2D6394', accentSoft: '#DEEAF6', onAccent: '#FFFFFF' },
+    dark: { accent: '#8EBEEA', accentSoft: '#1A2938', onAccent: '#0A1420' },
+  },
+  berry: {
+    title: 'Ягода',
+    light: { accent: '#A3305C', accentSoft: '#F8DCE7', onAccent: '#FFFFFF' },
+    dark: { accent: '#F08BB1', accentSoft: '#3B1C28', onAccent: '#1F0A12' },
+  },
+  sun: {
+    title: 'Солнце',
+    light: { accent: '#8A5A00', accentSoft: '#FBEBC8', onAccent: '#FFFFFF' },
+    dark: { accent: '#F2B84B', accentSoft: '#3A2C12', onAccent: '#1E1503' },
+  },
+  graphite: {
+    title: 'Графит',
+    light: { accent: '#3F4652', accentSoft: '#E4E6EA', onAccent: '#FFFFFF' },
+    dark: { accent: '#C3CAD6', accentSoft: '#262A31', onAccent: '#12151A' },
+  },
+};
+
+export const ACCENT_KEYS = Object.keys(ACCENTS) as AccentKey[];
+
+export type ThemePrefs = { accent: AccentKey; mode: ThemeMode };
+const DEFAULT_PREFS: ThemePrefs = { accent: 'terracotta', mode: 'system' };
+const PREFS_KEY = 'vdvoem.theme';
+
+type ThemeCtx = { prefs: ThemePrefs; setPrefs: (p: ThemePrefs) => void };
+const ThemeContext = createContext<ThemeCtx | null>(null);
+
+function isAccent(v: unknown): v is AccentKey {
+  return typeof v === 'string' && v in ACCENTS;
+}
+function isMode(v: unknown): v is ThemeMode {
+  return v === 'system' || v === 'light' || v === 'dark';
 }
 
-export type SectionKey = 'watch' | 'recipe' | 'weekend' | 'shopping' | 'savings' | 'wishlist' | 'rule';
+/**
+ * Держит личную тему пользователя. Источник правды — профиль на сервере
+ * (`remote`), локальная копия нужна, чтобы при запуске не мигал цвет по умолчанию.
+ */
+export function ThemeProvider({ remote, children }: { remote?: { accent?: string | null; mode?: string | null } | null; children: React.ReactNode }) {
+  const [prefs, setPrefsState] = useState<ThemePrefs>(DEFAULT_PREFS);
+
+  useEffect(() => {
+    AsyncStorage.getItem(PREFS_KEY)
+      .then((raw) => {
+        if (!raw) return;
+        const p = JSON.parse(raw) as Partial<ThemePrefs>;
+        setPrefsState({ accent: isAccent(p.accent) ? p.accent : 'terracotta', mode: isMode(p.mode) ? p.mode : 'system' });
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const rAccent = remote?.accent;
+  const rMode = remote?.mode;
+  useEffect(() => {
+    if (!isAccent(rAccent) || !isMode(rMode)) return;
+    const next = { accent: rAccent, mode: rMode };
+    setPrefsState(next);
+    AsyncStorage.setItem(PREFS_KEY, JSON.stringify(next)).catch(() => undefined);
+  }, [rAccent, rMode]);
+
+  const value = useMemo<ThemeCtx>(
+    () => ({
+      prefs,
+      setPrefs: (p) => {
+        setPrefsState(p);
+        AsyncStorage.setItem(PREFS_KEY, JSON.stringify(p)).catch(() => undefined);
+      },
+    }),
+    [prefs],
+  );
+  return React.createElement(ThemeContext.Provider, { value }, children);
+}
+
+export function useThemePrefs(): ThemeCtx {
+  return useContext(ThemeContext) ?? { prefs: DEFAULT_PREFS, setPrefs: () => undefined };
+}
+
+export function buildTheme(prefs: ThemePrefs, systemDark: boolean): Theme {
+  const isDark = prefs.mode === 'system' ? systemDark : prefs.mode === 'dark';
+  const base = isDark ? dark : light;
+  const a = ACCENTS[prefs.accent] ?? ACCENTS.terracotta;
+  return { c: { ...base, ...(isDark ? a.dark : a.light) }, dark: isDark };
+}
+
+export function useTheme(): Theme {
+  const scheme = useColorScheme();
+  const { prefs } = useThemePrefs();
+  return useMemo(() => buildTheme(prefs, scheme === 'dark'), [prefs, scheme]);
+}
+
+export type SectionKey = 'watch' | 'recipe' | 'weekend' | 'shopping' | 'savings' | 'wishlist' | 'rule' | 'calendar' | 'chat' | 'dates';
 
 /** Цвет и эмодзи каждого раздела — у каждого свой характер */
 export function sectionStyle(c: Palette, key: SectionKey): { fg: string; bg: string; emoji: string } {
@@ -124,5 +242,11 @@ export function sectionStyle(c: Palette, key: SectionKey): { fg: string; bg: str
       return { fg: c.plum, bg: c.plumSoft, emoji: '🎁' };
     case 'rule':
       return { fg: c.accent, bg: c.accentSoft, emoji: '✨' };
+    case 'calendar':
+      return { fg: c.sky, bg: c.skySoft, emoji: '📅' };
+    case 'chat':
+      return { fg: c.sage, bg: c.sageSoft, emoji: '💬' };
+    case 'dates':
+      return { fg: c.plum, bg: c.plumSoft, emoji: '💞' };
   }
 }

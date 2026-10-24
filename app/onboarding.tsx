@@ -24,7 +24,7 @@ export default function Onboarding() {
 
   // Если пространство уже есть (например, вернулись на экран) и мы не показываем код — идём дальше
   useEffect(() => {
-    if (!needProfile && space && !created && !busy) router.replace('/(tabs)/watch');
+    if (!needProfile && space && !created && !busy) router.replace('/(tabs)/calendar');
   }, [needProfile, space, created, busy]);
 
   async function onCreate() {
@@ -45,7 +45,7 @@ export default function Onboarding() {
     setError(null);
     try {
       await joinSpace(code.trim());
-      router.replace('/(tabs)/watch');
+      router.replace('/(tabs)/calendar');
     } catch (e) {
       setError(humanError(e));
     } finally {
@@ -104,7 +104,7 @@ export default function Onboarding() {
             />
           </View>
           <Spacer h={10} />
-          <Button title="Начать" icon="arrow-forward" onPress={() => router.replace('/(tabs)/watch')} />
+          <Button title="Начать" icon="arrow-forward" onPress={() => router.replace('/(tabs)/calendar')} />
         </Card>
       ) : (
         <>

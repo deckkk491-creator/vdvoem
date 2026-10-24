@@ -1,16 +1,17 @@
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
-import { confirmDelete } from '../../src/components/ItemCard';
-import { Avatar, useNameOf } from '../../src/components/people';
-import { SectionHeader } from '../../src/components/SectionHeader';
-import { Body, Button, Card, EmptyState, ErrorNote, Fab, Input, Label, Loading, ProgressBar, Row, Screen, Sheet } from '../../src/components/ui';
-import { formatDate, isoToRu, normalizeDateInput, parseAmount, plural, rub, todayISO } from '../../src/lib/format';
-import { humanError, supabase } from '../../src/lib/supabase';
-import type { Contribution, GoalWithProgress, SavingsGoal } from '../../src/lib/types';
-import { useAuth } from '../../src/providers/AuthProvider';
-import { useRealtimeRefetch, useSpace } from '../../src/providers/SpaceProvider';
-import { fonts, sectionStyle, useTheme } from '../../src/theme';
+import { confirmDelete } from '../src/components/ItemCard';
+import { Avatar, useNameOf } from '../src/components/people';
+import { SectionHeader } from '../src/components/SectionHeader';
+import { Body, Button, Card, EmptyState, ErrorNote, Fab, Input, Label, Loading, ProgressBar, Row, Screen, Sheet } from '../src/components/ui';
+import { formatDate, isoToRu, normalizeDateInput, parseAmount, plural, rub, todayISO } from '../src/lib/format';
+import { humanError, supabase } from '../src/lib/supabase';
+import type { Contribution, GoalWithProgress, SavingsGoal } from '../src/lib/types';
+import { useAuth } from '../src/providers/AuthProvider';
+import { useRealtimeRefetch, useSpace } from '../src/providers/SpaceProvider';
+import { fonts, sectionStyle, useTheme } from '../src/theme';
 
 const GOAL_EMOJI = ['🐷', '✈️', '🏖️', '🏠', '🚗', '💍', '🎁', '🛋️', '📱', '🎓', '👶', '🐶'];
 
@@ -90,7 +91,7 @@ export default function SavingsScreen() {
   return (
     <View style={{ flex: 1 }}>
       <Screen>
-        <SectionHeader title="Копилка" subtitle="Копим на мечты вместе" emoji={st.emoji} color={st.fg} />
+        <SectionHeader title="Копилка" subtitle="Копим на мечты вместе" emoji={st.emoji} color={st.fg} onBack={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/us'))} />
         {goals.length > 0 ? (
           <Card tint={st.bg} style={{ marginBottom: 16, borderColor: 'transparent' }}>
             <Label style={{ color: st.fg }}>Всего отложено</Label>
@@ -192,7 +193,7 @@ export default function SavingsScreen() {
           })
         )}
       </Screen>
-      {goals.length > 0 ? <Fab onPress={() => setGoalSheet('new')} color={st.fg} /> : null}
+      {goals.length > 0 ? <Fab onPress={() => setGoalSheet('new')} color={st.fg} overTabBar={false} /> : null}
       <GoalSheet
         goal={goalSheet === 'new' ? null : goalSheet}
         visible={goalSheet !== null}

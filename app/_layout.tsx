@@ -8,13 +8,13 @@ import { AuthProvider, useAuth } from '../src/providers/AuthProvider';
 import { SpaceProvider, useSpace } from '../src/providers/SpaceProvider';
 import { RuleReminderSync } from '../src/components/RuleReminderSync';
 import { useAuthDeepLinks } from '../src/lib/authLink';
-import { useTheme } from '../src/theme';
+import { ThemeProvider, useTheme } from '../src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
-const IN_APP = ['(tabs)', 'wishlists', 'rule222', 'settings', 'onboarding'];
+const IN_APP = ['(tabs)', 'wishlists', 'rule222', 'settings', 'onboarding', 'savings', 'dates', 'chat'];
 
-type Target = '/setup' | '/sign-in' | '/onboarding' | '/(tabs)/watch' | null;
+type Target = '/setup' | '/sign-in' | '/onboarding' | '/(tabs)/calendar' | null;
 
 function useGateTarget(): Target {
   const { ready, session, profile, profileLoaded } = useAuth();
@@ -24,7 +24,7 @@ function useGateTarget(): Target {
   if (!session) return '/sign-in';
   if (!profileLoaded || !loaded) return null;
   if (!profile?.display_name || !space) return '/onboarding';
-  return '/(tabs)/watch';
+  return '/(tabs)/calendar';
 }
 
 function Gate() {
@@ -41,7 +41,7 @@ function Gate() {
       '/sign-in': first === 'sign-in',
       '/onboarding': first === 'onboarding',
       // с онбординга уходим сами (чтобы успеть показать код приглашения)
-      '/(tabs)/watch': !!first && IN_APP.includes(first),
+      '/(tabs)/calendar': !!first && IN_APP.includes(first),
     };
     if (!at[target]) router.replace(target);
   }, [target, first, navReady]);
@@ -82,8 +82,20 @@ function Shell() {
         <Stack.Screen name="wishlists" options={{ headerShown: true, title: 'Вишлисты' }} />
         <Stack.Screen name="rule222" options={{ headerShown: true, title: 'Правило 2-2-2' }} />
         <Stack.Screen name="settings" options={{ headerShown: true, title: 'Настройки', presentation: 'modal' }} />
+        <Stack.Screen name="savings" />
+        <Stack.Screen name="dates" options={{ headerShown: true, title: 'Важные даты' }} />
+        <Stack.Screen name="chat" options={{ headerShown: true, title: 'Чат' }} />
       </Stack>
     </>
+  );
+}
+
+function ThemedShell() {
+  const { profile } = useAuth();
+  return (
+    <ThemeProvider remote={profile ? { accent: profile.theme_accent, mode: profile.theme_mode } : null}>
+      <Shell />
+    </ThemeProvider>
   );
 }
 
@@ -92,7 +104,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <SpaceProvider>
-          <Shell />
+          <ThemedShell />
         </SpaceProvider>
       </AuthProvider>
     </SafeAreaProvider>

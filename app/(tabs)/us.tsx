@@ -5,6 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { Avatar } from '../../src/components/people';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { Body, Card, Label, Row, Screen } from '../../src/components/ui';
+import { useUnreadCount } from '../../src/hooks/useUnread';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useSpace } from '../../src/providers/SpaceProvider';
 import { sectionStyle, useTheme, type SectionKey } from '../../src/theme';
@@ -15,12 +16,16 @@ export default function UsScreen() {
   const { space, members, people } = useSpace();
   const st = sectionStyle(c, 'rule');
 
-  const tiles: { key: SectionKey; title: string; text: string; href: '/wishlists' | '/rule222' | '/settings' }[] = [
+  const unread = useUnreadCount();
+  const tiles: { key: SectionKey; title: string; text: string; href: '/wishlists' | '/rule222' | '/savings' | '/dates' | '/chat' }[] = [
+    { key: 'chat', title: unread ? `Чат · ${unread} новых` : 'Чат', text: 'Сообщения, фото и документы только для вас', href: '/chat' },
+    { key: 'dates', title: 'Важные даты', text: 'Годовщины, дни рождения и всё, что нельзя забыть', href: '/dates' },
+    { key: 'savings', title: 'Копилка', text: 'Копим на мечты вместе', href: '/savings' },
     { key: 'wishlist', title: 'Вишлисты', text: 'Что подарить друг другу — и тайно забронировать подарок', href: '/wishlists' },
     {
       key: 'rule',
       title: 'Правило 2-2-2',
-      text: space?.rule222_enabled ? 'Свидания, новые места и страны — по расписанию' : 'Выключено · включи, чтобы не забывать о свиданиях',
+      text: space?.rule222_enabled ? 'Свидания, новые места и страны — в вашем ритме' : 'Выключено · включи, чтобы не забывать о свиданиях',
       href: '/rule222',
     },
   ];

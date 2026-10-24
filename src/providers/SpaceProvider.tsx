@@ -20,7 +20,9 @@ type SpaceState = {
   createSpace: (name: string) => Promise<string>;
   joinSpace: (code: string) => Promise<void>;
   leaveSpace: () => Promise<void>;
-  updateSpace: (patch: Partial<Pick<Space, 'name' | 'city' | 'rule222_enabled' | 'rule222_start'>>) => Promise<void>;
+  updateSpace: (
+    patch: Partial<Pick<Space, 'name' | 'city' | 'rule222_enabled' | 'rule222_start' | 'rule_date_weeks' | 'rule_place_months' | 'rule_country_years'>>,
+  ) => Promise<void>;
   subscribe: (fn: Listener) => () => void;
   live: boolean;
   /** Не удалось загрузить список пространств (например, нет сети) */
@@ -41,6 +43,10 @@ const TABLES: RealtimeTable[] = [
   'wishlist_items',
   'wishlist_claims',
   'rule_events',
+  'calendar_events',
+  'messages',
+  'message_reads',
+  'attachments',
 ];
 
 export function SpaceProvider({ children }: { children: React.ReactNode }) {
