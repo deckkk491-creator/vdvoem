@@ -11,7 +11,7 @@ import { Avatar } from '../src/components/people';
 import { Body, Button, Card, Chip, EmptyState, ErrorNote, H2, Input, Loading, ProgressBar, Row, Segmented, Sheet } from '../src/components/ui';
 import { countryPhotos } from '../src/data/countryPhotos';
 import { COUNTRY_IDEAS, DATE_IDEAS, PLACE_IDEAS, type CountryIdea, type DateIdea, type PlaceIdea } from '../src/data/ideas';
-import { commitAttachments, emptyDraft, removeAttachmentFilesOf, type AttachmentDraft } from '../src/lib/files';
+import { commitAttachments, deleteWithFiles, emptyDraft, type AttachmentDraft } from '../src/lib/files';
 import { formatDate, normalizeUrl, relativeDays, todayISO } from '../src/lib/format';
 import { openMapSearch } from '../src/lib/maps';
 import { ensurePermission } from '../src/lib/notifications';
@@ -110,9 +110,9 @@ export default function Rule222() {
   async function removeEvent(e: RuleEvent) {
     const prev = events;
     setEvents((list) => list.filter((x) => x.id !== e.id));
-    await removeAttachmentFilesOf(e.id);
-    const { error: delErr } = await supabase.from('rule_events').delete().eq('id', e.id);
-    if (delErr) {
+    try {
+      await deleteWithFiles(e.id, () => supabase.from('rule_events').delete().eq('id', e.id));
+    } catch (delErr) {
       setEvents(prev);
       Alert.alert('Не получилось удалить', humanError(delErr));
     }
@@ -636,7 +636,7 @@ function MarkDoneSheet({
       <Input label="Впечатления" value={note} onChangeText={setNote} placeholder="Что запомнилось" multiline maxLength={1000} />
       <AttachmentEditor draft={draft} onChange={setDraft} color={st.fg} label="Фото на память" allowFiles={false} allowLinks={false} />
       <Text style={{ color: c.textFaint, fontSize: 12, marginTop: -4, marginBottom: 12 }}>
-        Фото хранятся в вашем общем пространстве — их видите только вы двое.
+        Фото хранятся в вашем общем пространстве — их видят только его участники.
       </Text>
       <ErrorNote text={error} />
     </Sheet>

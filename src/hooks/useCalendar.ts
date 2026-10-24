@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
-import { removeAttachmentFilesOf } from '../lib/files';
+import { deleteWithFiles } from '../lib/files';
 import { parseDate, plural, toISODate } from '../lib/format';
 import { humanError, supabase } from '../lib/supabase';
 import type { CalendarEvent, CalendarKind, Item } from '../lib/types';
@@ -134,11 +134,10 @@ export function useCalendar() {
 
   const remove = useCallback(
     async (ev: CalendarEvent) => {
-      // Сначала файлы: записи о вложениях база удалит триггером вместе с событием
-      await removeAttachmentFilesOf(ev.id);
       setEvents((list) => list.filter((e) => e.id !== ev.id));
-      const { error: e } = await supabase.from('calendar_events').delete().eq('id', ev.id);
-      if (e) {
+      try {
+        await deleteWithFiles(ev.id, () => supabase.from('calendar_events').delete().eq('id', ev.id));
+      } catch (e) {
         await load();
         throw e;
       }

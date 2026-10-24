@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { removeAttachmentFilesOf } from '../lib/files';
+import { deleteWithFiles } from '../lib/files';
 import { humanError, supabase } from '../lib/supabase';
 import type { Item, ItemKind, ItemWithLikes } from '../lib/types';
 import { useAuth } from '../providers/AuthProvider';
@@ -116,10 +116,9 @@ export function useItems(kind: ItemKind) {
   const remove = useCallback(
     async (id: string) => {
       setItems((list) => list.filter((i) => i.id !== id));
-      // файлы вложений — до удаления записи (записи о вложениях база удалит сама)
-      await removeAttachmentFilesOf(id);
-      const { error: e } = await supabase.from('items').delete().eq('id', id);
-      if (e) {
+      try {
+        await deleteWithFiles(id, () => supabase.from('items').delete().eq('id', id));
+      } catch (e) {
         await load();
         throw e;
       }

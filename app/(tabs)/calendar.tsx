@@ -16,6 +16,7 @@ import {
   removeExportedEvents,
   requestCalendarAccess,
   setExportEnabled,
+  pruneOtherSpaces,
   syncDeviceCalendar,
 } from '../../src/lib/deviceCalendar';
 import { parseDate, todayISO, toISODate } from '../../src/lib/format';
@@ -175,6 +176,14 @@ export default function CalendarScreen() {
       alive = false;
     };
   }, []);
+
+  // События пространств, из которых пользователь вышел, убираем с телефона
+  const { spaces: allSpaces, loaded: spacesLoaded, loadError: spacesError } = useSpace();
+  const spaceIdsKey = allSpaces.map((x) => x.id).join(',');
+  useEffect(() => {
+    if (!deviceOn || !spacesLoaded || spacesError) return;
+    pruneOtherSpaces(spaceIdsKey ? spaceIdsKey.split(',') : []);
+  }, [deviceOn, spacesLoaded, spacesError, spaceIdsKey]);
 
   // Выгружаем, только когда данные пространства загружены полностью — иначе можно стереть события на телефоне
   const ready = !!spaceId && loadedSpace === spaceId && !loading;
@@ -425,8 +434,9 @@ function DeviceCalendarCard({ on, onChange, color }: { on: boolean; onChange: (v
         />
       </View>
       <Body muted style={{ fontSize: 13, marginTop: 8 }}>
-        События, задачи со сроком и важные даты появятся в отдельном календаре «Вдвоём» на этом телефоне. Изменения
-        в «Календаре» iPhone обратно в приложение не попадают. Настройка своя на каждом телефоне.
+        События, задачи со сроком и важные даты появятся в отдельном календаре «Вдвоём» на iPhone (а если календари
+        синхронизируются через iCloud — и на других твоих устройствах Apple). Изменения в «Календаре» iPhone обратно в
+        приложение не попадают. Включается отдельно на каждом телефоне.
       </Body>
     </Card>
   );

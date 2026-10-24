@@ -121,7 +121,7 @@ export function AttachmentStrip({ attachments, size = 76 }: { attachments: Attac
             return (
               <Pressable key={p.id} onPress={() => u && setViewer(photoUrls.indexOf(u))} accessibilityRole="imagebutton" accessibilityLabel={`Фото ${i + 1}`}>
                 <Image
-                  source={u ? { uri: u } : undefined}
+                  source={u ? { uri: u, cacheKey: p.storage_path! } : undefined}
                   style={{ width: size, height: size, borderRadius: radius.sm, backgroundColor: c.bgAlt }}
                   contentFit="cover"
                   transition={150}
@@ -258,7 +258,7 @@ export function AttachmentEditor({
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingTop: 6, paddingRight: 6, paddingBottom: 10 }}>
           {storedPhotos.map((a) => (
             <View key={a.id}>
-              <Image source={urls[a.storage_path!] ? { uri: urls[a.storage_path!] } : undefined} style={tile} contentFit="cover" />
+              <Image source={urls[a.storage_path!] ? { uri: urls[a.storage_path!], cacheKey: a.storage_path! } : undefined} style={tile} contentFit="cover" />
               {removeBadge(() => onChange({ ...draft, removed: [...draft.removed, a.id] }), 'фото')}
             </View>
           ))}

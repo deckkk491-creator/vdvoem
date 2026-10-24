@@ -24,7 +24,7 @@ export function SectionHeader({
   color: string;
   right?: React.ReactNode;
 }) {
-  const { c } = useTheme();
+  const { c, dark } = useTheme();
   const { profile } = useAuth();
   const { space, live } = useSpace();
   const unread = useUnreadCount();
@@ -82,7 +82,7 @@ export function SectionHeader({
             <Ionicons name="chatbubble-ellipses-outline" size={20} color={c.text} />
             {unread ? (
               <View style={{ position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: c.heart, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg }}>
-                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unread > 99 ? '99+' : unread}</Text>
+                <Text style={{ color: dark ? c.bg : '#fff', fontSize: 10, fontWeight: '800' }}>{unread > 99 ? '99+' : unread}</Text>
               </View>
             ) : null}
           </Pressable>

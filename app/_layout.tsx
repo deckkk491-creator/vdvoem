@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '../src/providers/AuthProvider';
 import { SpaceProvider, useSpace } from '../src/providers/SpaceProvider';
 import { RuleReminderSync } from '../src/components/RuleReminderSync';
 import { useAuthDeepLinks } from '../src/lib/authLink';
+import { UnreadProvider } from '../src/hooks/useUnread';
 import { ThemeProvider, useTheme } from '../src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -104,7 +105,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <SpaceProvider>
-          <ThemedShell />
+          <UnreadProvider>
+            <ThemedShell />
+          </UnreadProvider>
         </SpaceProvider>
       </AuthProvider>
     </SafeAreaProvider>

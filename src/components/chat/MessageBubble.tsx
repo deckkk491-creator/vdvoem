@@ -59,7 +59,8 @@ function BubbleBase({ item, mine, firstInGroup, lastInGroup, sender, senderName,
   const maxBubble = Math.round(screenW * 0.75);
   const maxImage = Math.round(screenW * 0.65);
   const img = isImage ? imageSize(item.image_width, item.image_height, maxImage) : null;
-  const imageSource = local?.uri ? { uri: local.uri } : imageUrl ? { uri: imageUrl } : undefined;
+  // cacheKey = путь в хранилище: временная ссылка меняется каждый час, а кэш картинки — нет
+  const imageSource = local?.uri ? { uri: local.uri } : imageUrl ? { uri: imageUrl, cacheKey: item.attachment_path ?? undefined } : undefined;
 
   const fg = mine ? c.onAccent : c.text;
   const subFg = mine ? c.onAccent : c.textMuted;

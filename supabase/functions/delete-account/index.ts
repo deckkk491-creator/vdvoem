@@ -43,16 +43,20 @@ Deno.serve(async (req: Request) => {
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
 
-  // Файлы пользователя (фото, документы, вложения чата) — до удаления записей, пока пути известны
-  const { data: paths } = await userClient.rpc("my_file_paths");
+  // Пути файлов собираем до удаления записей, пока они известны: свои вложения, вложения на своих записях,
+  // вложения чата и всё из пространств, где пользователь остался один
+  const { data: paths, error: pathsErr } = await userClient.rpc("my_file_paths");
+  if (pathsErr) return json({ error: "list_files_failed", details: pathsErr.message }, 500);
   const files = ((paths ?? []) as string[]).filter(Boolean);
+
+  const { error: rpcErr } = await userClient.rpc("delete_my_data");
+  if (rpcErr) return json({ error: "delete_data_failed", details: rpcErr.message }, 500);
+
+  // Файлы удаляем после записей: если удаление данных не прошло, вложения не останутся «битыми»
   for (let i = 0; i < files.length; i += 100) {
     const { error: rmErr } = await admin.storage.from("space-files").remove(files.slice(i, i + 100));
     if (rmErr) console.warn("storage remove", rmErr.message);
   }
-
-  const { error: rpcErr } = await userClient.rpc("delete_my_data");
-  if (rpcErr) return json({ error: "delete_data_failed", details: rpcErr.message }, 500);
 
   const { error: delErr } = await admin.auth.admin.deleteUser(userId);
   if (delErr) return json({ error: "delete_user_failed", details: delErr.message }, 500);

@@ -197,7 +197,15 @@ Deno.serve(async (req: Request) => {
       meta["product:price:amount"] ?? meta["og:price:amount"] ?? meta["price"] ??
       /"offers"\s*:\s*\{[^}]*?"price"\s*:\s*"?([\d.,\s]+)"?/i.exec(html)?.[1] ??
       /itemprop=["']price["'][^>]*content=["']([\d.,\s]+)["']/i.exec(html)?.[1] ?? null;
-    const priceNum = rawPrice ? Number(String(rawPrice).replace(/\s/g, "").replace(",", ".")) : NaN;
+    // «1,299.00» (en) → 1299; «1 299,50» (ru) → 1299.5; «1,299» → 1299 (запятая перед тремя цифрами — разряды)
+    const normPrice = (v: string): number => {
+      let t = v.replace(/\s/g, "");
+      if (t.includes(",") && t.includes(".")) t = t.replace(/,/g, "");
+      else if (/,\d{3}(?!\d)/.test(t) && !/,\d{1,2}$/.test(t)) t = t.replace(/,/g, "");
+      else t = t.replace(",", ".");
+      return Number(t);
+    };
+    const priceNum = rawPrice ? normPrice(String(rawPrice)) : NaN;
     const price = Number.isFinite(priceNum) && priceNum > 0 && priceNum < 1e9 ? Math.round(priceNum * 100) / 100 : null;
 
     return json({

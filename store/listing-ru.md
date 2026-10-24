@@ -98,7 +98,7 @@
 | Age Assurance (проверка возраста) | No |
 | Unrestricted Web Access (свободный доступ в интернет) | No (ссылки на рецепты открываются во внешнем браузере / Safari View) |
 | User-Generated Content (пользовательский контент) | Yes — участники видят записи друг друга, но только внутри закрытого пространства по приглашению |
-| Messaging and Chat (переписка) | No |
+| Messaging and Chat (переписка) | **Yes** — приватный чат участников пространства |
 | Advertising (реклама) | No |
 | Cartoon or Fantasy Violence | None |
 | Realistic Violence | None |

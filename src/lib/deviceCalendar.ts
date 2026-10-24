@@ -257,6 +257,29 @@ export function syncDeviceCalendar(spaceId: string, events: CalendarEvent[], col
   });
 }
 
+/**
+ * Убирает с телефона события пространств, в которых пользователя больше нет
+ * (вышел из пространства, сменил аккаунт). spaceIds — актуальный список его пространств.
+ */
+export function pruneOtherSpaces(spaceIds: string[]): Promise<void> {
+  return serialize(async () => {
+    if (!deviceCalendarSupported) return;
+    try {
+      const all = await readMap();
+      const stale = Object.keys(all).filter((id) => !spaceIds.includes(id));
+      if (!stale.length) return;
+      if (!(await hasAccess())) return;
+      for (const sid of stale) {
+        for (const entry of Object.values(all[sid] ?? {})) await safeDelete(entry.deviceId);
+        delete all[sid];
+      }
+      await writeMap(all);
+    } catch (e) {
+      console.warn('deviceCalendar: prune', e);
+    }
+  });
+}
+
 /** Удаляет календарь «Вдвоём» с телефона вместе со всеми выгруженными событиями */
 export function removeExportedEvents(): Promise<boolean> {
   return serialize(async () => {

@@ -161,7 +161,8 @@ export async function signedUrls(paths: string[]): Promise<Record<string, string
       for (const row of data) {
         if (row.path && row.signedUrl) {
           out[row.path] = row.signedUrl;
-          urlCache.set(row.path, { url: row.signedUrl, exp: now + (TTL - 120) * 1000 });
+          // из кэша отдаём не дольше 45 минут: у выданной ссылки всегда остаётся ≥ 15 минут жизни
+          urlCache.set(row.path, { url: row.signedUrl, exp: now + (TTL - 900) * 1000 });
         }
       }
     }
@@ -179,9 +180,13 @@ export function useSignedUrls(paths: (string | null | undefined)[]): Record<stri
       setUrls({});
       return;
     }
-    signedUrls(list).then((u) => alive && setUrls(u)).catch(() => undefined);
+    const refresh = () => signedUrls(list).then((u) => alive && setUrls(u)).catch(() => undefined);
+    refresh();
+    // ссылки живут час — обновляем заранее, если экран долго открыт
+    const timer = setInterval(refresh, 10 * 60 * 1000);
     return () => {
       alive = false;
+      clearInterval(timer);
     };
   }, [list]);
   return urls;
@@ -276,12 +281,19 @@ export async function commitAttachments(
   return problems.length ? `Не всё сохранилось: ${problems.join('; ')}` : null;
 }
 
-/** Удаляет файлы вложений записи из хранилища (записи о вложениях удалит база вместе с родителем) */
-export async function removeAttachmentFilesOf(parentId: string): Promise<void> {
+/**
+ * Удаляет запись вместе с файлами её вложений: сначала запоминаем пути, потом удаляем запись
+ * (записи о вложениях база удалит триггером), и только после успеха — сами файлы.
+ * Так при ошибке удаления у записи не остаётся «битых» вложений.
+ */
+export async function deleteWithFiles(parentId: string, deleteRow: () => PromiseLike<{ error: unknown }>): Promise<void> {
+  let paths: (string | null)[] = [];
   try {
-    const list = await loadAttachments([parentId]);
-    await removeFiles(list.map((a) => a.storage_path));
+    paths = (await loadAttachments([parentId])).map((a) => a.storage_path);
   } catch {
-    // не критично: останется осиротевший файл
+    // не получилось узнать пути — запись всё равно удаляем, файл останется сиротой
   }
+  const { error } = await deleteRow();
+  if (error) throw error;
+  await removeFiles(paths);
 }

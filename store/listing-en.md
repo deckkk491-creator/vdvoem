@@ -100,7 +100,7 @@ App Store Connect → App Information → Age Rating:
 | Age Assurance | No |
 | Unrestricted Web Access | No (recipe links open in Safari / Safari View) |
 | User-Generated Content | Yes — members see each other's items, but only inside a private, invite-only space |
-| Messaging and Chat | No |
+| Messaging and Chat | **Yes** — private chat between space members |
 | Advertising | No |
 | Cartoon or Fantasy Violence | None |
 | Realistic Violence | None |

@@ -379,7 +379,7 @@ export function Segmented<T extends string>({
               shadowOffset: { width: 0, height: 1 },
             }}
           >
-            <Text style={{ fontSize: 13, fontWeight: '700', color: active ? c.text : c.textMuted }}>{o.label}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontSize: 13, fontWeight: '700', color: active ? c.text : c.textMuted }}>{o.label}</Text>
           </Pressable>
         );
       })}

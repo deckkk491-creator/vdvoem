@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { AppState } from 'react-native';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { removeFiles } from '../lib/files';
 import { humanError, supabase } from '../lib/supabase';
 import type { Member, Profile, RealtimeTable, Space } from '../lib/types';
 import { useAuth } from './AuthProvider';
@@ -266,8 +267,13 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
 
   const leaveSpace = useCallback(async () => {
     if (!currentId) return;
+    // Если выходит последний участник, пространство удалится — заранее узнаём его файлы, чтобы убрать их из хранилища.
+    // Сервер вернёт пустой список, если в пространстве есть кто-то ещё.
+    const { data } = await supabase.rpc('space_file_paths', { p_space: currentId });
+    const files = ((data ?? []) as string[]).filter(Boolean);
     const { error } = await supabase.rpc('leave_space', { p_space: currentId });
     if (error) throw error;
+    if (files.length) await removeFiles(files);
     // Сразу убираем пространство локально и переключаемся на следующее (если есть):
     // без промежуточного «нет пространства», даже если перезагрузка списка не удастся
     const remaining = spaces.filter((s) => s.id !== currentId);

@@ -30,6 +30,25 @@ exception when others then
 end;
 $$;
 
+revoke all on function public.is_member_of(uuid, uuid) from public, anon;
+grant execute on function public.is_member_of(uuid, uuid) to authenticated;
+
+-- Автора и пространство записи нельзя подменить при изменении:
+-- от created_by зависит, чьи данные удаляются вместе с аккаунтом
+create or replace function public.keep_owner_fields()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.space_id := old.space_id;
+  -- обнулить можно (так делает внешний ключ при удалении аккаунта), подменить на другого — нет
+  if new.created_by is not null then
+    new.created_by := old.created_by;
+  end if;
+  return new;
+end;
+$$;
+
 -- ---------------------------------------------------------------------
 --  Существующие таблицы: новые колонки
 -- ---------------------------------------------------------------------
@@ -71,13 +90,13 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 drop policy if exists likes_update on public.item_likes;
 create policy likes_update on public.item_likes for update to authenticated
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid() and public.is_space_member(space_id) and public.item_space(item_id) = space_id);
 
 -- Отметки 2-2-2 можно дополнять: впечатления, дата, название
 drop policy if exists rule_update on public.rule_events;
 create policy rule_update on public.rule_events for update to authenticated
   using (public.is_space_member(space_id)) with check (public.is_space_member(space_id));
-grant update (title, note, done_on) on public.rule_events to authenticated;
 
 -- ---------------------------------------------------------------------
 --  Календарь: события, задачи и важные даты
@@ -112,6 +131,15 @@ create index if not exists calendar_space_kind_idx on public.calendar_events (sp
 drop trigger if exists calendar_touch on public.calendar_events;
 create trigger calendar_touch before update on public.calendar_events
   for each row execute function public.touch_updated_at();
+drop trigger if exists calendar_keep_owner on public.calendar_events;
+create trigger calendar_keep_owner before update on public.calendar_events
+  for each row execute function public.keep_owner_fields();
+drop trigger if exists items_keep_owner on public.items;
+create trigger items_keep_owner before update on public.items
+  for each row execute function public.keep_owner_fields();
+drop trigger if exists rule_events_keep_owner on public.rule_events;
+create trigger rule_events_keep_owner before update on public.rule_events
+  for each row execute function public.keep_owner_fields();
 
 alter table public.calendar_events enable row level security;
 drop policy if exists cal_select on public.calendar_events;
@@ -122,6 +150,7 @@ create policy cal_insert on public.calendar_events for insert to authenticated
   with check (
     public.is_space_member(space_id) and created_by = auth.uid()
     and (assignee is null or public.is_member_of(space_id, assignee))
+    and (done_by is null or public.is_member_of(space_id, done_by))
   );
 drop policy if exists cal_update on public.calendar_events;
 create policy cal_update on public.calendar_events for update to authenticated
@@ -129,6 +158,7 @@ create policy cal_update on public.calendar_events for update to authenticated
   with check (
     public.is_space_member(space_id)
     and (assignee is null or public.is_member_of(space_id, assignee))
+    and (done_by is null or public.is_member_of(space_id, done_by))
   );
 drop policy if exists cal_delete on public.calendar_events;
 create policy cal_delete on public.calendar_events for delete to authenticated
@@ -271,11 +301,12 @@ create policy space_files_delete on storage.objects for delete to authenticated
 grant select, insert, update, delete on public.calendar_events, public.messages, public.message_reads, public.attachments to authenticated;
 revoke update on public.messages from authenticated;
 revoke all on public.calendar_events, public.messages, public.message_reads, public.attachments from anon;
-grant update (value) on public.item_likes to authenticated;
 
 -- ---------------------------------------------------------------------
 --  Пути файлов пользователя (для удаления аккаунта) и обновлённые RPC
 -- ---------------------------------------------------------------------
+-- Все файлы, которые исчезнут вместе с аккаунтом: свои вложения, вложения на своих записях,
+-- свои вложения в чате и всё содержимое пространств, где пользователь — единственный участник
 create or replace function public.my_file_paths()
 returns setof text
 language sql
@@ -283,12 +314,65 @@ stable
 security definer
 set search_path = public
 as $$
-  select storage_path from public.attachments where created_by = auth.uid() and storage_path is not null
+  with solo as (
+    select m.space_id from public.space_members m
+    where m.user_id = auth.uid()
+      and not exists (select 1 from public.space_members o where o.space_id = m.space_id and o.user_id <> auth.uid())
+  )
+  select a.storage_path from public.attachments a
+  where a.storage_path is not null and (
+    a.created_by = auth.uid()
+    or a.space_id in (select space_id from solo)
+    or exists (select 1 from public.items i where i.id = a.parent_id and i.created_by = auth.uid())
+    or exists (select 1 from public.calendar_events e where e.id = a.parent_id and e.created_by = auth.uid())
+    or exists (select 1 from public.rule_events r where r.id = a.parent_id and r.created_by = auth.uid())
+  )
   union
-  select attachment_path from public.messages where sender_id = auth.uid() and attachment_path is not null;
+  select msg.attachment_path from public.messages msg
+  where msg.attachment_path is not null and (msg.sender_id = auth.uid() or msg.space_id in (select space_id from solo));
 $$;
 revoke all on function public.my_file_paths() from public, anon;
 grant execute on function public.my_file_paths() to authenticated;
+
+-- Файлы пространства, если вызывающий — его единственный участник (при его выходе пространство удалится).
+-- Если в пространстве есть кто-то ещё, возвращает пустой список: общие файлы трогать нельзя.
+create or replace function public.space_file_paths(p_space uuid)
+returns setof text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  with ok as (
+    select 1 where public.is_space_member(p_space)
+      and not exists (select 1 from public.space_members where space_id = p_space and user_id <> auth.uid())
+  )
+  select storage_path from public.attachments where space_id = p_space and storage_path is not null and exists (select 1 from ok)
+  union
+  select attachment_path from public.messages where space_id = p_space and attachment_path is not null and exists (select 1 from ok);
+$$;
+revoke all on function public.space_file_paths(uuid) from public, anon;
+grant execute on function public.space_file_paths(uuid) to authenticated;
+
+-- Отметка «прочитано» по часам сервера (часы телефонов могут спешить или отставать)
+create or replace function public.mark_chat_read(p_space uuid)
+returns void
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_space_member(p_space) then
+    raise exception 'not a member' using errcode = '42501';
+  end if;
+  insert into public.message_reads (space_id, user_id, last_read_at)
+  values (p_space, auth.uid(), now())
+  on conflict (space_id, user_id) do update set last_read_at = excluded.last_read_at;
+end;
+$$;
+revoke all on function public.mark_chat_read(uuid) from public, anon;
+grant execute on function public.mark_chat_read(uuid) to authenticated;
 
 create or replace function public.leave_space(p_space uuid)
 returns void

@@ -1,5 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { isExportEnabled, removeExportedEvents, setExportEnabled } from '../lib/deviceCalendar';
 import { isConfigured } from '../lib/env';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../lib/types';
@@ -80,6 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
+    // Общие события не должны оставаться в календаре iPhone после выхода из аккаунта
+    if (await isExportEnabled().catch(() => false)) {
+      await removeExportedEvents().catch(() => false);
+      await setExportEnabled(false).catch(() => undefined);
+    }
     // Без сети supabase.auth.signOut() возвращает ошибку и НЕ удаляет сессию с устройства —
     // тогда выходим хотя бы локально, чтобы кнопка «Выйти» работала всегда.
     const { error } = await supabase.auth.signOut().catch((e: unknown) => ({ error: e }));

@@ -50,7 +50,7 @@ ACCOUNT DELETION
 Profile → "Delete account". This permanently deletes the account and the user's data from our database (Guideline 5.1.1(v)).
 
 USER-GENERATED CONTENT
-Content and chat messages are visible only to members of the same private space, who joined by an invite code they received from someone they know (typically a partner or family). There is no public feed and no way to find or message strangers. Any member can leave a space at any time (Profile → Leave space), which immediately stops all contact; a long-press on any chat message offers "Report", which sends the message to the developer (deckkk491@gmail.com) for review within 24 hours.
+Content and chat messages are visible only to members of the same private space, who joined by an invite code they received from someone they know (typically a partner or family). There is no public feed and no way to find or message strangers. Any member can leave a space at any time (Settings → Leave space, or long-press a partner's chat message → "Выйти из пространства"), which immediately stops all contact; the same long-press menu offers "Пожаловаться" (Report), which emails the message to the developer (deckkk491@gmail.com) for review within 24 hours.
 
 DATA
 Data is stored in Supabase (EU region). No ads, no analytics, no tracking, no in-app purchases.

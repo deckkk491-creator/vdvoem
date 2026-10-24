@@ -113,7 +113,7 @@ function showActions(title: string | undefined, actions: { text: string; destruc
 export default function ChatScreen() {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const { space, members, people } = useSpace();
+  const { space, members, people, refresh: refreshSpace, leaveSpace } = useSpace();
   const { userId } = useAuth();
   const nameOf = useNameOf();
   const keyboardShown = useKeyboardShown();
@@ -246,6 +246,25 @@ export default function ChatScreen() {
     [spaceId],
   );
 
+  const confirmLeave = useCallback(() => {
+    Alert.alert(
+      'Выйти из пространства?',
+      'Ты перестанешь видеть общие записи и чат этого пространства. Вернуться можно только по коду приглашения.',
+      [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Выйти',
+          style: 'destructive',
+          onPress: () => {
+            leaveSpace()
+              .then(() => router.replace('/(tabs)/calendar'))
+              .catch((e: unknown) => Alert.alert('Не получилось выйти', humanError(e)));
+          },
+        },
+      ],
+    );
+  }, [leaveSpace]);
+
   const onPress = useCallback(
     (m: ChatItem) => {
       if (m.local) {
@@ -272,13 +291,16 @@ export default function ChatScreen() {
       const actions: { text: string; destructive?: boolean; onPress: () => void }[] = [];
       if (m.body.trim()) actions.push({ text: 'Скопировать', onPress: () => copy(m) });
       if (m.sender_id === userId) actions.push({ text: 'Удалить', destructive: true, onPress: () => confirmDelete(m) });
-      // Жалоба разработчику (App Store Guideline 1.2): письмо с id сообщения и текстом
-      else actions.push({ text: 'Пожаловаться', onPress: () => report(m) });
+      // Жалоба разработчику и выход из пространства (App Store Guideline 1.2: пожаловаться и заблокировать)
+      else {
+        actions.push({ text: 'Пожаловаться', onPress: () => report(m) });
+        actions.push({ text: 'Выйти из пространства', destructive: true, onPress: () => confirmLeave() });
+      }
       if (!actions.length) return;
       Haptics.selectionAsync().catch(() => undefined);
       showActions(undefined, actions);
     },
-    [retrySend, discard, copy, confirmDelete, report, userId],
+    [retrySend, discard, copy, confirmDelete, report, confirmLeave, userId],
   );
 
   const onSend = useCallback(
@@ -325,10 +347,17 @@ export default function ChatScreen() {
   }
 
   if (!members.length) {
+    // Участники ещё грузятся — или загрузка не удалась (тогда даём повторить, а не крутим вечно)
     return (
       <View style={{ flex: 1, backgroundColor: c.bg }}>
         {header}
-        <Loading />
+        {loading ? (
+          <Loading />
+        ) : (
+          <View style={{ padding: 16 }}>
+            <ErrorNote text="Не получилось загрузить участников. Проверь интернет." onRetry={() => refreshSpace()} />
+          </View>
+        )}
       </View>
     );
   }
