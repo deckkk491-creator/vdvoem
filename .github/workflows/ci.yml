@@ -33,3 +33,36 @@ jobs:
           cat export.log
           if [ $code -ne 0 ]; then echo "::error title=expo export::$(tail -c 3000 export.log | tr '\n' '|')"; fi
           exit $code
+
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Migrations and RLS checks
+        run: |
+          set -o pipefail
+          run() { psql -v ON_ERROR_STOP=1 -X -q -f "$1" 2>&1 | tee -a db.log; }
+          {
+            run supabase/tests/auth_stub.sql &&
+            run supabase/tests/storage_stub.sql &&
+            run supabase/migrations/0001_init.sql &&
+            run supabase/migrations/0002_calendar_chat_files.sql &&
+            echo "--- rerun 0002 (idempotent)" | tee -a db.log &&
+            run supabase/migrations/0002_calendar_chat_files.sql &&
+            psql -v ON_ERROR_STOP=1 -X -t -A -f supabase/tests/rls_v2_test.sql 2>&1 | tee -a db.log
+          }; code=$?
+          if [ $code -ne 0 ]; then echo "::error title=db::$(tail -c 3000 db.log | tr '\n' '|')"; exit $code; fi
+          if grep -qx 'f' db.log; then echo "::error title=db checks::$(grep -n -x 'f' db.log | head) |$(tail -c 2500 db.log | tr '\n' '|')"; exit 1; fi
+          echo "::notice title=db ok::$(grep -c -x 't' db.log) checks passed; $(grep -c 'blocked ok' db.log) blocked as expected"
