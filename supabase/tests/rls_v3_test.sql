@@ -65,6 +65,12 @@ do $$ begin
     raise exception 'should fail';
   exception when insufficient_privilege then raise notice 'partner wish photo blocked ok'; end;
 end $$;
+do $$ begin
+  begin insert into attachments(space_id, parent_type, parent_id, kind, storage_path, created_by)
+    select space_id, 'item', id, 'photo', space_id || '/item/3.jpg', auth.uid() from wishlist_items where title = 'Плёночный фотоаппарат';
+    raise exception 'should fail';
+  exception when insufficient_privilege then raise notice 'partner wish photo as item blocked ok'; end;
+end $$;
 delete from attachments where parent_id = :'wid';
 select count(*) = 1 as partner_cannot_delete_wish_photo from attachments where parent_id = :'wid';
 

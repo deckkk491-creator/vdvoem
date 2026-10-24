@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { File, Paths } from 'expo-file-system';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform, useColorScheme } from 'react-native';
 
@@ -210,6 +211,12 @@ export const BACKGROUNDS: { key: Exclude<BackgroundKey, 'none' | 'photo'>; title
   { key: 'hearts', title: 'Сердечки', tone: 'light', source: require('../../assets/backgrounds/hearts.jpg') },
   { key: 'paper', title: 'Бумага', tone: 'light', source: require('../../assets/backgrounds/paper.jpg') },
 ];
+
+/** Полный путь к своему фото на фон. Хранится имя файла в папке документов приложения. */
+export function bgPhotoUri(nameOrUri: string): string {
+  const name = nameOrUri.split('/').pop() || nameOrUri;
+  return new File(Paths.document, name).uri;
+}
 
 function isSurface(v: unknown): v is SurfaceKey {
   return typeof v === 'string' && v in SURFACES;

@@ -422,6 +422,7 @@ function CountryGallery({ countryId, flag }: { countryId: string; flag: string }
   return (
     <View>
       <ScrollView
+        key={countryId}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}

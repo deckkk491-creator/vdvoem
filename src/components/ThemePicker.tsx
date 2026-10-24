@@ -16,6 +16,7 @@ import {
   radius,
   useTheme,
   useThemePrefs,
+  bgPhotoUri,
   type BackgroundKey,
   type ThemePrefs,
 } from '../theme';
@@ -57,10 +58,11 @@ export function ThemePicker() {
       const dest = new File(Paths.document, `background-${Date.now()}.jpg`);
       new File(res.assets[0].uri).copy(dest);
       const old = prefs.bgPhoto;
-      apply({ ...prefs, background: 'photo', bgPhoto: dest.uri });
+      // Храним только имя файла: путь к папке приложения на iOS меняется после обновления
+      apply({ ...prefs, background: 'photo', bgPhoto: dest.name });
       if (old) {
         try {
-          new File(old).delete();
+          new File(bgPhotoUri(old)).delete();
         } catch {
           // старый файл мог уже исчезнуть
         }
@@ -205,7 +207,7 @@ export function ThemePicker() {
           prefs.background === 'photo',
           () => (prefs.bgPhoto && prefs.background !== 'photo' ? setBackground('photo') : pickPhoto()),
           prefs.bgPhoto ? (
-            <Image source={{ uri: prefs.bgPhoto }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+            <Image source={{ uri: bgPhotoUri(prefs.bgPhoto) }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
           ) : (
             <Ionicons name="image-outline" size={24} color={c.accent} />
           ),

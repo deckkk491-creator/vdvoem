@@ -24,7 +24,12 @@ export function useCalendarSheets(cal: Cal, opts?: { onSaved?: () => void; space
   const [editing, setEditing] = useState<Editing | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const cancelSwap = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
   useEffect(() => {
+    cancelSwap();
     setPicked(null);
     setEditing(null);
   }, [opts?.spaceId]);
@@ -49,22 +54,30 @@ export function useCalendarSheets(cal: Cal, opts?: { onSaved?: () => void; space
   }, [picked, entry, cal.loading]);
 
   const openEntry = useCallback((e: Entry) => {
+    cancelSwap();
     if (e.type === 'event') setPicked({ type: 'event', id: e.event.id, date: e.date });
     else setPicked({ type: 'weekend', id: e.item.id, date: e.date });
   }, []);
 
   const openEvent = useCallback((ev: CalendarEvent, date?: string | null) => {
+    cancelSwap();
     setPicked({ type: 'event', id: ev.id, date: date ?? ev.starts_on ?? '' });
   }, []);
 
   const swapTo = (fn: () => void) => {
     setPicked(null);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(fn, SHEET_SWAP_MS);
+    cancelSwap();
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      fn();
+    }, SHEET_SWAP_MS);
   };
 
   const editEvent = useCallback((ev: CalendarEvent) => setEditing({ event: ev, kind: ev.kind, date: ev.starts_on }), []);
-  const openNew = useCallback((kind: CalendarKind, date: string | null) => setEditing({ event: null, kind, date }), []);
+  const openNew = useCallback((kind: CalendarKind, date: string | null) => {
+    cancelSwap();
+    setEditing({ event: null, kind, date });
+  }, []);
 
   const deleteEvent = useCallback(
     (ev: CalendarEvent) => {

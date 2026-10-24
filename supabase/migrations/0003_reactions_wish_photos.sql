@@ -68,12 +68,30 @@ $$;
 revoke all on function public.owns_wish(uuid, uuid) from public, anon;
 grant execute on function public.owns_wish(uuid, uuid) to authenticated;
 
+-- Вложение к желанию: только parent_type = 'wish' и только от владельца.
+-- Так фото нельзя «подложить» к чужому желанию под другим parent_type.
+create or replace function public.wish_attachment_ok(p_parent uuid, p_type text, p_space uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select case
+    when exists (select 1 from public.wishlist_items where id = p_parent)
+      then p_type = 'wish' and exists (select 1 from public.wishlist_items where id = p_parent and space_id = p_space and owner_id = auth.uid())
+    else p_type <> 'wish'
+  end;
+$$;
+revoke all on function public.wish_attachment_ok(uuid, text, uuid) from public, anon;
+grant execute on function public.wish_attachment_ok(uuid, text, uuid) to authenticated;
+
 drop policy if exists att_insert on public.attachments;
 create policy att_insert on public.attachments for insert to authenticated
   with check (
     public.is_space_member(space_id) and created_by = auth.uid()
     and (storage_path is null or public.try_uuid(split_part(storage_path, '/', 1)) = space_id)
-    and (parent_type <> 'wish' or public.owns_wish(parent_id, space_id))
+    and public.wish_attachment_ok(parent_id, parent_type, space_id)
   );
 drop policy if exists att_delete on public.attachments;
 create policy att_delete on public.attachments for delete to authenticated

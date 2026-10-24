@@ -16,3 +16,4 @@ ios/
 android/
 supabase/.temp/
 supabase/.branches/
+__pycache__/

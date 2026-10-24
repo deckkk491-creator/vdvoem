@@ -81,15 +81,26 @@ export function useReactions(spaceId: string | null, messageIds: string[]) {
   );
 
   /** Поставить, заменить или убрать (если та же) свою реакцию */
+  // Актуальные строки для react: два быстрых нажатия не должны читать устаревшее состояние
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+
   const react = useCallback(
     async (messageId: string, emoji: string) => {
       if (!spaceId || !userId) return;
-      const prev = rows;
-      const mine = prev.find((r) => r.message_id === messageId && r.user_id === userId);
+      const mine = rowsRef.current.find((r) => r.message_id === messageId && r.user_id === userId);
       const removing = mine?.emoji === emoji;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-      const rest = prev.filter((r) => !(r.message_id === messageId && r.user_id === userId));
-      setRows(removing ? rest : [...rest, { message_id: messageId, space_id: spaceId, user_id: userId, emoji, created_at: mine?.created_at ?? new Date().toISOString() }]);
+      const isMine = (r: MessageReaction) => r.message_id === messageId && r.user_id === userId;
+      const next = removing
+        ? null
+        : { message_id: messageId, space_id: spaceId, user_id: userId, emoji, created_at: mine?.created_at ?? new Date().toISOString() };
+      setRows((list) => {
+        const rest = list.filter((r) => !isMine(r));
+        const out = next ? [...rest, next] : rest;
+        rowsRef.current = out;
+        return out;
+      });
       try {
         if (removing) {
           const { error } = await supabase.from('message_reactions').delete().eq('message_id', messageId).eq('user_id', userId);
@@ -101,11 +112,16 @@ export function useReactions(spaceId: string | null, messageIds: string[]) {
           if (error) throw error;
         }
       } catch (e) {
-        setRows(prev);
+        // Откатываем только свою реакцию на это сообщение и перечитываем с сервера
+        setRows((list) => {
+          const rest = list.filter((r) => !isMine(r));
+          return mine ? [...rest, mine] : rest;
+        });
+        load();
         Alert.alert('Реакция не сохранилась', humanError(e));
       }
     },
-    [rows, spaceId, userId],
+    [spaceId, userId, load],
   );
 
   return { byMessage, myReaction, react };

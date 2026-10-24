@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { BACKGROUNDS, useTheme, useThemePrefs } from '../theme';
+import { BACKGROUNDS, bgPhotoUri, useTheme, useThemePrefs } from '../theme';
 
 /**
  * Фон экрана из личного оформления: готовая картинка или своё фото.
@@ -13,7 +13,7 @@ export function AppBackground() {
   const { prefs } = useThemePrefs();
   if (prefs.background === 'none') return null;
   const preset = BACKGROUNDS.find((b) => b.key === prefs.background);
-  const source = prefs.background === 'photo' ? (prefs.bgPhoto ? { uri: prefs.bgPhoto } : null) : preset?.source;
+  const source = prefs.background === 'photo' ? (prefs.bgPhoto ? { uri: bgPhotoUri(prefs.bgPhoto) } : null) : preset?.source;
   if (!source) return null;
   // Фото и картинки «не в тон» теме затемняем или осветляем сильнее
   const tone = preset?.tone ?? 'photo';
