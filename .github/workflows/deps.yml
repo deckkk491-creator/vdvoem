@@ -1,0 +1,33 @@
+name: Add deps and data
+on:
+  push:
+    branches: [deps]
+permissions:
+  contents: write
+jobs:
+  deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: |
+          npm install --no-audit --no-fund
+          npx expo install expo-image-picker expo-document-picker expo-calendar @react-native-community/datetimepicker expo-file-system expo-image 2>&1 | tail -20
+          npx expo install --check || true
+      - name: Landmark photos
+        run: |
+          python3 .github/landmarks/fetch_landmarks.py .github/landmarks/landmarks.json src/data/countryPhotos.json | tee landmarks.log
+          echo "::notice title=landmarks::$(grep -v ': OK' landmarks.log | tr '\n' '|')"
+      - name: Commit
+        run: |
+          git config user.name deckkk491-creator
+          git config user.email deckkk491@gmail.com
+          git rm -rq --cached .github/landmarks .github/workflows/deps.yml
+          rm -rf .github/landmarks .github/workflows/deps.yml
+          git add package.json src/data/countryPhotos.json
+          git add -f package-lock.json
+          git commit -m "Пакеты: выбор фото и файлов, календарь, выбор даты; фото стран" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+          git push origin HEAD:deps-result
