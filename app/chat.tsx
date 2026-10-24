@@ -367,7 +367,7 @@ export default function ChatScreen() {
               <View style={{ paddingVertical: 16 }}>
                 <ActivityIndicator color={c.accent} />
               </View>
-            ) : null
+            ) : undefined
           }
         />
         {error ? (

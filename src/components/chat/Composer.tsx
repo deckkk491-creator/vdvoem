@@ -29,7 +29,7 @@ export function Composer({ onSend, bottomInset, disabled, ref }: Props) {
   const { c } = useTheme();
   const [text, setText] = useState('');
   const [files, setFiles] = useState<LocalFile[]>([]);
-  const input = useRef<TextInput>(null);
+  const input = useRef<React.ComponentRef<typeof TextInput>>(null);
   // Файлы выбираются асинхронно (после закрытия галереи) — берём актуальный список из ref
   const filesRef = useRef<LocalFile[]>([]);
   filesRef.current = files;
