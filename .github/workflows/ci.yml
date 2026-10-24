@@ -14,7 +14,12 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: |
+          set +e
+          npm install --no-audit --no-fund > npm.log 2>&1; code=$?
+          cat npm.log
+          if [ $code -ne 0 ]; then echo "::error title=npm install::$(grep -v 'warn deprecated' npm.log | tail -c 3000 | tr '\n' '|')"; fi
+          exit $code
       - name: Align Expo SDK versions
         run: npx expo install --check || true
       - name: Type check
@@ -22,4 +27,9 @@ jobs:
       - name: Expo doctor
         run: npx expo-doctor || true
       - name: Bundle for iOS
-        run: npx expo export --platform ios
+        run: |
+          set +e
+          npx expo export --platform ios > export.log 2>&1; code=$?
+          cat export.log
+          if [ $code -ne 0 ]; then echo "::error title=expo export::$(tail -c 3000 export.log | tr '\n' '|')"; fi
+          exit $code
