@@ -8,6 +8,7 @@ import { isImageMessage, type ChatItem } from '../../hooks/useMessages';
 import { radius, useTheme } from '../../theme';
 import { Avatar } from '../people';
 import { ReactionChips } from './MessageMenu';
+import { isVoiceMessage, voiceDurationMs, VoiceBubbleContent } from './Voice';
 import type { ReactionSummary } from '../../hooks/useReactions';
 
 const AVATAR = 28;
@@ -40,7 +41,7 @@ export type BubbleProps = {
   sender: Profile | null;
   /** Имя над группой (в пространствах на 3+ человек) */
   senderName: string | null;
-  /** Подписанная ссылка на фото, если уже получена */
+  /** Подписанная ссылка на фото или голосовое, если уже получена */
   imageUrl: string | null;
   /** «Прочитано» / «Доставлено» под самым свежим своим сообщением */
   receipt: 'read' | 'delivered' | null;
@@ -60,7 +61,8 @@ function BubbleBase({ item, mine, firstInGroup, lastInGroup, sender, senderName,
   const failed = local?.status === 'failed';
   const sending = local?.status === 'sending';
   const isImage = isImageMessage(item);
-  const isDoc = !isImage && !!(item.attachment_path || item.attachment_name);
+  const isVoice = !isImage && isVoiceMessage(item);
+  const isDoc = !isImage && !isVoice && !!(item.attachment_path || item.attachment_name);
   const hasText = item.body.trim().length > 0;
 
   const maxBubble = Math.round(screenW * 0.75);
@@ -79,7 +81,7 @@ function BubbleBase({ item, mine, firstInGroup, lastInGroup, sender, senderName,
     : { borderTopRightRadius: big, borderBottomRightRadius: big, borderTopLeftRadius: firstInGroup ? big : small, borderBottomLeftRadius: lastInGroup ? big : small };
 
   const time = timeLabel(item.created_at);
-  const what = isImage ? 'Фото' : isDoc ? `Файл ${item.attachment_name ?? ''}` : '';
+  const what = isImage ? 'Фото' : isVoice ? 'Голосовое сообщение' : isDoc ? `Файл ${item.attachment_name ?? ''}` : '';
   const a11y = [mine ? 'Ты' : senderName ?? sender?.display_name ?? 'Партнёр', what, hasText ? item.body : '', time, sending ? 'отправляется' : '', failed ? 'не отправлено' : '', receipt === 'read' ? 'прочитано' : receipt === 'delivered' ? 'доставлено' : '']
     .filter(Boolean)
     .join(', ');
@@ -95,7 +97,7 @@ function BubbleBase({ item, mine, firstInGroup, lastInGroup, sender, senderName,
         {!mine ? (
           <View style={{ width: AVATAR, marginRight: 8 }}>{lastInGroup ? <Avatar profile={sender} size={AVATAR} /> : null}</View>
         ) : null}
-        {mine && (failed || (sending && !isImage && !isDoc)) ? (
+        {mine && (failed || (sending && !isImage && !isDoc && !isVoice)) ? (
           <View style={{ marginRight: 6, marginBottom: 6 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             {sending ? <ActivityIndicator size="small" color={c.textFaint} /> : <Ionicons name="alert-circle" size={20} color={c.danger} />}
           </View>
@@ -104,7 +106,7 @@ function BubbleBase({ item, mine, firstInGroup, lastInGroup, sender, senderName,
           onPress={() => {
             // Двойное нажатие на текст — ❤️, как в Telegram
             const now = Date.now();
-            if (!local && !isImage && !isDoc && onReact && now - lastTap.current < 300) {
+            if (!local && !isImage && !isDoc && !isVoice && onReact && now - lastTap.current < 300) {
               lastTap.current = 0;
               onReact(item, '❤️');
               return;
@@ -148,6 +150,15 @@ function BubbleBase({ item, mine, firstInGroup, lastInGroup, sender, senderName,
                 </View>
               ) : null}
             </View>
+          ) : null}
+          {isVoice ? (
+            <VoiceBubbleContent
+              id={item.id}
+              url={local?.uri ?? imageUrl}
+              durationMs={voiceDurationMs(item.attachment_name)}
+              mine={mine}
+              sending={!!sending}
+            />
           ) : null}
           {isDoc ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingTop: 10, paddingBottom: hasText ? 2 : 10, minWidth: 180 }}>

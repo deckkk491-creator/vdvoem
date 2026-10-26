@@ -7,6 +7,7 @@ import { isConfigured } from '../src/lib/env';
 import { AuthProvider, useAuth } from '../src/providers/AuthProvider';
 import { SpaceProvider, useSpace } from '../src/providers/SpaceProvider';
 import { RuleReminderSync } from '../src/components/RuleReminderSync';
+import { PageReaderHost } from '../src/components/PageReader';
 import { useAuthDeepLinks } from '../src/lib/authLink';
 import { UnreadProvider } from '../src/hooks/useUnread';
 import { ThemeProvider, useTheme } from '../src/theme';
@@ -63,6 +64,7 @@ function Shell() {
       <AuthLinks />
       <Gate />
       <RuleReminderSync />
+      <PageReaderHost />
       <Stack
         screenOptions={{
           headerShown: false,

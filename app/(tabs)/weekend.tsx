@@ -269,7 +269,7 @@ function WeekendSheet({
         {link.fetching ? (
           <>
             <ActivityIndicator size="small" color={st.fg} />
-            <Text style={{ color: c.textMuted, fontSize: 13 }}>Читаем страницу…</Text>
+            <Text style={{ color: c.textMuted, fontSize: 13 }}>Читаем страницу… до 20 секунд</Text>
           </>
         ) : link.hint ? (
           <Text style={{ color: c.textMuted, fontSize: 13 }}>{link.hint}</Text>

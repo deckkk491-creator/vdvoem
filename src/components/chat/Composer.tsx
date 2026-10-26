@@ -5,6 +5,7 @@ import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, StyleSheet, Tex
 import { formatSize, MAX_FILE_BYTES, pickDocument, pickPhotos, takePhoto, type LocalFile } from '../../lib/files';
 import { MAX_MESSAGE_LENGTH } from '../../hooks/useMessages';
 import { radius, TAP, useTheme } from '../../theme';
+import { MAX_VOICE_MS, RecordingBar, useVoiceRecorder } from './Voice';
 
 /** Сколько вложений можно приложить к одной отправке */
 const MAX_FILES = 10;
@@ -87,6 +88,20 @@ export function Composer({ onSend, bottomInset, disabled, ref }: Props) {
   };
 
   const canSend = !disabled && (text.trim().length > 0 || files.length > 0);
+  // Пустое поле — вместо «Отправить» микрофон для голосового
+  const showMic = !disabled && !canSend;
+  const voice = useVoiceRecorder();
+
+  const sendVoice = async () => {
+    const f = await voice.finish();
+    if (f) onSend('', [f]);
+  };
+
+  // Дольше 5 минут не пишем — отправляем само
+  React.useEffect(() => {
+    if (voice.active && voice.durationMs >= MAX_VOICE_MS) sendVoice();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voice.active, voice.durationMs]);
 
   const submit = () => {
     if (!canSend) return;
@@ -132,6 +147,9 @@ export function Composer({ onSend, bottomInset, disabled, ref }: Props) {
           ))}
         </ScrollView>
       ) : null}
+      {voice.active ? (
+        <RecordingBar durationMs={voice.durationMs} onCancel={voice.cancel} onSend={sendVoice} />
+      ) : (
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 6, gap: 4 }}>
         <Pressable
           onPress={openAttach}
@@ -171,6 +189,16 @@ export function Composer({ onSend, bottomInset, disabled, ref }: Props) {
             textAlignVertical: 'center',
           }}
         />
+        {showMic ? (
+          <Pressable
+            onPress={() => voice.start()}
+            accessibilityRole="button"
+            accessibilityLabel="Записать голосовое сообщение"
+            style={({ pressed }) => ({ width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
+          >
+            <Ionicons name="mic-outline" size={28} color={c.accent} />
+          </Pressable>
+        ) : (
         <Pressable
           onPress={submit}
           disabled={!canSend}
@@ -194,7 +222,9 @@ export function Composer({ onSend, bottomInset, disabled, ref }: Props) {
             <Ionicons name="arrow-up" size={20} color={canSend ? c.onAccent : c.textFaint} />
           </View>
         </Pressable>
+        )}
       </View>
+      )}
       {text.length > MAX_MESSAGE_LENGTH - 200 ? (
         <Text style={{ alignSelf: 'flex-end', marginRight: 16, marginTop: 2, fontSize: 11, color: c.textMuted }}>
           {text.length} / {MAX_MESSAGE_LENGTH}

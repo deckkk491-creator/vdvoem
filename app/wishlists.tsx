@@ -286,6 +286,7 @@ function WishSheet({ item, visible, onClose, onSaved }: { item: WishItem | null;
     if (p.title) setTitle((t) => t || p.title!.slice(0, 200));
     if (p.image) setImage((i) => i || p.image);
     if (p.price) setPrice((x) => x || String(p.price));
+    if (p.description) setNote((n) => n || p.description!.slice(0, 1000));
   });
 
   useEffect(() => {
@@ -366,7 +367,7 @@ function WishSheet({ item, visible, onClose, onSaved }: { item: WishItem | null;
         {link.fetching ? (
           <>
             <ActivityIndicator size="small" color={st.fg} />
-            <Text style={{ color: c.textMuted, fontSize: 13 }}>Читаем страницу…</Text>
+            <Text style={{ color: c.textMuted, fontSize: 13 }}>Читаем страницу… до 20 секунд</Text>
           </>
         ) : link.hint ? (
           <Text style={{ color: c.textMuted, fontSize: 13 }}>{link.hint}</Text>

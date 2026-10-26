@@ -293,7 +293,8 @@ export function useMessages() {
         if (e) throw e;
         const row = data as Message;
         uploaded.current.delete(localId);
-        if (f?.kind === 'photo') previews.current.set(row.id, f.uri);
+        // Только что отправленные фото и голосовые показываем из локального файла — без повторной загрузки
+        if (f?.kind === 'photo' || f?.mime.startsWith('audio/')) previews.current.set(row.id, f.uri);
         pendingRef.current = pendingRef.current.filter((x) => x.localId !== localId);
         setPending((list) => list.filter((x) => x.localId !== localId));
         if (spaceRef.current === p.spaceId) setMessages((prev) => dedupe([row, ...prev]));

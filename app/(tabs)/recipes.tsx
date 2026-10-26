@@ -262,7 +262,7 @@ function RecipeSheet({
         {fetching ? (
           <>
             <ActivityIndicator size="small" color={st.fg} />
-            <Body muted style={{ fontSize: 13 }}>Читаем страницу…</Body>
+            <Body muted style={{ fontSize: 13 }}>Читаем страницу… до 20 секунд</Body>
           </>
         ) : hint ? (
           <Body muted style={{ fontSize: 13 }}>{hint}</Body>

@@ -17,6 +17,7 @@
     "@react-native-community/datetimepicker": "9.2.1",
     "@supabase/supabase-js": "^2.50.0",
     "expo": "^58.0.17",
+    "expo-audio": "~58.0.10",
     "expo-calendar": "~58.0.6",
     "expo-clipboard": "~58.0.4",
     "expo-constants": "~58.0.13",
@@ -37,7 +38,8 @@
     "react-native": "0.88.0",
     "react-native-safe-area-context": "~5.10.1",
     "react-native-screens": "~4.30.0",
-    "react-native-url-polyfill": "^2.0.0"
+    "react-native-url-polyfill": "^2.0.0",
+    "react-native-webview": "14.0.1"
   },
   "devDependencies": {
     "@types/react": "~19.3.0",

@@ -82,6 +82,9 @@ export function PhotoViewer({ urls, index, onClose }: { urls: string[]; index: n
       }),
     [dragY, height, onClose],
   );
+  // В модальном окне поверх карточки системные отступы иногда приходят нулевыми — берём не меньше привычных
+  const topPad = Math.max(insets.top, 50) + 8;
+  const bottomPad = Math.max(insets.bottom, 20) + 12;
   const fade = dragY.interpolate({ inputRange: [-height / 2, 0, height / 2], outputRange: [0.4, 1, 0.4], extrapolate: 'clamp' });
 
   return (
@@ -110,31 +113,45 @@ export function PhotoViewer({ urls, index, onClose }: { urls: string[]; index: n
             </ScrollView>
           </Animated.View>
         ) : null}
-        <Pressable
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Закрыть фото"
-          hitSlop={16}
-          style={({ pressed }) => ({
-            position: 'absolute',
-            top: insets.top + 10,
-            right: 16,
-            height: 44,
-            paddingHorizontal: 16,
-            borderRadius: 22,
-            backgroundColor: pressed ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.22)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            gap: 6,
-          })}
-        >
-          <Ionicons name="close" size={22} color="#fff" />
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Закрыть</Text>
-        </Pressable>
-        <Text style={{ position: 'absolute', bottom: insets.bottom + 16, alignSelf: 'center', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>
-          {urls.length > 1 ? `${page + 1} / ${urls.length} · ` : ''}смахни вниз, чтобы закрыть
-        </Text>
+        {/* Подписи и кнопки — на тёмных плашках, чтобы читались на любом фото */}
+        <View pointerEvents="box-none" style={{ position: 'absolute', top: topPad, left: 16, right: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          {urls.length > 1 ? (
+            <View style={{ backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 }}>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
+                {page + 1} из {urls.length}
+              </Text>
+            </View>
+          ) : (
+            <View />
+          )}
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Закрыть фото"
+            hitSlop={16}
+            style={({ pressed }) => ({
+              height: 44,
+              paddingHorizontal: 16,
+              borderRadius: 22,
+              backgroundColor: pressed ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.65)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.35)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'row',
+              gap: 6,
+            })}
+          >
+            <Ionicons name="close" size={22} color="#fff" />
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Закрыть</Text>
+          </Pressable>
+        </View>
+        <View pointerEvents="none" style={{ position: 'absolute', bottom: bottomPad, left: 0, right: 0, alignItems: 'center' }}>
+          <View style={{ backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="chevron-down" size={16} color="#fff" />
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Смахни вниз, чтобы закрыть</Text>
+          </View>
+        </View>
       </Animated.View>
     </Modal>
   );

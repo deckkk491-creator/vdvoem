@@ -21,6 +21,7 @@ import { EmptyState, ErrorNote, Loading } from '../src/components/ui';
 import { isImageMessage, timeOf, useMessages, type ChatItem } from '../src/hooks/useMessages';
 import { useReactions } from '../src/hooks/useReactions';
 import { MessageMenu, type MenuAction } from '../src/components/chat/MessageMenu';
+import { formatClock, isVoiceMessage, voiceDurationMs } from '../src/components/chat/Voice';
 import { markChatRead } from '../src/hooks/useUnread';
 import { useSignedUrls, type LocalFile } from '../src/lib/files';
 import { formatDate, toISODate } from '../src/lib/format';
@@ -164,7 +165,12 @@ export default function ChatScreen() {
     () => items.filter((m) => !m.local && m.attachment_path && isImageMessage(m)).map((m) => m.attachment_path as string),
     [items],
   );
-  const urls = useSignedUrls(photoPaths);
+  const voicePaths = useMemo(
+    () => items.filter((m) => !m.local && m.attachment_path && isVoiceMessage(m)).map((m) => m.attachment_path as string),
+    [items],
+  );
+  const mediaPaths = useMemo(() => [...photoPaths, ...voicePaths], [photoPaths, voicePaths]);
+  const urls = useSignedUrls(mediaPaths);
 
   /* ------------------------- Строки списка ------------------------- */
 
@@ -279,7 +285,8 @@ export default function ChatScreen() {
         return;
       }
       if (isImageMessage(m)) openPhoto(m);
-      else if (m.attachment_path) openStoredFile(m.attachment_path).catch(() => undefined);
+      // Голосовое играет кнопка в самом пузыре
+      else if (m.attachment_path && !isVoiceMessage(m)) openStoredFile(m.attachment_path).catch(() => undefined);
     },
     [retrySend, openPhoto],
   );
@@ -319,6 +326,10 @@ export default function ChatScreen() {
     if (!m) return '';
     if (m.body.trim()) return m.body;
     if (isImageMessage(m)) return '📷 Фото';
+    if (isVoiceMessage(m)) {
+      const ms = voiceDurationMs(m.attachment_name);
+      return `🎤 Голосовое${ms ? ` · ${formatClock(ms)}` : ''}`;
+    }
     return m.attachment_name ? `📎 ${m.attachment_name}` : '';
   };
 
