@@ -23,7 +23,12 @@ jobs:
       - name: Align Expo SDK versions
         run: npx expo install --check || true
       - name: Type check
-        run: npx tsc --noEmit
+        run: |
+          set +e
+          npx tsc --noEmit > tsc.log 2>&1; code=$?
+          cat tsc.log
+          if [ $code -ne 0 ]; then echo "::error title=tsc::$(head -c 3000 tsc.log | tr '\n' '|')"; fi
+          exit $code
       - name: Expo doctor
         run: npx expo-doctor || true
       - name: Bundle for iOS
