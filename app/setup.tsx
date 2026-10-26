@@ -18,7 +18,7 @@ export default function Setup() {
       <Text style={{ fontSize: 56 }}>🔧</Text>
       <Title style={{ marginTop: 12 }}>Почти готово</Title>
       <Body muted style={{ marginTop: 8 }}>
-        Приложению «Вдвоём» нужен сервер Supabase, чтобы вы с партнёром видели одни и те же списки. Ключи ещё не указаны.
+        Приложению «Вместе» нужен сервер Supabase, чтобы вы с партнёром видели одни и те же списки. Ключи ещё не указаны.
       </Body>
       <Spacer />
       <Card>

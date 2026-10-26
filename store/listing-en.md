@@ -1,8 +1,8 @@
-# Vdvoem — App Store listing (English)
+# Vmeste — App Store listing (English)
 
 Bundle: `com.deckkk491.vdvoem` · Version: 1.0 · Developer: deckkk491-creator
 
-The app's primary name is «Вдвоём» (Russian for "together, the two of us"). For the English localization the name is transliterated so it stays recognizable.
+The app's primary name is «Вместе» (Russian for "together"). For the English localization the name is transliterated so it stays recognizable.
 
 Character counts (script `../tools/count_listing.py`, counts Unicode characters the way App Store Connect does):
 
@@ -23,7 +23,7 @@ Character counts (script `../tools/count_listing.py`, counts Unicode characters 
 ## App Name (≤ 30)
 
 <!-- field:name -->
-Vdvoem: Couple & Family Plans
+Vmeste: Couple & Family Plans
 <!-- /field -->
 
 ## Subtitle (≤ 30)
@@ -41,7 +41,7 @@ A shared space for two or the whole family: what to watch, what to cook, where t
 ## Description (≤ 4000)
 
 <!-- field:description -->
-Vdvoem is a shared space for a couple or a family. It keeps movie-night picks, recipes, weekend ideas, the shopping list and wishlists in one place. Everyone can add things, and others can like them, which makes choosing easier.
+Vmeste is a shared space for a couple or a family. It keeps movie-night picks, recipes, weekend ideas, the shopping list and wishlists in one place. Everyone can add things, and others can like them, which makes choosing easier.
 
 GETTING STARTED
 • Sign in with your email: you'll get a code, no password needed.
@@ -82,7 +82,7 @@ relationship,date,night,wishlist,gift,savings,weekend,ideas,shared,partner,toget
 ## What's New (version 1.0)
 
 <!-- field:whatsnew -->
-The first version of Vdvoem: a shared space you join with an invite code, movies, recipes, weekend ideas, a savings jar, a shopping list, wishlists with a secret "I'll gift this" and the 2-2-2 rule with reminders.
+The first version of Vmeste: a shared space you join with an invite code, movies, recipes, weekend ideas, a savings jar, a shopping list, wishlists with a secret "I'll gift this" and the 2-2-2 rule with reminders.
 <!-- /field -->
 
 ## Category

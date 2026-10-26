@@ -46,7 +46,7 @@ export function ThemePicker() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted && perm.accessPrivileges !== 'limited') {
-        Alert.alert('Нет доступа к фото', 'Разреши доступ к фото для «Вдвоём» в настройках телефона.', [
+        Alert.alert('Нет доступа к фото', 'Разреши доступ к фото для «Вместе» в настройках телефона.', [
           { text: 'Не сейчас', style: 'cancel' },
           { text: 'Открыть настройки', onPress: () => Linking.openSettings().catch(() => undefined) },
         ]);

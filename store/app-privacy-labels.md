@@ -1,4 +1,4 @@
-# Вдвоём (Vdvoem) — App Privacy (App Store Connect)
+# Вместе (Vmeste) — App Privacy (App Store Connect)
 
 App Store Connect → your app → **App Privacy** → Get Started.
 

@@ -7,13 +7,13 @@ import type { CalendarEvent } from './types';
 /*
  * Выгрузка в календарь iPhone — только в одну сторону (приложение → телефон).
  * Включается отдельно на каждом устройстве. События складываются в собственный
- * календарь «Вдвоём», поэтому его легко скрыть или удалить целиком.
+ * календарь «Вместе», поэтому его легко скрыть или удалить целиком.
  */
 
 const ENABLED_KEY = 'vdvoem.deviceCalendar.enabled';
 const CAL_ID_KEY = 'vdvoem.deviceCalendar.id';
 const MAP_KEY = 'vdvoem.deviceCalendar.map';
-const CAL_TITLE = 'Вдвоём';
+const CAL_TITLE = 'Вместе';
 
 /** space_id → (id события в приложении → id события в iPhone и отпечаток содержимого) */
 type Mapping = Record<string, Record<string, { deviceId: string; hash: string }>>;
@@ -152,7 +152,7 @@ function toDetails(ev: CalendarEvent): Details {
   const day = ev.starts_on as string;
   const base = ev.emoji ? `${ev.emoji} ${ev.title}` : ev.title;
   const title = ev.kind === 'task' ? `${ev.done ? '✓' : '☐'} ${base}` : base;
-  const notes = [ev.note.trim(), ev.url ?? '', 'Из приложения «Вдвоём»'].filter(Boolean).join('\n\n');
+  const notes = [ev.note.trim(), ev.url ?? '', 'Из приложения «Вместе»'].filter(Boolean).join('\n\n');
 
   // На весь день: важные даты, задачи и события без времени
   if (ev.kind !== 'event' || !ev.start_time) {
@@ -202,7 +202,7 @@ function serialize<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Приводит календарь «Вдвоём» на телефоне к списку событий пространства:
+ * Приводит календарь «Вместе» на телефоне к списку событий пространства:
  * создаёт новые, обновляет изменённые, удаляет пропавшие. Никогда не бросает исключений.
  */
 export function syncDeviceCalendar(spaceId: string, events: CalendarEvent[], color: string): Promise<SyncResult> {
@@ -280,7 +280,7 @@ export function pruneOtherSpaces(spaceIds: string[]): Promise<void> {
   });
 }
 
-/** Удаляет календарь «Вдвоём» с телефона вместе со всеми выгруженными событиями */
+/** Удаляет календарь «Вместе» с телефона вместе со всеми выгруженными событиями */
 export function removeExportedEvents(): Promise<boolean> {
   return serialize(async () => {
     try {

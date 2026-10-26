@@ -21,6 +21,8 @@ type SpaceState = {
   createSpace: (name: string) => Promise<string>;
   joinSpace: (code: string) => Promise<void>;
   leaveSpace: () => Promise<void>;
+  kickMember: (userId: string) => Promise<void>;
+  rotateInviteCode: () => Promise<string | null>;
   updateSpace: (
     patch: Partial<Pick<Space, 'name' | 'city' | 'rule222_enabled' | 'rule222_start' | 'rule_date_weeks' | 'rule_place_months' | 'rule_country_years'>>,
   ) => Promise<void>;
@@ -188,15 +190,19 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
         },
       );
     }
-    // DELETE-события не фильтруются по колонкам — слушаем их отдельно без фильтра
-    for (const table of TABLES) {
-      if (table === 'profiles') continue;
-      channel = channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table }, () => {
-        pending.add(table);
+    // DELETE-события Supabase не фильтрует по пространству (и без фильтра раздавал бы чужие id).
+    // Поэтому сервер пишет об удалениях в space_changes — её видят только участники пространства.
+    channel = channel.on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'space_changes', filter: `space_id=eq.${currentId}` },
+      (payload) => {
+        const t = (payload.new as { tbl?: string } | null)?.tbl as RealtimeTable | undefined;
+        if (!t || !TABLES.includes(t)) return;
+        pending.add(t);
         if (timer) clearTimeout(timer);
         timer = setTimeout(flush, 250);
-      });
-    }
+      },
+    );
     let subscribedOnce = false;
     channel.subscribe((status) => {
       if (!active) return;
@@ -258,8 +264,9 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
 
   const joinSpace = useCallback(
     async (code: string) => {
-      const { data, error } = await supabase.rpc('join_space', { p_code: code });
+      const { data, error } = await supabase.rpc('join_space', { p_code: code.trim().toUpperCase() });
       if (error) throw error;
+      if (!data) throw new Error('Пространство с таким кодом не найдено. Проверь код и попробуй ещё раз.');
       await loadSpaces();
       await selectSpace(data as string);
     },
@@ -296,6 +303,26 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
     await loadSpaces();
   }, [currentId, spaces, loadSpaces, userId]);
 
+  /** Исключить участника (может владелец пространства) */
+  const kickMember = useCallback(
+    async (memberId: string) => {
+      if (!currentId) return;
+      const { error } = await supabase.rpc('kick_member', { p_space: currentId, p_user: memberId });
+      if (error) throw error;
+      await loadMembers();
+    },
+    [currentId, loadMembers],
+  );
+
+  /** Новый код приглашения: старый перестаёт работать */
+  const rotateInviteCode = useCallback(async () => {
+    if (!currentId) return null;
+    const { data, error } = await supabase.rpc('rotate_invite_code', { p_space: currentId });
+    if (error) throw error;
+    await loadSpaces();
+    return (data as string) ?? null;
+  }, [currentId, loadSpaces]);
+
   const updateSpace = useCallback<SpaceState['updateSpace']>(
     async (patch) => {
       if (!currentId) return;
@@ -329,12 +356,14 @@ export function SpaceProvider({ children }: { children: React.ReactNode }) {
       createSpace,
       joinSpace,
       leaveSpace,
+      kickMember,
+      rotateInviteCode,
       updateSpace,
       subscribe,
       live,
       loadError,
     }),
-    [loaded, spaces, space, members, people, selectSpace, refresh, createSpace, joinSpace, leaveSpace, updateSpace, subscribe, live, loadError],
+    [loaded, spaces, space, members, people, selectSpace, refresh, createSpace, joinSpace, leaveSpace, kickMember, rotateInviteCode, updateSpace, subscribe, live, loadError],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

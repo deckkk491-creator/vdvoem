@@ -43,21 +43,28 @@ export async function signInFromUrl(url: string | null): Promise<boolean> {
     return true;
   }
 
+  // Принимаем только одноразовый code (PKCE): его можно обменять лишь на телефоне, где запросили письмо.
+  // Готовые токены в ссылке не принимаем — так чужая ссылка не «подсунет» чужой аккаунт.
+  if (!p.code) return false;
+  const { data: current } = await supabase.auth.getSession();
+  if (current.session) {
+    const ok = await new Promise<boolean>((resolve) =>
+      Alert.alert('Войти в другой аккаунт?', 'Ты уже вошёл. Если продолжить, текущий вход сменится на аккаунт из ссылки.', [
+        { text: 'Отмена', style: 'cancel', onPress: () => resolve(false) },
+        { text: 'Продолжить', onPress: () => resolve(true) },
+      ]),
+    );
+    if (!ok) return true;
+  }
   try {
-    if (p.access_token && p.refresh_token) {
-      const { error } = await supabase.auth.setSession({ access_token: p.access_token, refresh_token: p.refresh_token });
-      if (error) throw error;
-    } else if (p.code) {
-      const { error } = await supabase.auth.exchangeCodeForSession(p.code);
-      if (error) throw error;
-    } else if (p.token_hash) {
-      const { error } = await supabase.auth.verifyOtp({ token_hash: p.token_hash, type: 'email' });
-      if (error) throw error;
-    } else {
-      return false;
-    }
+    const { error } = await supabase.auth.exchangeCodeForSession(p.code);
+    if (error) throw error;
   } catch (e) {
-    Alert.alert('Не получилось войти', humanError(e));
+    const msg = e instanceof Error ? e.message : '';
+    Alert.alert(
+      'Не получилось войти',
+      /code verifier|flow state|pkce/i.test(msg) ? 'Открой ссылку на том же телефоне, где запрашивал письмо, или введи код из письма.' : humanError(e),
+    );
   }
   // при успехе Gate сам переведёт на нужный экран
   return true;

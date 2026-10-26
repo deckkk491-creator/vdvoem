@@ -183,9 +183,20 @@ export function Button({
     }
   };
   const accent = color ?? c.accent;
-  const bg =
-    variant === 'primary' ? accent : variant === 'secondary' ? c.bgAlt : variant === 'danger' ? c.dangerSoft : 'transparent';
-  const fg = variant === 'primary' ? c.onAccent : variant === 'danger' ? c.danger : variant === 'ghost' ? accent : c.text;
+  // Неактивная кнопка — серая и читаемая, а не полупрозрачная (так виден контраст текста)
+  const off = !!disabled && !loading;
+  const bg = off
+    ? variant === 'ghost'
+      ? 'transparent'
+      : c.bgAlt
+    : variant === 'primary'
+      ? accent
+      : variant === 'secondary'
+        ? c.bgAlt
+        : variant === 'danger'
+          ? c.dangerSoft
+          : 'transparent';
+  const fg = off ? c.textMuted : variant === 'primary' ? c.onAccent : variant === 'danger' ? c.danger : variant === 'ghost' ? accent : c.text;
   return (
     <Pressable
       onPress={handlePress}
@@ -205,7 +216,7 @@ export function Button({
           alignItems: 'center',
           justifyContent: 'center',
           gap: 8,
-          opacity: disabled ? 0.45 : pressed ? 0.85 : 1,
+          opacity: pressed && !disabled ? 0.85 : 1,
           transform: [{ scale: pressed ? 0.98 : 1 }],
         },
         style,

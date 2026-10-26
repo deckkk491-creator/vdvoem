@@ -66,9 +66,17 @@ export const RULE_META: Record<RuleKind, { title: string; emoji: string; hint: s
 
 export function addInterval(kind: RuleKind, from: Date, times = 1, rhythm: RuleRhythm = DEFAULT_RHYTHM): Date {
   const d = new Date(from);
-  if (kind === 'date') d.setDate(d.getDate() + 7 * rhythm.date * times);
-  else if (kind === 'place') d.setMonth(d.getMonth() + rhythm.place * times);
-  else d.setFullYear(d.getFullYear() + rhythm.country * times);
+  if (kind === 'date') {
+    d.setDate(d.getDate() + 7 * rhythm.date * times);
+    return d;
+  }
+  // 31 января + 1 месяц = 28/29 февраля, а не 3 марта
+  const months = kind === 'place' ? rhythm.place * times : 12 * rhythm.country * times;
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + months);
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, last));
   return d;
 }
 

@@ -242,7 +242,7 @@ export default function ChatScreen() {
   const report = useCallback(
     (m: ChatItem) => {
       const body = [
-        'Жалоба на сообщение в «Вдвоём»',
+        'Жалоба на сообщение в «Вместе»',
         `Пространство: ${spaceId ?? '—'}`,
         `Сообщение: ${m.id}`,
         `Отправитель: ${m.sender_id}`,

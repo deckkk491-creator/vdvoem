@@ -15,6 +15,8 @@ export const supabase = createClient(
       autoRefreshToken: isConfigured,
       persistSession: true,
       detectSessionInUrl: false,
+      // Ссылка из письма приносит одноразовый code, который обменивается только на этом телефоне
+      flowType: 'pkce',
     },
   },
 );
@@ -50,7 +52,7 @@ export function humanError(e: unknown): string {
 
   if (/network request failed|fetch failed|failed to fetch|network ?error|timed? ?out|aborted|load failed/i.test(msg) || name === 'FunctionsFetchError' || name === 'AuthRetryableFetchError')
     return 'Нет связи с сервером. Проверь интернет.';
-  if (/rate limit|too many/i.test(msg) || status === 429 || code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit')
+  if (/rate limit|too many/i.test(msg) || status === 429 || code === '54000' || code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit')
     return 'Слишком много попыток. Подожди минуту и попробуй снова.';
   if (/jwt|not authenticated|refresh token|session.*(missing|not found)|auth session/i.test(msg) || code === '28000' || code === 'PGRST301' || code === 'session_not_found' || status === 401)
     return 'Сессия истекла — войди снова.';

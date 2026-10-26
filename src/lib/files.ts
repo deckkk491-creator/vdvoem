@@ -36,6 +36,15 @@ function extOf(name: string, mime: string): string {
 }
 
 /** Безопасное имя файла для пути в хранилище (кириллица и пробелы заменяются) */
+/** Браузер не должен исполнять загруженное (html, svg, js): такие файлы храним как «просто данные» */
+function safeContentType(mime: string): string {
+  const m = (mime || '').toLowerCase();
+  if (/^image\/(jpeg|png|heic|heif|gif|webp)$/.test(m)) return m;
+  if (/^(audio|video)\/[a-z0-9.+-]+$/.test(m)) return m;
+  if (m === 'application/pdf') return m;
+  return 'application/octet-stream';
+}
+
 function safeName(name: string, mime: string): string {
   const ext = extOf(name, mime);
   const base = name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
@@ -43,7 +52,7 @@ function safeName(name: string, mime: string): string {
 }
 
 function permissionAlert(what: string) {
-  Alert.alert(`Нет доступа к ${what}`, `Разреши доступ к ${what} для «Вдвоём» в настройках телефона.`, [
+  Alert.alert(`Нет доступа к ${what}`, `Разреши доступ к ${what} для «Вместе» в настройках телефона.`, [
     { text: 'Не сейчас', style: 'cancel' },
     { text: 'Открыть настройки', onPress: () => Linking.openSettings().catch(() => undefined) },
   ]);
@@ -128,7 +137,7 @@ export async function uploadFile(spaceId: string, folder: string, f: LocalFile):
   if (size > MAX_FILE_BYTES) throw new Error('Файл больше 25 МБ — выбери файл поменьше');
   const bytes = await file.bytes();
   const path = `${spaceId}/${folder}/${randomId()}-${safeName(f.name, f.mime)}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: f.mime, upsert: false });
+  const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: safeContentType(f.mime), upsert: false });
   if (error) throw error;
   return path;
 }

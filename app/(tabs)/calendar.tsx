@@ -157,7 +157,7 @@ export default function CalendarScreen() {
       // Включаем только после разрешения: иначе синхронизация увидит «нет доступа» и выключит переключатель
       const ok = await requestCalendarAccess();
       if (!ok) {
-        Alert.alert('Нет доступа к календарю', 'Разреши «Вдвоём» доступ к календарю в настройках iPhone.', [
+        Alert.alert('Нет доступа к календарю', 'Разреши «Вместе» доступ к календарю в настройках iPhone.', [
           { text: 'Не сейчас', style: 'cancel' },
           { text: 'Открыть настройки', onPress: () => Linking.openSettings().catch(() => undefined) },
         ]);
@@ -169,14 +169,14 @@ export default function CalendarScreen() {
     }
     setDeviceOn(false);
     await setExportEnabled(false);
-    Alert.alert('Убрать события из календаря iPhone?', 'Календарь «Вдвоём» на этом телефоне можно оставить как есть или удалить вместе со всеми событиями.', [
+    Alert.alert('Убрать события из календаря iPhone?', 'Календарь «Вместе» на этом телефоне можно оставить как есть или удалить вместе со всеми событиями.', [
       { text: 'Оставить', style: 'cancel' },
       {
         text: 'Удалить',
         style: 'destructive',
         onPress: () => {
           removeExportedEvents().then((ok) => {
-            if (!ok) Alert.alert('Не получилось', 'Удали календарь «Вдвоём» вручную в приложении «Календарь».');
+            if (!ok) Alert.alert('Не получилось', 'Удали календарь «Вместе» вручную в приложении «Календарь».');
           });
         },
       },
@@ -325,7 +325,7 @@ function DeviceCalendarCard({ on, onChange, color }: { on: boolean; onChange: (v
         />
       </View>
       <Body muted style={{ fontSize: 13, marginTop: 8 }}>
-        События, задачи со сроком и важные даты появятся в отдельном календаре «Вдвоём» на iPhone (а если календари
+        События, задачи со сроком и важные даты появятся в отдельном календаре «Вместе» на iPhone (а если календари
         синхронизируются через iCloud — и на других твоих устройствах Apple). Изменения в «Календаре» iPhone обратно в
         приложение не попадают. Включается отдельно на каждом телефоне.
       </Body>

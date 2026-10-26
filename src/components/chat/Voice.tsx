@@ -32,7 +32,8 @@ export function voiceDurationMs(name: string | null | undefined): number | null 
 }
 
 export function isVoiceMessage(m: { attachment_mime: string | null; attachment_name: string | null }): boolean {
-  return !!m.attachment_mime?.startsWith('audio/') || voiceDurationMs(m.attachment_name) !== null;
+  // Голосовое — только то, что записано в приложении (voice-<мс>.m4a), а не любой присланный аудиофайл
+  return voiceDurationMs(m.attachment_name) !== null && (!m.attachment_mime || m.attachment_mime.startsWith('audio/'));
 }
 
 export function formatClock(ms: number): string {
@@ -51,6 +52,8 @@ export function useVoiceRecorder() {
   const state = useAudioRecorderState(recorder, 200);
   const [active, setActive] = useState(false);
   const busy = useRef(false);
+  // запись уже останавливается: второе нажатие «Отправить» (или автоотправка на 5:00) не шлёт дубль
+  const stopping = useRef(false);
 
   const start = async (): Promise<boolean> => {
     if (busy.current || active) return false;
@@ -58,7 +61,7 @@ export function useVoiceRecorder() {
     try {
       const perm = await AudioModule.requestRecordingPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Нет доступа к микрофону', 'Разреши «Вдвоём» доступ к микрофону в настройках iPhone, чтобы записывать голосовые.', [
+        Alert.alert('Нет доступа к микрофону', 'Разреши «Вместе» доступ к микрофону в настройках iPhone, чтобы записывать голосовые.', [
           { text: 'Не сейчас', style: 'cancel' },
           { text: 'Открыть настройки', onPress: () => Linking.openSettings().catch(() => undefined) },
         ]);
@@ -92,8 +95,11 @@ export function useVoiceRecorder() {
 
   /** Останавливает запись и возвращает файл для отправки (или null, если запись слишком короткая) */
   const finish = async (): Promise<LocalFile | null> => {
-    if (!active) return null;
-    const { uri, ms } = await stop();
+    if (!active || stopping.current) return null;
+    stopping.current = true;
+    const { uri, ms } = await stop().finally(() => {
+      stopping.current = false;
+    });
     if (!uri || ms < MIN_VOICE_MS) {
       if (uri) Alert.alert('Слишком коротко', 'Нажми на микрофон и говори — потом нажми «Отправить».');
       return null;
@@ -103,8 +109,11 @@ export function useVoiceRecorder() {
   };
 
   const cancel = async () => {
-    if (!active) return;
-    await stop();
+    if (!active || stopping.current) return;
+    stopping.current = true;
+    await stop().finally(() => {
+      stopping.current = false;
+    });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => undefined);
   };
 

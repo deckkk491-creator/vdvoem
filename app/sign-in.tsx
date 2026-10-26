@@ -61,7 +61,7 @@ export default function SignIn() {
         <Text style={{ fontSize: 44 }}>🤍</Text>
         <Text style={{ fontSize: 44, marginLeft: -18, marginTop: 8 }}>🧡</Text>
       </View>
-      <Title style={{ fontSize: 40, marginTop: 8 }}>Вдвоём</Title>
+      <Title style={{ fontSize: 40, marginTop: 8 }}>Вместе</Title>
       <Body muted style={{ marginTop: 6, fontSize: 17, lineHeight: 24 }}>
         Общие списки фильмов, рецептов, планов и мечтаний — для пары или всей семьи.
       </Body>

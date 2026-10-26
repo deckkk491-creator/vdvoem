@@ -85,7 +85,7 @@ export default function Onboarding() {
             {created}
           </Text>
           <Body muted style={{ textAlign: 'center' }}>
-            Партнёру нужно установить «Вдвоём», войти по почте и ввести этот код. Код всегда есть в настройках.
+            Партнёру нужно установить «Вместе», войти по почте и ввести этот код. Код всегда есть в настройках.
           </Body>
           <Spacer />
           <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -100,7 +100,7 @@ export default function Onboarding() {
               title="Отправить"
               icon="share-outline"
               style={{ flex: 1 }}
-              onPress={() => Share.share({ message: `Присоединяйся ко мне во «Вдвоём»! Код пространства: ${created}` })}
+              onPress={() => Share.share({ message: `Присоединяйся ко мне в «Вместе»! Код пространства: ${created}` })}
             />
           </View>
           <Spacer h={10} />
@@ -131,14 +131,14 @@ export default function Onboarding() {
               <Input
                 label="Код приглашения"
                 value={code}
-                onChangeText={(t) => setCode(t.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
-                placeholder="ABC234"
+                onChangeText={(t) => setCode(t.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
+                placeholder="ABCD2345"
                 autoCapitalize="characters"
                 autoCorrect={false}
                 style={{ fontSize: 24, letterSpacing: 6, textAlign: 'center', fontFamily: fonts.display }}
               />
               <ErrorNote text={error} />
-              <Button title="Присоединиться" onPress={onJoin} loading={busy} disabled={code.length !== 6} icon="people-outline" />
+              <Button title="Присоединиться" onPress={onJoin} loading={busy} disabled={code.length < 6} icon="people-outline" />
             </>
           )}
         </>

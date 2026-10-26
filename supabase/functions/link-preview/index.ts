@@ -21,13 +21,81 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-function isPrivateHost(hostname: string): boolean {
-  const h = hostname.toLowerCase();
-  if (h === "localhost" || h.endsWith(".local") || h.endsWith(".internal")) return true;
-  if (/^(127\.|10\.|192\.168\.|169\.254\.|0\.)/.test(h)) return true;
-  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
-  if (h === "[::1]" || h.startsWith("[fc") || h.startsWith("[fd") || h.startsWith("[fe80")) return true;
+/** Адрес из частной/служебной сети (IPv4 или IPv6) */
+function isPrivateIp(ip: string): boolean {
+  const v = ip.toLowerCase().replace(/^\[|\]$/g, "");
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(v);
+  if (mapped) return isPrivateIp(mapped[1]);
+  // URL записывает ::ffff:127.0.0.1 как ::ffff:7f00:1 — такие адреса не пускаем совсем
+  if (v.startsWith("::ffff:") || v.startsWith("::") && v !== "::") return true;
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(v);
+  if (m) {
+    const a = Number(m[1]), b = Number(m[2]);
+    return a === 0 || a === 10 || a === 127 || a >= 224 ||
+      (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) ||
+      (a === 192 && b === 0) || (a === 198 && (b === 18 || b === 19));
+  }
+  if (v.includes(":")) {
+    return v === "::" || v === "::1" || /^f[cd]/.test(v) || /^fe[89ab]/.test(v) || /^ff/.test(v) ||
+      v.startsWith("64:ff9b:") || v.startsWith("2001:db8:");
+  }
   return false;
+}
+
+function isPrivateHost(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (h === "localhost" || (!h.includes(".") && !h.includes(":"))) return true;
+  if (/\.(local|localhost|internal|lan|home|arpa)$/.test(h)) return true;
+  // десятичные/шестнадцатеричные записи IP (http://2130706433/) — не пускаем
+  if (/^\d+$/.test(h) || /^0x[0-9a-f]+/i.test(h) || /^\d+\.\d+(\.\d+)?$/.test(h)) return true;
+  return isPrivateIp(h);
+}
+
+/** Проверяет адрес до запроса: схема, порт, имя и все IP, в которые оно разрешается */
+async function checkTarget(u: URL): Promise<boolean> {
+  if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+  if (u.username || u.password) return false;
+  if (u.port && u.port !== "80" && u.port !== "443") return false;
+  if (isPrivateHost(u.hostname)) return false;
+  const host = u.hostname.replace(/^\[|\]$/g, "");
+  if (/^[\d.]+$/.test(host) || host.includes(":")) return true; // уже проверенный IP
+  try {
+    const [a4, a6] = await Promise.all([
+      Deno.resolveDns(host, "A").catch(() => [] as string[]),
+      Deno.resolveDns(host, "AAAA").catch(() => [] as string[]),
+    ]);
+    const all = [...a4, ...a6];
+    if (!all.length) return false;
+    return !all.some(isPrivateIp);
+  } catch {
+    // resolveDns недоступен в рантайме — остаётся проверка по имени
+    return true;
+  }
+}
+
+const UA = "Mozilla/5.0 (compatible; facebookexternalhit/1.1; +http://www.facebook.com/externalhit_uatext.php) VmesteLinkPreview/1.0";
+
+/** fetch без автоматических редиректов: каждый следующий адрес проверяем заново (не больше 4 переходов) */
+async function safeFetch(start: URL, signal: AbortSignal): Promise<{ res: Response; url: URL } | null> {
+  let url = start;
+  for (let hop = 0; hop < 5; hop++) {
+    if (!(await checkTarget(url))) return null;
+    const res = await fetch(url, {
+      signal,
+      redirect: "manual",
+      headers: { "User-Agent": UA, "Accept": "text/html,application/xhtml+xml", "Accept-Language": "ru,en;q=0.8" },
+    });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get("location");
+      try { await res.body?.cancel(); } catch { /* ignore */ }
+      if (!loc) return null;
+      try { url = new URL(loc, url); } catch { return null; }
+      continue;
+    }
+    return { res, url };
+  }
+  return null;
 }
 
 function decodeEntities(s: string): string {
@@ -128,6 +196,7 @@ Deno.serve(async (req: Request) => {
     target = new URL(String(body?.url ?? "").trim());
     if (!["http:", "https:"].includes(target.protocol)) throw new Error("bad protocol");
     if (isPrivateHost(target.hostname)) throw new Error("private host");
+    if (target.toString().length > 2048) throw new Error("too long");
   } catch {
     return json({ error: "invalid_url" }, 400);
   }
@@ -135,19 +204,11 @@ Deno.serve(async (req: Request) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(target, {
-      signal: controller.signal,
-      redirect: "follow",
-      headers: {
-        // Многие соцсети отдают OG-теги только «ботам»-превьюшникам
-        "User-Agent":
-          "Mozilla/5.0 (compatible; facebookexternalhit/1.1; +http://www.facebook.com/externalhit_uatext.php) VdvoemLinkPreview/1.0",
-        "Accept": "text/html,application/xhtml+xml",
-        "Accept-Language": "ru,en;q=0.8",
-      },
-    });
+    const got = await safeFetch(target, controller.signal);
+    if (!got) return json({ error: "invalid_url" }, 400);
+    const res = got.res;
 
-    const finalUrl = new URL(res.url || target.toString());
+    const finalUrl = got.url;
     const type = res.headers.get("content-type") ?? "";
     if (type.startsWith("image/")) {
       return json({ url: finalUrl.toString(), title: null, image: finalUrl.toString(), description: null, siteName: finalUrl.hostname });

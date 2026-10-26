@@ -27,7 +27,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: c.accent,
         tabBarInactiveTintColor: c.textFaint,
-        tabBarLabelStyle: { fontSize: 10.5, fontWeight: '700' },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
         tabBarStyle: {
           position: 'absolute',
           backgroundColor: c.card,

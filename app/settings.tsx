@@ -15,8 +15,10 @@ import { fonts, useTheme } from '../src/theme';
 export default function Settings() {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const { email, signOut } = useAuth();
-  const { space, spaces, selectSpace, updateSpace, leaveSpace, createSpace, joinSpace } = useSpace();
+  const { email, signOut, userId } = useAuth();
+  const { space, spaces, members, people, selectSpace, updateSpace, leaveSpace, createSpace, joinSpace, kickMember, rotateInviteCode } = useSpace();
+  const myRole = members.find((m) => m.user_id === userId)?.role;
+  const canManage = myRole === 'owner' || (!!members.length && !members.some((m) => m.role === 'owner'));
   const [profileOpen, setProfileOpen] = useState(false);
   const [spaceName, setSpaceName] = useState(space?.name ?? '');
   const [spaceCity, setSpaceCity] = useState(space?.city ?? '');
@@ -64,16 +66,11 @@ export default function Settings() {
     try {
       const { error: fnErr } = await supabase.functions.invoke('delete-account', { body: {} });
       if (fnErr) {
-        // Если функция не задеплоена — хотя бы удаляем все данные
-        const { error: rpcErr } = await supabase.rpc('delete_my_data');
-        if (rpcErr) throw rpcErr;
-        Alert.alert(
-          'Данные удалены',
-          'Все твои данные удалены. Учётную запись не получилось удалить автоматически — мы удалим её вручную. Напиши нам, если нужно быстрее.',
-        );
-      } else {
-        Alert.alert('Аккаунт удалён', 'Спасибо, что были с нами 🤍');
+        // Учётную запись не удалили — данные не трогаем, чтобы не остаться «наполовину удалённым»
+        Alert.alert('Не получилось удалить аккаунт', 'Сервер сейчас недоступен. Проверь интернет и попробуй позже — или напиши нам на deckkk491@gmail.com.');
+        return;
       }
+      Alert.alert('Аккаунт удалён', 'Спасибо, что были с нами 🤍');
       await signOut();
     } catch (e) {
       Alert.alert('Не получилось', humanError(e));
@@ -85,7 +82,7 @@ export default function Settings() {
   function confirmDeleteAccount() {
     Alert.alert(
       'Удалить аккаунт?',
-      'Безвозвратно удалятся твой профиль, добавленные тобой записи, лайки, вишлист, взносы в копилку и сама учётная запись. Отменить это нельзя.',
+      'Безвозвратно удалятся твой профиль, сообщения, лайки, вишлист и учётная запись. Общие записи (фильмы, рецепты, события, копилки) останутся у партнёра — без твоего имени. Отменить это нельзя.',
       [
         { text: 'Отмена', style: 'cancel' },
         { text: 'Удалить навсегда', style: 'destructive', onPress: deleteAccount },
@@ -111,10 +108,64 @@ export default function Settings() {
               small
               icon="share-outline"
               style={{ flex: 1 }}
-              onPress={() => Share.share({ message: `Присоединяйся ко мне во «Вдвоём»! Код пространства: ${space.invite_code}` })}
+              onPress={() => Share.share({ message: `Присоединяйся ко мне в «Вместе»! Код пространства: ${space.invite_code}` })}
             />
           </Row>
+          {canManage ? (
+            <Button
+              title="Сменить код"
+              small
+              variant="ghost"
+              icon="refresh"
+              style={{ alignSelf: 'center', marginTop: 6 }}
+              onPress={() =>
+                Alert.alert('Сменить код приглашения?', 'Старый код перестанет работать. Те, кто уже в пространстве, останутся.', [
+                  { text: 'Отмена', style: 'cancel' },
+                  { text: 'Сменить', onPress: () => rotateInviteCode().catch((e) => Alert.alert('Не получилось', humanError(e))) },
+                ])
+              }
+            />
+          ) : null}
         </Card>
+      ) : null}
+
+      {space && members.length > 1 ? (
+        <>
+          <Label>Участники</Label>
+          <Card style={{ marginBottom: 16 }}>
+            {members.map((m, i) => {
+              const p = people[m.user_id];
+              const me = m.user_id === userId;
+              const name = (p?.display_name || 'Без имени') + (me ? ' (ты)' : '');
+              return (
+                <View
+                  key={m.user_id}
+                  style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: i ? 1 : 0, borderColor: c.border }}
+                >
+                  <Text style={{ fontSize: 20 }}>{p?.avatar_emoji || '🙂'}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: c.text, fontSize: 16 }} numberOfLines={1}>{name}</Text>
+                    {m.role === 'owner' ? <Text style={{ color: c.textMuted, fontSize: 13 }}>создатель</Text> : null}
+                  </View>
+                  {canManage && !me ? (
+                    <Button
+                      title="Исключить"
+                      small
+                      variant="ghost"
+                      color={c.danger}
+                      onPress={() =>
+                        Alert.alert(`Исключить ${p?.display_name || 'участника'}?`, 'Он перестанет видеть пространство. Его вишлист и лайки здесь удалятся, общие записи останутся.', [
+                          { text: 'Отмена', style: 'cancel' },
+                          { text: 'Исключить', style: 'destructive', onPress: () => kickMember(m.user_id).catch((e) => Alert.alert('Не получилось', humanError(e))) },
+                        ])
+                      }
+                    />
+                  ) : null}
+                </View>
+              );
+            })}
+          </Card>
+        </>
       ) : null}
 
       <Label>Пространство</Label>
@@ -179,11 +230,11 @@ export default function Settings() {
         ) : null}
         <Button title="Удалить аккаунт" small variant="danger" icon="trash-outline" loading={deleting} onPress={confirmDeleteAccount} style={{ alignSelf: 'flex-start' }} />
         <Body muted style={{ fontSize: 13, marginTop: 8 }}>
-          Удалит профиль, твои записи и учётную запись без возможности восстановления.
+          Удалит профиль, сообщения, вишлист и учётную запись. Общие записи останутся у партнёра без твоего имени.
         </Body>
       </Card>
 
-      <Text style={{ textAlign: 'center', color: c.textFaint, fontSize: 12 }}>«Вдвоём» · сделано с теплом</Text>
+      <Text style={{ textAlign: 'center', color: c.textFaint, fontSize: 12 }}>«Вместе» · сделано с теплом</Text>
 
       <Sheet visible={profileOpen} onClose={() => setProfileOpen(false)} title="Профиль">
         <ProfileForm onDone={() => setProfileOpen(false)} />
@@ -232,11 +283,11 @@ function AddSpaceSheet({
       <Input
         label="Или присоединиться по коду"
         value={code}
-        onChangeText={(t) => setCode(t.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
-        placeholder="ABC234"
+        onChangeText={(t) => setCode(t.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
+        placeholder="ABCD2345"
         autoCapitalize="characters"
       />
-      <Button title="Присоединиться" small variant="secondary" onPress={() => run(() => joinSpace(code))} disabled={code.length !== 6} loading={busy} />
+      <Button title="Присоединиться" small variant="secondary" onPress={() => run(() => joinSpace(code))} disabled={code.length < 6} loading={busy} />
       <ErrorNote text={error} />
     </Sheet>
   );

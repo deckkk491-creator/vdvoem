@@ -1,4 +1,4 @@
-# Вдвоём (Vdvoem) — App Review notes
+# Вместе (Vmeste) — App Review notes
 
 Paste the English block below into App Store Connect → version 1.0 → **App Review Information**.
 
@@ -19,9 +19,9 @@ Contact: deckkk491-creator, deckkk491@gmail.com, phone: `[+7 XXX XXX-XX-XX]`
 ## Notes (paste as is, fill in the brackets)
 
 ```
-Hello, and thank you for reviewing Vdvoem («Вдвоём», Russian for "the two of us").
+Hello, and thank you for reviewing Vmeste («Вместе», Russian for "together").
 
-Vdvoem is a private shared space for a couple or a family: movies and series to watch together, recipes saved from links, weekend outing ideas, a shared savings jar, a shopping list by category and personal wishlists. Members add items and like each other's items.
+Vmeste is a private shared space for a couple or a family: movies and series to watch together, recipes saved from links, weekend outing ideas, a shared savings jar, a shopping list by category and personal wishlists. Members add items and like each other's items.
 
 SIGN-IN
 The app uses passwordless email sign-in: the user enters an email and receives a one-time code.
@@ -42,7 +42,7 @@ FEATURES TO CHECK
 - Wishlists: open the other member's wishlist and tap "I'll gift this". This mark is hidden from the wishlist owner.
 - Savings jar: a manual tracker only. The app does not process payments or connect to banks.
 - 2-2-2 rule ("Us" tab → 2-2-2): date night every 2 weeks, a new place every 2 months, a new country every 2 years; the couple can change the rhythm (e.g. 1-2-3). When enabled, the app asks for notification permission and schedules LOCAL notifications. No remote push. Country ideas show landmark photos from Wikimedia Commons (free licences, author credited on each photo).
-- Calendar tab: shared events, tasks ("I'll do it" to take a task) and important dates. Optional "Add to iPhone Calendar" switch writes events to a separate "Вдвоём" calendar on the device; calendar permission is asked only when the user turns it on.
+- Calendar tab: shared events, tasks ("I'll do it" to take a task) and important dates. Optional "Add to iPhone Calendar" switch writes events to a separate "Вместе" calendar on the device; calendar permission is asked only when the user turns it on.
 - Chat (bubble icon at the top of every tab): private messages between members of the space, with photo and document attachments stored in private storage (signed URLs, members only).
 - Photos: the photo library / camera permission is asked only when the user taps "Photo" to attach a picture.
 

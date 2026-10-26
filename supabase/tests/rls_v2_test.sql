@@ -85,13 +85,15 @@ end $$;
 -- Пути файлов: пока в пространстве двое — общие файлы при выходе не трогаем
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',false);
 select count(*) = 0 as shared_space_paths_empty from space_file_paths(:'sid');
-select count(*) = 2 as my_paths from my_file_paths();
+-- С 0004: к удалению только файл из чата; фото события общее и остаётся партнёру
+select count(*) = 1 as my_paths from my_file_paths();
 
--- Удаление аккаунта A: данные удаляются, внешние ключи с триггером неизменного автора не мешают
+-- Удаление аккаунта A: личное удаляется, общее с B остаётся без автора (с 0004)
 select delete_my_data();
 reset role;
 delete from auth.users where id = '00000000-0000-0000-0000-0000000000a1';
 select (select count(*) from messages where sender_id = '00000000-0000-0000-0000-0000000000a1')=0
-   and (select count(*) from calendar_events)=0
-   and (select count(*) from attachments)=0 as a_deleted;
+   and (select count(*) from calendar_events where created_by = '00000000-0000-0000-0000-0000000000a1')=0
+   and (select count(*) from calendar_events) > 0
+   and (select count(*) from attachments where created_by is not null)=0 as a_deleted;
 select count(*) >= 14 as realtime_tables from pg_publication_tables where pubname='supabase_realtime';

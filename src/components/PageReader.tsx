@@ -26,7 +26,38 @@ let enqueue: ((url: string) => Promise<PageData | null>) | null = null;
  * Возвращает null, если страница не открылась или не успела за отведённое время.
  */
 export function readPageInBrowser(url: string): Promise<PageData | null> {
-  return enqueue ? enqueue(url) : Promise.resolve(null);
+  return enqueue && isPublicWebUrl(url) ? enqueue(url) : Promise.resolve(null);
+}
+
+/**
+ * Только обычные сайты в интернете: http(s), стандартный порт, не локальная сеть.
+ * Иначе ссылка из чата могла бы заставить телефон открыть роутер или другое устройство дома.
+ */
+export function isPublicWebUrl(raw: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+  if (u.username || u.password) return false;
+  if (u.port && u.port !== '80' && u.port !== '443') return false;
+  const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (!h.includes('.') || /\.(local|localhost|internal|lan|home|arpa)$/.test(h) || h === 'localhost') return false;
+  // IP-адреса: пускаем только публичные IPv4, IPv6 не пускаем вовсе (сайты отдаются по имени)
+  if (h.includes(':')) return false;
+  const ip = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h);
+  if (ip) {
+    const [a, b] = [Number(ip[1]), Number(ip[2])];
+    if (a === 0 || a === 10 || a === 127 || a >= 224) return false;
+    if (a === 169 && b === 254) return false;
+    if (a === 172 && b >= 16 && b <= 31) return false;
+    if (a === 192 && b === 168) return false;
+    if (a === 100 && b >= 64 && b <= 127) return false;
+  }
+  if (/^\d+$/.test(h) || /^0x/i.test(h)) return false;
+  return true;
 }
 
 /** Невидимый браузер для чтения страниц. Ставится один раз в корне приложения. */
@@ -114,8 +145,8 @@ export function PageReaderHost() {
         mediaPlaybackRequiresUserAction
         allowsInlineMediaPlayback={false}
         setSupportMultipleWindows={false}
-        // Не открываем приложения маркетплейсов (ozon://, wildberries://) — остаёмся в вебе
-        onShouldStartLoadWithRequest={(req) => /^https?:/i.test(req.url) || req.url === 'about:blank'}
+        // Не открываем приложения маркетплейсов (ozon://, wildberries://) и не уходим в локальную сеть при редиректе
+        onShouldStartLoadWithRequest={(req) => req.url === 'about:blank' || (req.isTopFrame === false ? /^https?:/i.test(req.url) : isPublicWebUrl(req.url))}
       />
     </View>
   );
