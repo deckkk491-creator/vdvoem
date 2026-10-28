@@ -88,7 +88,7 @@ function pendingToItem(p: Pending, userId: string): ChatItem {
 }
 
 export function useMessages() {
-  const { space, members } = useSpace();
+  const { space, members, spaces, loaded } = useSpace();
   const { userId } = useAuth();
   const spaceId = space?.id ?? null;
 
@@ -218,12 +218,10 @@ export function useMessages() {
     setReads((data ?? []) as MessageRead[]);
   }, [spaceId]);
 
-  // Смена пространства: чистим всё, что относилось к прошлому
+  // Смена пространства: чистим ленту прошлого. Неотправленные сообщения НЕ трогаем —
+  // они продолжают уходить в своё пространство (p.spaceId), а неудачные ждут там «Повторить».
   useEffect(() => {
     setMessages([]);
-    setPending([]);
-    pendingRef.current = [];
-    uploaded.current.clear();
     previews.current.clear();
     setReads([]);
     setError(null);
@@ -234,6 +232,27 @@ export function useMessages() {
     loadNewest();
     loadReads();
   }, [spaceId, loadNewest, loadReads]);
+
+  // Другой пользователь (выход из аккаунта) — чужие черновики не показываем и не отправляем
+  useEffect(() => {
+    pendingRef.current = [];
+    setPending([]);
+    uploaded.current.clear();
+  }, [userId]);
+
+  // Пространство пропало из списка (вышли или исключили) — его неотправленные сообщения убираем
+  useEffect(() => {
+    if (!loaded) return;
+    const alive = new Set(spaces.map((x) => x.id));
+    const gone = pendingRef.current.filter((p) => !alive.has(p.spaceId) && !inFlight.current.has(p.localId));
+    if (!gone.length) return;
+    const goneIds = new Set(gone.map((p) => p.localId));
+    const paths = gone.map((p) => uploaded.current.get(p.localId)).filter((x): x is string => !!x);
+    gone.forEach((p) => uploaded.current.delete(p.localId));
+    pendingRef.current = pendingRef.current.filter((p) => !goneIds.has(p.localId));
+    setPending((list) => list.filter((p) => !goneIds.has(p.localId)));
+    if (paths.length) removeFiles(paths).catch(() => undefined);
+  }, [loaded, spaces]);
 
   // Realtime срабатывает на любое изменение (и при возврате из фона) — перечитываем только свежую страницу
   useRealtimeRefetch(['messages'], loadNewest);
