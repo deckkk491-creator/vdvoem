@@ -1,4 +1,4 @@
-# «Вместе» — где остановились (26.10.2026)
+# «Вместе» — где остановились (28.10.2026)
 
 Приложение переименовано из «Вдвоём» в «Вместе». Работаем только над ним; HomeFit пока на паузе.
 
@@ -13,16 +13,20 @@
   - политика конфиденциальности обновлена (что остаётся у партнёра после удаления аккаунта).
 - **Разбор перспектив:** https://claude.ai/artifact/PDKHfaUnDwC9zWJrBRpSPp — рынок, конкуренты, заработок (партнёрка Яндекс Маркета → подписка), план запуска ноябрь 2026 – апрель 2027, метрики, риски.
 
+## Сделано 28.10.2026
+- Миграция `0004_security_hardening.sql` применена в Supabase (проверено: `space_changes`, `join_attempts`, новые функции на месте).
+- Новый код `link-preview` задеплоен (Edge Functions → Code).
+- `audit-fixes` влита в `main`.
+- Чат: неотправленные сообщения больше не пропадают при смене пространства (`src/hooks/useMessages.ts`).
+
 ## Не сделано
-1. **Supabase:** применить `0004_security_hardening.sql` (SQL Editor) и обновить код функции `link-preview` (Edge Functions → Code). Нужно, чтобы пользователь вошёл в Supabase в своём Chrome.
-2. Влить `audit-fixes` в `main` (после шага 1).
-3. Не исправлено из аудита: сообщения чата, которые ещё отправляются, при переключении пространства (`src/hooks/useMessages.ts`).
-4. Перед релизом убрать `exp://**` из Redirect URLs в Supabase.
-5. Оплатить Apple Developer аккаунт ($99/год).
-6. Демо-аккаунт для ревьюера Apple, `store/review-notes.md`.
+1. Проверить в Expo Go вдвоём на двух телефонах: участники, «Исключить», «Сменить код», вход по ссылке, чат при переключении пространств.
+2. Перед релизом убрать `exp://**` из Redirect URLs в Supabase.
+3. Оплатить Apple Developer аккаунт ($99/год).
+4. Демо-аккаунт для ревьюера Apple, `store/review-notes.md`.
 
 ## Запуск для теста (терминал на маке)
 ```bash
-cd ~ && { [ -d vdvoem ] || git clone https://github.com/deckkk491-creator/vdvoem.git; } && cd vdvoem && git fetch origin && git checkout audit-fixes && git pull && npm install && npx expo start -c
+cd ~ && { [ -d vdvoem ] || git clone https://github.com/deckkk491-creator/vdvoem.git; } && cd vdvoem && git fetch origin && git checkout main && git pull && npm install && npx expo start -c
 ```
-Если телефон не подключается: `npx expo start -c --tunnel`. Пока не сделан шаг 1, изменения партнёра могут приходить не сразу, а «Исключить» и «Сменить код» выдают ошибку.
+Если телефон не подключается: `npx expo start -c --tunnel`.
