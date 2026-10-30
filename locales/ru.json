@@ -1,1 +1,4 @@
-{ "CFBundleDisplayName": "Вместе", "CFBundleName": "Вместе" }
+{
+  "ios": { "CFBundleDisplayName": "Вместе", "CFBundleName": "Вместе" },
+  "android": { "app_name": "Вместе" }
+}
