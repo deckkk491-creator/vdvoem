@@ -26,7 +26,8 @@
       "allowBackup": false,
       "blockedPermissions": [
         "android.permission.READ_CALENDAR",
-        "android.permission.WRITE_CALENDAR"
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.SYSTEM_ALERT_WINDOW"
       ]
     },
     "plugins": [
@@ -63,7 +64,7 @@
         {
           "photosPermission": "«Вместе» открывает галерею, чтобы ты мог прикрепить фото к свиданию, поездке, событию или отправить его в чат.",
           "cameraPermission": "«Вместе» использует камеру, чтобы ты мог сфотографировать и прикрепить снимок к записи или сообщению.",
-          "microphonePermission": false
+          "microphonePermission": "«Вместе» использует микрофон, чтобы ты мог записать голосовое сообщение в чат."
         }
       ],
       [

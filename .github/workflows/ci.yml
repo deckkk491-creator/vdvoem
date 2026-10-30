@@ -57,6 +57,10 @@ jobs:
           grep 'uses-permission' "$M" | grep -v 'tools:node="remove"' | sed -E 's/.*android:name="([^"]*)".*/\1/' | sort
           echo "::notice title=android permissions::$(grep 'uses-permission' "$M" | grep -v 'tools:node="remove"' | sed -E 's/.*android:name="android.permission.([^"]*)".*/\1/' | sort | tr '\n' ' ')"
           echo "::notice title=android blocked::$(grep 'uses-permission' "$M" | grep 'tools:node="remove"' | sed -E 's/.*android:name="android.permission.([^"]*)".*/\1/' | sort | tr '\n' ' ')"
+          # Голосовые сообщения: микрофон должен остаться в манифесте (плагин expo-image-picker с microphonePermission: false его блокирует)
+          if grep 'RECORD_AUDIO' "$M" | grep -q 'tools:node="remove"' || ! grep -q 'android.permission.RECORD_AUDIO' "$M"; then
+            echo "::error title=microphone::RECORD_AUDIO заблокирован или отсутствует в манифесте Android: голосовые не заработают"; exit 1
+          fi
           # Выгрузка в календарь на Android выключена: разрешения на календарь не должны попасть в сборку
           if grep -E 'READ_CALENDAR|WRITE_CALENDAR' "$M" | grep -v 'tools:node="remove"'; then
             echo "::error title=calendar permission::READ/WRITE_CALENDAR попали в манифест Android"; exit 1
@@ -73,6 +77,8 @@ jobs:
           npx expo prebuild --platform ios --no-install > prebuild-ios.log 2>&1 || { echo "::error title=prebuild ios::$(tail -c 2500 prebuild-ios.log | tr '\n' '|')"; exit 1; }
           if ! grep -rl 'CFBundleDisplayName' ios --include=InfoPlist.strings | grep -q .; then echo "::error title=locales ios::в ios нет InfoPlist.strings с CFBundleDisplayName"; exit 1; fi
           grep -r 'CFBundleDisplayName' ios --include=InfoPlist.strings
+          # iOS: текст про микрофон для голосовых должен остаться в Info.plist
+          if ! grep -rl 'NSMicrophoneUsageDescription' ios --include=Info.plist | grep -q .; then echo "::error title=ios microphone::в Info.plist нет NSMicrophoneUsageDescription"; exit 1; fi
           for f in mipmap-anydpi-v26/ic_launcher.xml drawable-mdpi/notification_icon.png; do
             find android/app/src/main/res -path "*$f" | grep -q . || echo "::warning title=android icon::нет $f"
           done
