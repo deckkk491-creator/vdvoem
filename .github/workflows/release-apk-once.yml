@@ -1,0 +1,30 @@
+name: Release APK once
+
+# Разовый запуск: берёт уже собранный APK и кладёт его в закрытый черновик релиза.
+on:
+  push:
+    branches: [apk-release-once]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK from the finished build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 41078307285 --repo "${{ github.repository }}" --name vmeste-android-apk --dir apk
+          ls -la apk
+          sha256sum apk/vmeste-android.apk
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create android-test-1 apk/vmeste-android.apk \
+            --repo "${{ github.repository }}" --draft --target "${{ github.sha }}" \
+            --title "Вместе для Android (тестовая сборка 1)" \
+            --notes "Тестовая сборка для Android. Скачайте файл vmeste-android.apk на телефон и откройте его. Если Android спросит, разрешите установку из этого источника. Это не магазинная версия."
