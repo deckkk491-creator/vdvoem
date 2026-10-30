@@ -164,6 +164,8 @@ npx expo start
 eas build --platform android --profile preview      # APK: поставить на свои телефоны
 eas build --platform android --profile production   # AAB для Google Play
 ```
+Без аккаунта Expo тестовый APK собирается на GitHub: **Actions → «Android APK (тестовая сборка)» → Run workflow** (~20 минут), файл появится в закрытом черновике релиза на вкладке Releases. Подпись у него тестовая, для магазинов нужны сборки EAS.
+
 Ключ подписи EAS создаст сам при первой сборке; сохраните его копию (`eas credentials -p android`). Что на Android сделано иначе, как заполнить Google Play и что проверить на телефоне — в `store/google-play.md`. Страница удаления аккаунта, которую требует Google Play: https://deckkk491-creator.github.io/vdvoem/delete-account.html.
 
 ---
