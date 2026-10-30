@@ -29,6 +29,16 @@ jobs:
           cat tsc.log
           if [ $code -ne 0 ]; then echo "::error title=tsc::$(head -c 3000 tsc.log | tr '\n' '|')"; fi
           exit $code
+      - name: Logic tests (rule 2-2-2 dates)
+        run: |
+          set +e
+          # tsx — только для запуска проверок, в зависимости приложения не входит; прогон в двух часовых поясах (переход на летнее время)
+          for tz in UTC America/New_York; do
+            echo "--- TZ=$tz"
+            TZ=$tz npx --yes tsx@4 --test tests/rule222.test.mjs > tests.log 2>&1; code=$?
+            tail -n 25 tests.log
+            if [ $code -ne 0 ]; then echo "::error title=logic tests ($tz)::$(grep -E '^not ok|# fail|Error' tests.log | head -c 2500 | tr '\n' '|')"; exit $code; fi
+          done
       - name: Expo doctor
         run: npx expo-doctor || true
       - name: Bundle for iOS
