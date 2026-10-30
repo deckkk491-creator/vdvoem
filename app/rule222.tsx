@@ -3,13 +3,13 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Dimensions, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AttachmentEditor, AttachmentStrip, useAttachmentsFor } from '../src/components/Attachments';
 import { AppBackground } from '../src/components/AppBackground';
 import { DateField } from '../src/components/DateField';
 import { Avatar } from '../src/components/people';
-import { Body, Button, Card, Chip, EmptyState, ErrorNote, H2, Input, Loading, ProgressBar, Row, Segmented, Sheet } from '../src/components/ui';
+import { Body, Button, Card, Chip, EmptyState, ErrorNote, H2, Input, Loading, pageStyle, ProgressBar, Row, Segmented, Sheet } from '../src/components/ui';
 import { countryPhotos } from '../src/data/countryPhotos';
 import { ideaPhoto } from '../src/data/photos';
 import { COUNTRY_CARDS, COUNTRY_IDEAS, DATE_IDEAS, PLACE_IDEAS, type CountryCard, type CountryIdea, type DateIdea, type PlaceIdea } from '../src/data/ideas';
@@ -33,7 +33,7 @@ import { humanError, supabase } from '../src/lib/supabase';
 import type { Attachment, ItemKind, RuleEvent, RuleKind } from '../src/lib/types';
 import { useAuth } from '../src/providers/AuthProvider';
 import { useRealtimeRefetch, useSpace } from '../src/providers/SpaceProvider';
-import { fonts, radius, sectionStyle, useTheme } from '../src/theme';
+import { fonts, MAX_CONTENT_WIDTH, radius, sectionStyle, useTheme } from '../src/theme';
 
 const KINDS: RuleKind[] = ['date', 'place', 'country'];
 const IDEAS_SHOWN = 3;
@@ -124,7 +124,7 @@ export default function Rule222() {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
     <AppBackground />
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40 }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={pageStyle(insets, insets.bottom + 40)}>
       <Card tint={st.bg} style={{ borderColor: 'transparent', marginBottom: 16 }}>
         <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View style={{ flex: 1, paddingRight: 12 }}>
@@ -398,7 +398,10 @@ function CountryGallery({ countryId, flag }: { countryId: string; flag: string }
   const st = sectionStyle(c, 'rule');
   const photos = useMemo(() => countryPhotos(countryId), [countryId]);
   const info = COUNTRY_CARDS[countryId];
-  const width = Dimensions.get('window').width - 32; // ширина карточки = экран минус отступы
+  // Ширина карточки = ширина страницы минус поля. Размер окна читаем при каждой отрисовке: он меняется при складывании iPhone Duo и в Split View
+  const { width: windowW } = useWindowDimensions();
+  const sides = useSafeAreaInsets();
+  const width = Math.min(windowW, MAX_CONTENT_WIDTH) - sides.left - sides.right - 32;
   const [page, setPage] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
   useEffect(() => {

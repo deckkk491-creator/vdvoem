@@ -5,7 +5,7 @@ import { AppBackground } from '../src/components/AppBackground';
 import { useCalendarSheets } from '../src/components/calendar/CalendarSheets';
 import { TasksPanel } from '../src/components/calendar/TasksPanel';
 import { itemMenu } from '../src/components/ItemCard';
-import { EmptyState, ErrorNote, Fab } from '../src/components/ui';
+import { EmptyState, ErrorNote, Fab, pageStyle } from '../src/components/ui';
 import { useCalendar } from '../src/hooks/useCalendar';
 import { useSpace } from '../src/providers/SpaceProvider';
 import { sectionStyle, useTheme } from '../src/theme';
@@ -22,7 +22,7 @@ export default function TasksScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <AppBackground />
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 110 }}>
+      <ScrollView contentContainerStyle={pageStyle(insets, insets.bottom + 110)}>
         {!space ? (
           <EmptyState emoji="✅" title="Нет пространства" text="Создай пространство или присоединись по коду, чтобы делить дела." />
         ) : (

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, Animated, Dimensions, Modal, PanResponder, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Animated, Modal, PanResponder, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   formatSize,
@@ -53,7 +53,7 @@ export function useAttachmentsFor(parentIds: string[]) {
 
 export function PhotoViewer({ urls, index, onClose }: { urls: string[]; index: number | null; onClose: () => void }) {
   const insets = useSafeAreaInsets();
-  const { width, height } = Dimensions.get('window');
+  const { width, height } = useWindowDimensions();
   const [page, setPage] = useState(0);
   const dragY = useRef(new Animated.Value(0)).current;
   useEffect(() => {

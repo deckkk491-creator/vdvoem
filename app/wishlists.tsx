@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AttachmentEditor, AttachmentStrip, useAttachmentsFor } from '../src/components/Attachments';
 import { Badge, itemMenu, openLink } from '../src/components/ItemCard';
 import { Avatar, useNameOf } from '../src/components/people';
-import { Body, Button, Card, ChipGroup, EmptyState, ErrorNote, Fab, Input, Label, Loading, Row, Sheet } from '../src/components/ui';
+import { Body, Button, Card, ChipGroup, EmptyState, ErrorNote, Fab, Input, Label, Loading, pageStyle, Row, Sheet } from '../src/components/ui';
 import { useLinkAutofill } from '../src/hooks/useLinkAutofill';
 import { commitAttachments, deleteWithFiles, emptyDraft, loadAttachments, useSignedUrls, type AttachmentDraft } from '../src/lib/files';
 import { hostOf, normalizeUrl, parseAmount, rub } from '../src/lib/format';
@@ -96,7 +96,7 @@ export default function Wishlists() {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <AppBackground />
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 120 }}>
+      <ScrollView contentContainerStyle={pageStyle(insets, insets.bottom + 120)}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 16 }}>
           {members.map((m) => {
             const active = owner === m.user_id;

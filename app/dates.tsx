@@ -3,7 +3,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCalendarSheets } from '../src/components/calendar/CalendarSheets';
 import { itemMenu } from '../src/components/ItemCard';
-import { Body, Card, EmptyState, ErrorNote, Fab, Label, Loading } from '../src/components/ui';
+import { Body, Card, EmptyState, ErrorNote, Fab, Label, Loading, pageStyle } from '../src/components/ui';
 import { anniversaryLabel, daysBetween, daysUntilLabel, nextOccurrence, useCalendar } from '../src/hooks/useCalendar';
 import { formatDate, todayISO } from '../src/lib/format';
 import type { CalendarEvent } from '../src/lib/types';
@@ -82,7 +82,7 @@ export default function DatesScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <AppBackground />
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 110 }}>
+      <ScrollView contentContainerStyle={pageStyle(insets, insets.bottom + 110)}>
         {!space ? (
           <EmptyState emoji="💞" title="Нет пространства" text="Создай пространство или присоединись по коду, чтобы хранить общие даты." />
         ) : (

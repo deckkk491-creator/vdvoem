@@ -5,7 +5,7 @@ import { Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileForm } from '../src/components/ProfileForm';
 import { ThemePicker } from '../src/components/ThemePicker';
-import { Body, Button, Card, ErrorNote, Input, Label, Row, Sheet } from '../src/components/ui';
+import { Body, Button, Card, ErrorNote, Input, Label, pageStyle, Row, Sheet } from '../src/components/ui';
 import { PRIVACY_URL } from '../src/lib/env';
 import { humanError, supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/providers/AuthProvider';
@@ -91,7 +91,7 @@ export default function Settings() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40 }} keyboardShouldPersistTaps="handled">
+    <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={pageStyle(insets, insets.bottom + 40)} keyboardShouldPersistTaps="handled">
       {space ? (
         <Card style={{ marginBottom: 16 }}>
           <Label>Код приглашения</Label>

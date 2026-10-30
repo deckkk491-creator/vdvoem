@@ -5,7 +5,7 @@ import { useAttachmentsFor } from '../src/components/Attachments';
 import { useCalendarSheets } from '../src/components/calendar/CalendarSheets';
 import { AgendaCard } from '../src/components/calendar/EntryCards';
 import { itemMenu } from '../src/components/ItemCard';
-import { Body, Card, EmptyState, ErrorNote, Fab, Label, Loading, Segmented } from '../src/components/ui';
+import { Body, Card, EmptyState, ErrorNote, Fab, Label, Loading, pageStyle, Segmented } from '../src/components/ui';
 import { useCalendar, type Entry } from '../src/hooks/useCalendar';
 import { todayISO } from '../src/lib/format';
 import type { CalendarEvent } from '../src/lib/types';
@@ -66,7 +66,7 @@ export default function EventsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <AppBackground />
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 110 }}>
+      <ScrollView contentContainerStyle={pageStyle(insets, insets.bottom + 110)}>
         {!space ? (
           <EmptyState emoji="📌" title="Нет пространства" text="Создай пространство или присоединись по коду, чтобы планировать вместе." />
         ) : (
