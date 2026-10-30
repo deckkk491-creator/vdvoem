@@ -2,14 +2,15 @@ name: Android APK (тестовая сборка)
 
 # Собирает установочный APK прямо на GitHub, без аккаунта Expo и без Android Studio.
 # Запуск вручную: вкладка Actions → «Android APK (тестовая сборка)» → Run workflow.
-# Готовый файл — в разделе Artifacts внизу страницы запуска.
+# Готовый файл — в закрытом черновике релиза (вкладка Releases, виден только владельцу) и в Artifacts запуска.
 # Подпись у этого APK тестовая: ставить на свои телефоны можно, в магазины такой файл не загружают
 # (для Google Play и RuStore — сборки EAS, см. store/google-play.md).
 
 on:
   workflow_dispatch:
-  push:
-    branches: [android-apk-build]
+
+permissions:
+  contents: write
 
 jobs:
   apk:
@@ -49,3 +50,11 @@ jobs:
           name: vmeste-android-apk
           path: vmeste-android.apk
           retention-days: 14
+      - name: Draft release with the APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "android-test-${GITHUB_RUN_NUMBER}" vmeste-android.apk \
+            --repo "${{ github.repository }}" --draft --target "${{ github.sha }}" \
+            --title "Вместе для Android (тестовая сборка ${GITHUB_RUN_NUMBER})" \
+            --notes "Тестовая сборка для Android. Скачайте файл vmeste-android.apk на телефон и откройте его. Если Android спросит, разрешите установку из этого источника. Это не магазинная версия."

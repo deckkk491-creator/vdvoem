@@ -55,6 +55,8 @@ jobs:
           echo "--- manifest"; cat "$M"
           echo "--- permissions that stay"
           grep 'uses-permission' "$M" | grep -v 'tools:node="remove"' | sed -E 's/.*android:name="([^"]*)".*/\1/' | sort
+          echo "::notice title=android permissions::$(grep 'uses-permission' "$M" | grep -v 'tools:node="remove"' | sed -E 's/.*android:name="android.permission.([^"]*)".*/\1/' | sort | tr '\n' ' ')"
+          echo "::notice title=android blocked::$(grep 'uses-permission' "$M" | grep 'tools:node="remove"' | sed -E 's/.*android:name="android.permission.([^"]*)".*/\1/' | sort | tr '\n' ' ')"
           # Выгрузка в календарь на Android выключена: разрешения на календарь не должны попасть в сборку
           if grep -E 'READ_CALENDAR|WRITE_CALENDAR' "$M" | grep -v 'tools:node="remove"'; then
             echo "::error title=calendar permission::READ/WRITE_CALENDAR попали в манифест Android"; exit 1
