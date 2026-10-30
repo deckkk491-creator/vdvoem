@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { Body, Button, ErrorNote, Input, Screen, Spacer, Title } from '../src/components/ui';
 import { AUTH_REDIRECT_URL } from '../src/lib/authLink';
+import { DEMO_EMAIL } from '../src/lib/env';
 import { humanError, supabase } from '../src/lib/supabase';
 import { fonts, radius, useTheme } from '../src/theme';
 
@@ -10,6 +11,7 @@ export default function SignIn() {
   const [email, setEmail] = useState('');
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [code, setCode] = useState('');
+  const [accessCode, setAccessCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
@@ -24,8 +26,15 @@ export default function SignIn() {
   }, [cooldown]);
 
   const validEmail = /^\S+@\S+\.\S+$/.test(email.trim());
+  // Демо-аккаунт для ревьюера Apple: письмо не отправляем, вместо него просим код доступа
+  const isDemo = DEMO_EMAIL !== '' && email.trim().toLowerCase() === DEMO_EMAIL;
 
   async function sendCode() {
+    if (isDemo) {
+      setError(null);
+      setStep('code');
+      return;
+    }
     setBusy(true);
     setError(null);
     const { error: e } = await supabase.auth.signInWithOtp({
@@ -50,6 +59,21 @@ export default function SignIn() {
     if (e) {
       setError(humanError(e));
       setCode('');
+    }
+    // при успехе Gate сам переведёт на нужный экран
+  }
+
+  async function signInWithAccessCode() {
+    if (!accessCode || verifying.current) return;
+    verifying.current = true;
+    setBusy(true);
+    setError(null);
+    const { error: e } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: accessCode });
+    verifying.current = false;
+    setBusy(false);
+    if (e) {
+      setError(humanError(e));
+      setAccessCode('');
     }
     // при успехе Gate сам переведёт на нужный экран
   }
@@ -86,6 +110,26 @@ export default function SignIn() {
           <Body faint style={{ marginTop: 14, fontSize: 13, textAlign: 'center' }}>
             Пароль не нужен — пришлём на почту код или ссылку для входа.
           </Body>
+        </>
+      ) : isDemo ? (
+        <>
+          <Body muted>Вход для проверки приложения. Введи код доступа из заметок для ревьюера.</Body>
+          <Spacer h={16} />
+          <Input
+            label="Код доступа"
+            value={accessCode}
+            onChangeText={setAccessCode}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="go"
+            onSubmitEditing={signInWithAccessCode}
+            autoFocus
+          />
+          <ErrorNote text={error} />
+          <Button title="Войти" onPress={signInWithAccessCode} loading={busy} disabled={!accessCode} />
+          <Spacer h={8} />
+          <Button title="Изменить почту" variant="ghost" onPress={() => { setStep('email'); setAccessCode(''); setError(null); }} />
         </>
       ) : (
         <>

@@ -79,3 +79,11 @@ jobs:
           if [ $code -ne 0 ]; then echo "::error title=db::$(tail -c 3000 db.log | tr '\n' '|')"; exit $code; fi
           if grep -qx 'f' db.log; then echo "::error title=db checks::$(grep -n -x 'f' db.log | head) |$(tail -c 2500 db.log | tr '\n' '|')"; exit 1; fi
           echo "::notice title=db ok::$(grep -c -x 't' db.log) checks passed; $(grep -c 'blocked ok' db.log) blocked as expected"
+      - name: Demo seed for App Review
+        run: |
+          set -e
+          psql -v ON_ERROR_STOP=1 -X -q -c "insert into auth.users (id, email) values ('11111111-1111-1111-1111-111111111111', 'reviewer@ci.test'), ('22222222-2222-2222-2222-222222222222', 'partner@ci.test')"
+          sed -e "s/demo-reviewer@example.com'; /reviewer@ci.test'; /" -e "s/demo-partner@example.com'; /partner@ci.test'; /" supabase/demo/seed_demo.sql > "$RUNNER_TEMP/seed.sql"
+          psql -v ON_ERROR_STOP=1 -X -q -f "$RUNNER_TEMP/seed.sql"
+          echo "--- rerun (idempotent)"
+          psql -v ON_ERROR_STOP=1 -X -q -f "$RUNNER_TEMP/seed.sql"
