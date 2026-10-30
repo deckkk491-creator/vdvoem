@@ -58,6 +58,7 @@ export function humanError(e: unknown): string {
     return 'Сессия истекла — войди снова.';
   if (/token has expired|invalid.*otp|otp.*(invalid|expired)|otp_expired/i.test(msg) || code === 'otp_expired')
     return 'Код неверный или устарел. Запроси новый.';
+  if (/invalid login credentials/i.test(msg) || code === 'invalid_credentials') return 'Неверный код доступа.';
   if (/invalid.*email|email.*invalid|email_address_invalid/i.test(msg) || code === 'email_address_invalid')
     return 'Проверь адрес почты.';
   if (/row-level security|permission denied/i.test(msg) || code === '42501' || status === 403)
