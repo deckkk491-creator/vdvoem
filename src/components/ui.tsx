@@ -16,8 +16,8 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fonts, radius, space, TAB_BAR_HEIGHT, TAP, useTheme } from '../theme';
+import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
+import { fonts, MAX_CONTENT_WIDTH, radius, space, TAB_BAR_HEIGHT, TAP, useTheme } from '../theme';
 
 import { AppBackground } from './AppBackground';
 
@@ -83,6 +83,22 @@ function KeyboardSafe({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Отступы страницы со списком (для ScrollView с собственным заголовком навигации):
+ * 16 pt по краям плюс системные вставки, ширина не больше MAX_CONTENT_WIDTH, содержимое по центру.
+ */
+export function pageStyle(insets: EdgeInsets, bottom: number): ViewStyle {
+  return {
+    paddingTop: 16,
+    paddingBottom: bottom,
+    paddingLeft: 16 + insets.left,
+    paddingRight: 16 + insets.right,
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
+  };
+}
+
 export function Screen({
   children,
   scroll = true,
@@ -96,7 +112,18 @@ export function Screen({
 }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const inner = [{ paddingHorizontal: padded ? space.lg : 0, paddingTop: insets.top + space.md, paddingBottom: insets.bottom + 120 }, style];
+  // Боковые отступы плюс системные вставки: на iPhone Duo с одной стороны бывает «рейка» шириной около 84 pt
+  const side = padded ? space.lg : 0;
+  const base: ViewStyle = {
+    paddingLeft: side + insets.left,
+    paddingRight: side + insets.right,
+    paddingTop: insets.top + space.md,
+    paddingBottom: insets.bottom + 120,
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
+  };
+  const inner = [base, style];
   if (!scroll)
     return (
       <View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -568,7 +595,7 @@ export function Fab({
       accessibilityLabel={label ?? 'Добавить'}
       style={({ pressed }) => ({
         position: 'absolute',
-        right: 20,
+        right: 20 + insets.right,
         bottom,
         height: 58,
         minWidth: 58,

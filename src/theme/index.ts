@@ -99,6 +99,8 @@ export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
 export const TAP = 44;
 /** Высота нижнего таб-бара без системного отступа */
 export const TAB_BAR_HEIGHT = 58;
+/** Содержимое страниц не шире этого (pt): на раскрытом iPhone Duo и в широких окнах оно остаётся по центру, а не растягивается */
+export const MAX_CONTENT_WIDTH = 720;
 
 export type Theme = { c: Palette; dark: boolean };
 

@@ -15,6 +15,7 @@
 - Тестовый APK без Expo и без Android Studio: GitHub → Actions → «Android APK (тестовая сборка)» → Run workflow (`android-apk.yml`, ~20 минут); файл — в закрытом черновике релиза. Для магазинов — EAS.
 - `locales/ru.json`: у iOS и Android разные ключи (`ios.CFBundleDisplayName`, `android.app_name`). Ключи iOS в Android-строках ломают lint релизной сборки.
 - Микрофон на Android: `expo-image-picker` с `microphonePermission: false` блокирует `RECORD_AUDIO` и ломает голосовые (в `app.json` у него тот же текст, что у `expo-audio`). CI это проверяет.
+- iPhone Duo (складной, внутренний экран ≈ 669 × 951 pt, внешний ≈ 466 × 678 pt): сборки SDK 58 на образе EAS `latest` идут на iOS 27 SDK, окно меняет размер при складывании. Поэтому размер окна — только `useWindowDimensions` (не `Dimensions.get`), боковые отступы страниц учитывают `insets.left/right` (`Screen`, `pageStyle` в `src/components/ui.tsx`), ширина содержимого ≤ `MAX_CONTENT_WIDTH` (720). Нативные Stack-заголовки и `Tabs` не трогаем: панели на Duo ставит iOS. Не проверено на устройстве. Подробности — `PROGRESS.md`.
 - CI (`.github/workflows/ci.yml`): npm install, tsc, expo export ios и android, `expo prebuild --platform android` с проверкой манифеста. CI должен оставаться зелёным.
 
 ## Где что лежит
@@ -55,4 +56,5 @@
 1. Проверить в Expo Go вдвоём на двух телефонах (участники, исключение, смена кода, вход по ссылке, вишлист с маркетплейсов, голосовые).
 2. Демо-аккаунт для ревьюера Apple: код и `store/review-notes.md` готовы, остаётся создать пользователей в Supabase, запустить `supabase/demo/seed_demo.sql`, задать `EXPO_PUBLIC_DEMO_EMAIL` в EAS и заполнить поля в App Store Connect.
 3. Проверить на двух телефонах: включить 2-2-2 на одном, свернуть и развернуть «Вместе» на другом — напоминания должны появиться.
-4. Android: поставить тестовый APK (`android-test-3`, он же отправлен в чат) и пройти список из `store/google-play.md`, раздел 5. На настоящем Android приложение ещё не запускалось. Черновик релиза `android-test-1` (без микрофона) удалить.
+4. iPhone Duo: после оплаты Apple Developer собрать TestFlight-сборку и проверить на настоящем Duo (или у знакомого с Mac и Xcode 27.1): складывание и раскладывание, «рейка» с кнопками, отступы, фото, чат с клавиатурой.
+5. Android: поставить тестовый APK (`android-test-3`, он же отправлен в чат) и пройти список из `store/google-play.md`, раздел 5. На настоящем Android приложение ещё не запускалось. Черновик релиза `android-test-1` (без микрофона) удалить.

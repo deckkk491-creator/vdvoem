@@ -473,7 +473,7 @@ export default function ChatScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: c.bg }}
+      style={{ flex: 1, backgroundColor: c.bg, paddingLeft: insets.left, paddingRight: insets.right }}
       behavior="padding"
       // Высота нативного заголовка (44) + статус-бар (на Android экран начинается под заголовком)
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 44 : 0}
