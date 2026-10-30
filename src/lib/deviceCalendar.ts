@@ -22,7 +22,12 @@ type Details = NonNullable<Parameters<typeof Calendar.createEventAsync>[1]>;
 
 export type SyncResult = 'ok' | 'denied' | 'error';
 
-/** Выгрузка поддерживается только на iOS (приложение выходит в App Store) */
+/**
+ * Выгрузка в календарь телефона сделана и проверена только для iOS.
+ * На Android она сознательно выключена: календарь «Вместе» там создаётся иначе (локальный аккаунт),
+ * а у событий на весь день своя работа с часовыми поясами — без проверки на устройстве включать нельзя.
+ * Разрешения на календарь для Android заблокированы в app.json (blockedPermissions).
+ */
 export const deviceCalendarSupported = Platform.OS === 'ios';
 
 export async function isExportEnabled(): Promise<boolean> {

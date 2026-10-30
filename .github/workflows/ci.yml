@@ -38,6 +38,33 @@ jobs:
           cat export.log
           if [ $code -ne 0 ]; then echo "::error title=expo export::$(tail -c 3000 export.log | tr '\n' '|')"; fi
           exit $code
+      - name: Bundle for Android
+        run: |
+          set +e
+          npx expo export --platform android > export-android.log 2>&1; code=$?
+          cat export-android.log
+          if [ $code -ne 0 ]; then echo "::error title=expo export android::$(tail -c 3000 export-android.log | tr '\n' '|')"; fi
+          exit $code
+      - name: Android project and manifest (prebuild)
+        run: |
+          set +e
+          npx expo prebuild --platform android --no-install > prebuild.log 2>&1; code=$?
+          tail -n 40 prebuild.log
+          if [ $code -ne 0 ]; then echo "::error title=prebuild android::$(tail -c 3000 prebuild.log | tr '\n' '|')"; exit $code; fi
+          M=android/app/src/main/AndroidManifest.xml
+          echo "--- manifest"; cat "$M"
+          echo "--- permissions that stay"
+          grep 'uses-permission' "$M" | grep -v 'tools:node="remove"' | sed -E 's/.*android:name="([^"]*)".*/\1/' | sort
+          # Выгрузка в календарь на Android выключена: разрешения на календарь не должны попасть в сборку
+          if grep -E 'READ_CALENDAR|WRITE_CALENDAR' "$M" | grep -v 'tools:node="remove"'; then
+            echo "::error title=calendar permission::READ/WRITE_CALENDAR попали в манифест Android"; exit 1
+          fi
+          grep -q 'android:scheme="vdvoem"' "$M" || { echo "::error title=deep link::в манифесте нет схемы vdvoem"; exit 1; }
+          grep -q 'android:allowBackup="false"' "$M" || echo "::warning title=allowBackup::allowBackup не выключен"
+          for f in mipmap-anydpi-v26/ic_launcher.xml drawable-mdpi/notification_icon.png; do
+            find android/app/src/main/res -path "*$f" | grep -q . || echo "::warning title=android icon::нет $f"
+          done
+          grep -q 'monochrome' android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml || echo "::warning title=monochrome::в адаптивной иконке нет monochrome"
 
   database:
     runs-on: ubuntu-latest

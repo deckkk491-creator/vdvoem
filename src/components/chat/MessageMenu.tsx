@@ -75,7 +75,7 @@ export function MessageMenu({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' }} onPress={onClose} accessibilityLabel="Закрыть меню" accessibilityRole="button">
         <View style={{ flex: 1, justifyContent: 'flex-end', paddingHorizontal: 16, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }}>
           <Animated.View style={{ alignItems: side, transform: [{ scale }] }} onStartShouldSetResponder={() => true}>

@@ -61,7 +61,7 @@ export function useVoiceRecorder() {
     try {
       const perm = await AudioModule.requestRecordingPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Нет доступа к микрофону', 'Разреши «Вместе» доступ к микрофону в настройках iPhone, чтобы записывать голосовые.', [
+        Alert.alert('Нет доступа к микрофону', 'Разреши «Вместе» доступ к микрофону в настройках телефона, чтобы записывать голосовые.', [
           { text: 'Не сейчас', style: 'cancel' },
           { text: 'Открыть настройки', onPress: () => Linking.openSettings().catch(() => undefined) },
         ]);

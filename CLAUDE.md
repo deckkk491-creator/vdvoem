@@ -1,6 +1,6 @@
 # Вместе — заметки для Claude
 
-Общее пространство для пар и семей под iOS (App Store). Владелец: deckkk491-creator.
+Общее пространство для пар и семей под iOS (App Store) и Android (Google Play, RuStore или APK). Владелец: deckkk491-creator.
 - Название «Вместе» (раньше «Вдвоём», переименовано 26.10.2026). Технические имена не менялись: репозиторий, slug и схема `vdvoem`, Bundle ID `com.deckkk491.vdvoem`, проект Supabase `vdvoem`.
 
 ## Стек и сборка
@@ -10,8 +10,9 @@
 - Бэкенд: Supabase (Postgres + RLS, вход по 6-значному коду или ссылке из письма, realtime).
 - Демо-вход для ревьюера Apple: если задана `EXPO_PUBLIC_DEMO_EMAIL`, для этой одной почты `app/sign-in.tsx` вместо письма просит «Код доступа» и вызывает `signInWithPassword`. Пароль в приложении не хранится, он только в Supabase и в App Store Connect.
 - Сборка только в облаке EAS: у владельца MacBook Air 2019, Xcode 26 на нём не ставится.
-- Bundle ID: `com.deckkk491.vdvoem`.
-- CI (`.github/workflows/ci.yml`): npm install, tsc, expo export ios. CI должен оставаться зелёным.
+- Bundle ID и Android-пакет: `com.deckkk491.vdvoem`.
+- Android: тот же код. Профили EAS: `preview` — APK, `production` — AAB, `production-apk` — APK для RuStore/раздачи. Календарь телефона (`deviceCalendarSupported`) работает только на iOS, разрешения на календарь для Android заблокированы в `app.json`. На Android: галерея без запроса доступа (системный выбор фото), «Сделать фото» из меню вложений, без «Apple Maps», окна-шторки и экраны сами обходят клавиатуру и системные панели (`Screen`, `Sheet` в `src/components/ui.tsx`). Всё про публикацию и проверку на телефоне — `store/google-play.md`.
+- CI (`.github/workflows/ci.yml`): npm install, tsc, expo export ios и android, `expo prebuild --platform android` с проверкой манифеста. CI должен оставаться зелёным.
 
 ## Где что лежит
 - `supabase/migrations/0001_init.sql` — схема, RLS и RPC: `create_space`, `join_space`, `leave_space`, `delete_my_data`.
@@ -27,8 +28,8 @@
 - `src/data/ideas.ts` — идеи для правила 2-2-2 и визитки стран (`COUNTRY_CARDS`).
 - `src/data/mealPhotos.json`, `ideaPhotos.json` — фото блюд и идей с Wikimedia Commons (свободные лицензии, автор подписан); собраны `scripts/fetch_photos.py` (Википедию из облака не видно — запускали в Chrome пользователя).
 - `src/theme/index.ts` — также подложки (`SURFACES`) и фоны (`BACKGROUNDS`, картинки в `assets/backgrounds`); подложки и фон хранятся только на телефоне.
-- `docs/` — GitHub Pages: политика и поддержка (https://deckkk491-creator.github.io/vdvoem/).
-- `store/` — тексты для App Store Connect, App Privacy, заметки для ревью.
+- `docs/` — GitHub Pages: политика, поддержка и удаление аккаунта (`delete-account.html`, нужна Google Play) — https://deckkk491-creator.github.io/vdvoem/.
+- `store/` — тексты для App Store Connect, App Privacy, заметки для ревью; `google-play.md` — Android: сборка, анкеты Google Play, список проверок на телефоне.
 
 ## Правила
 - Тексты в приложении на русском, обращение на «ты».
@@ -51,3 +52,4 @@
 1. Проверить в Expo Go вдвоём на двух телефонах (участники, исключение, смена кода, вход по ссылке, вишлист с маркетплейсов, голосовые).
 2. Демо-аккаунт для ревьюера Apple: код и `store/review-notes.md` готовы, остаётся создать пользователей в Supabase, запустить `supabase/demo/seed_demo.sql`, задать `EXPO_PUBLIC_DEMO_EMAIL` в EAS и заполнить поля в App Store Connect.
 3. Проверить на двух телефонах: включить 2-2-2 на одном, свернуть и развернуть «Вместе» на другом — напоминания должны появиться.
+4. Android: собрать `preview` (APK) и пройти список из `store/google-play.md`, раздел 5. На настоящем Android приложение ещё не запускалось.
