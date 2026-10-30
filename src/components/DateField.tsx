@@ -60,7 +60,9 @@ export function DateField({
         ) : (
           <Pressable
             onPress={() => {
-              onChange(toISODate(new Date()));
+              // На iOS компактному выбору нужна дата, поэтому ставим сегодняшнюю.
+              // На Android дата запишется, только когда ты нажмёшь «ОК» в окне выбора: «Отмена» ничего не меняет.
+              if (Platform.OS === 'ios') onChange(toISODate(new Date()));
               setOpen(true);
             }}
             accessibilityRole="button"
@@ -138,8 +140,9 @@ export function TimeField({
         ) : (
           <Pressable
             onPress={() => {
-              onChange(toHHMM(d));
-              if (Platform.OS !== 'ios') setOpen(true);
+              // На Android время запишется после «ОК» в окне выбора, «Отмена» ничего не меняет
+              if (Platform.OS === 'ios') onChange(toHHMM(d));
+              else setOpen(true);
             }}
             accessibilityRole="button"
             style={{ flex: 1, paddingVertical: 14 }}

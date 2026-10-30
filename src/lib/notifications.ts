@@ -16,10 +16,23 @@ const PREFIX = 'rule222-';
 
 let permissionRequest: Promise<boolean> | null = null;
 
+/**
+ * Канал уведомлений Android. Начиная с Android 13 системное окно «Разрешить уведомления»
+ * появляется только если канал уже создан, поэтому создаём его до запроса разрешения.
+ */
+async function ensureChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync('rule222', {
+    name: 'Правило 2-2-2',
+    importance: Notifications.AndroidImportance.DEFAULT,
+  });
+}
+
 /** Спрашивает разрешение на уведомления. Параллельные вызовы делят один запрос — диалог не покажется дважды. */
 export function ensurePermission(): Promise<boolean> {
   if (!permissionRequest) {
     permissionRequest = (async () => {
+      await ensureChannel().catch(() => undefined);
       const current = await Notifications.getPermissionsAsync();
       if (current.granted) return true;
       if (!current.canAskAgain) return false;
@@ -61,12 +74,7 @@ export async function syncRuleReminders(space: Space | null, events: RuleEvent[]
     const granted = await ensurePermission();
     if (!granted) return;
 
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('rule222', {
-        name: 'Правило 2-2-2',
-        importance: Notifications.AndroidImportance.DEFAULT,
-      });
-    }
+    await ensureChannel();
 
     const kinds: RuleKind[] = ['date', 'place', 'country'];
     for (const kind of kinds) {

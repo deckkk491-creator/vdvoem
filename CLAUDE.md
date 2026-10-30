@@ -16,7 +16,7 @@
 - `locales/ru.json`: у iOS и Android разные ключи (`ios.CFBundleDisplayName`, `android.app_name`). Ключи iOS в Android-строках ломают lint релизной сборки.
 - Микрофон на Android: `expo-image-picker` с `microphonePermission: false` блокирует `RECORD_AUDIO` и ломает голосовые (в `app.json` у него тот же текст, что у `expo-audio`). CI это проверяет.
 - iPhone Duo (складной, внутренний экран ≈ 669 × 951 pt, внешний ≈ 466 × 678 pt): сборки SDK 58 на образе EAS `latest` идут на iOS 27 SDK, окно меняет размер при складывании. Поэтому размер окна — только `useWindowDimensions` (не `Dimensions.get`), боковые отступы страниц учитывают `insets.left/right` (`Screen`, `pageStyle` в `src/components/ui.tsx`), ширина содержимого ≤ `MAX_CONTENT_WIDTH` (720). Нативные Stack-заголовки и `Tabs` не трогаем: панели на Duo ставит iOS. Не проверено на устройстве. Подробности — `PROGRESS.md`.
-- CI (`.github/workflows/ci.yml`): npm install, tsc, expo export ios и android, `expo prebuild --platform android` с проверкой манифеста. CI должен оставаться зелёным.
+- CI (`.github/workflows/ci.yml`): npm install, tsc, expo export ios и android, `expo prebuild --platform android` с проверкой манифеста, проверки логики сроков 2-2-2 (`tests/rule222.test.mjs`, запуск `npx tsx --test tests/rule222.test.mjs`). CI должен оставаться зелёным.
 
 ## Где что лежит
 - `supabase/migrations/0001_init.sql` — схема, RLS и RPC: `create_space`, `join_space`, `leave_space`, `delete_my_data`.
