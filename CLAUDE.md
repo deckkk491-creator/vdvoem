@@ -12,6 +12,9 @@
 - Сборка только в облаке EAS: у владельца MacBook Air 2019, Xcode 26 на нём не ставится.
 - Bundle ID и Android-пакет: `com.deckkk491.vdvoem`.
 - Android: тот же код. Профили EAS: `preview` — APK, `production` — AAB, `production-apk` — APK для RuStore/раздачи. Календарь телефона (`deviceCalendarSupported`) работает только на iOS, разрешения на календарь для Android заблокированы в `app.json`. На Android: галерея без запроса доступа (системный выбор фото), «Сделать фото» из меню вложений, без «Apple Maps», окна-шторки и экраны сами обходят клавиатуру и системные панели (`Screen`, `Sheet` в `src/components/ui.tsx`). Всё про публикацию и проверку на телефоне — `store/google-play.md`.
+- Тестовый APK без Expo и без Android Studio: GitHub → Actions → «Android APK (тестовая сборка)» → Run workflow (`android-apk.yml`, ~20 минут); файл — в закрытом черновике релиза. Для магазинов — EAS.
+- `locales/ru.json`: у iOS и Android разные ключи (`ios.CFBundleDisplayName`, `android.app_name`). Ключи iOS в Android-строках ломают lint релизной сборки.
+- Микрофон на Android: `expo-image-picker` с `microphonePermission: false` блокирует `RECORD_AUDIO` и ломает голосовые (в `app.json` у него тот же текст, что у `expo-audio`). CI это проверяет.
 - CI (`.github/workflows/ci.yml`): npm install, tsc, expo export ios и android, `expo prebuild --platform android` с проверкой манифеста. CI должен оставаться зелёным.
 
 ## Где что лежит
@@ -52,4 +55,4 @@
 1. Проверить в Expo Go вдвоём на двух телефонах (участники, исключение, смена кода, вход по ссылке, вишлист с маркетплейсов, голосовые).
 2. Демо-аккаунт для ревьюера Apple: код и `store/review-notes.md` готовы, остаётся создать пользователей в Supabase, запустить `supabase/demo/seed_demo.sql`, задать `EXPO_PUBLIC_DEMO_EMAIL` в EAS и заполнить поля в App Store Connect.
 3. Проверить на двух телефонах: включить 2-2-2 на одном, свернуть и развернуть «Вместе» на другом — напоминания должны появиться.
-4. Android: собрать `preview` (APK) и пройти список из `store/google-play.md`, раздел 5. На настоящем Android приложение ещё не запускалось.
+4. Android: поставить тестовый APK (`android-test-3`, он же отправлен в чат) и пройти список из `store/google-play.md`, раздел 5. На настоящем Android приложение ещё не запускалось. Черновик релиза `android-test-1` (без микрофона) удалить.
