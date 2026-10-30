@@ -61,6 +61,16 @@ jobs:
           fi
           grep -q 'android:scheme="vdvoem"' "$M" || { echo "::error title=deep link::в манифесте нет схемы vdvoem"; exit 1; }
           grep -q 'android:allowBackup="false"' "$M" || echo "::warning title=allowBackup::allowBackup не выключен"
+          # Перевод названия: у iOS и Android в locales/*.json свои ключи. Ключ iOS в Android-ресурсах ломает lint релизной сборки.
+          for f in android/app/src/main/res/values-*/strings.xml; do
+            [ -f "$f" ] || continue
+            echo "--- $f"; cat "$f"
+            if grep -q 'CFBundle' "$f"; then echo "::error title=locales::ключи iOS (CFBundle…) попали в $f — положите их в раздел ios в locales/*.json"; exit 1; fi
+          done
+          # iOS: название на русском должно попасть в InfoPlist.strings
+          npx expo prebuild --platform ios --no-install > prebuild-ios.log 2>&1 || { echo "::error title=prebuild ios::$(tail -c 2500 prebuild-ios.log | tr '\n' '|')"; exit 1; }
+          if ! grep -rl 'CFBundleDisplayName' ios --include=InfoPlist.strings | grep -q .; then echo "::error title=locales ios::в ios нет InfoPlist.strings с CFBundleDisplayName"; exit 1; fi
+          grep -r 'CFBundleDisplayName' ios --include=InfoPlist.strings
           for f in mipmap-anydpi-v26/ic_launcher.xml drawable-mdpi/notification_icon.png; do
             find android/app/src/main/res -path "*$f" | grep -q . || echo "::warning title=android icon::нет $f"
           done
