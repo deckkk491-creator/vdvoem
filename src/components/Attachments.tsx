@@ -95,6 +95,7 @@ export function PhotoViewer({ urls, index, onClose }: { urls: string[]; index: n
       transparent
       presentationStyle="overFullScreen"
       statusBarTranslucent
+      navigationBarTranslucent
       supportedOrientations={['portrait', 'landscape']}
     >
       <Animated.View style={{ flex: 1, backgroundColor: '#000', opacity: fade }} {...pan.panHandlers}>
@@ -273,7 +274,14 @@ export function AttachmentEditor({
         if (i === 0) run(() => pickPhotos(10));
         if (i === 1) run(takePhoto);
       });
-    } else run(() => pickPhotos(10));
+    } else {
+      // Android: Alert — до трёх кнопок, как раз «галерея», «камера» и «Отмена»
+      Alert.alert('Добавить фото', undefined, [
+        { text: 'Выбрать из галереи', onPress: () => run(() => pickPhotos(10)) },
+        { text: 'Сделать фото', onPress: () => run(takePhoto) },
+        { text: 'Отмена', style: 'cancel' },
+      ]);
+    }
   };
 
   const saveLink = () => {

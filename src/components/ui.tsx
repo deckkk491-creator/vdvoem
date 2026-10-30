@@ -69,6 +69,20 @@ export function Label({ children, style }: { children: React.ReactNode; style?: 
 
 /* ------------------------------ Layout ------------------------------ */
 
+/**
+ * Android рисует приложение «от края до края» и не сжимает окно под клавиатуру,
+ * поэтому приподнимаем содержимое сами. На iOS ничего не меняется.
+ * Если окно всё же сжалось, перекрытия нет и отступ получается нулевым.
+ */
+function KeyboardSafe({ children }: { children: React.ReactNode }) {
+  if (Platform.OS !== 'android') return <>{children}</>;
+  return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      {children}
+    </KeyboardAvoidingView>
+  );
+}
+
 export function Screen({
   children,
   scroll = true,
@@ -93,9 +107,11 @@ export function Screen({
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <AppBackground />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={inner} keyboardShouldPersistTaps="handled">
-        {children}
-      </ScrollView>
+      <KeyboardSafe>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={inner} keyboardShouldPersistTaps="handled">
+          {children}
+        </ScrollView>
+      </KeyboardSafe>
     </View>
   );
 }
@@ -506,13 +522,14 @@ export function Sheet({
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    // Android: окно на весь экран «от края до края» — отступ под статус-бар делаем сами, клавиатуру обходим через padding
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg, paddingTop: Platform.OS === 'android' ? insets.top : 0 }} behavior="padding">
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.lg, paddingTop: space.lg, paddingBottom: space.sm }}>
           <H2 style={{ flex: 1 }}>{title}</H2>
           <IconButton icon="close" onPress={onClose} bg={c.bgAlt} size={20} label="Закрыть" />
         </View>
-        <ScrollView contentContainerStyle={{ padding: space.lg, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{ padding: space.lg, paddingBottom: 40 + (!footer && Platform.OS === 'android' ? insets.bottom : 0) }} keyboardShouldPersistTaps="handled">
           {children}
         </ScrollView>
         {footer ? (

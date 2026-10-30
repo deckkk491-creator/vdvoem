@@ -377,7 +377,9 @@ function IdeaCard({ item, onReplace, onSave, onDone }: { item: AnyIdea; onReplac
         {item.kind === 'place' ? (
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
             <Button title="Яндекс Карты" small variant="secondary" icon="map-outline" onPress={() => openMapSearch(`${item.idea.query} ${city}`)} />
-            <Button title="Apple Maps" small variant="secondary" icon="navigate-outline" onPress={() => openMapSearch(`${item.idea.query} ${city}`, 'apple')} />
+            {Platform.OS === 'ios' ? (
+              <Button title="Apple Maps" small variant="secondary" icon="navigate-outline" onPress={() => openMapSearch(`${item.idea.query} ${city}`, 'apple')} />
+            ) : null}
           </View>
         ) : null}
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>

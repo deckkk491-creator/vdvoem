@@ -2,7 +2,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Linking } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
 import { supabase } from './supabase';
 import type { Attachment, AttachmentParent } from './types';
 
@@ -60,10 +60,13 @@ function permissionAlert(what: string) {
 
 /** Выбор фото из галереи (по умолчанию — несколько) */
 export async function pickPhotos(limit = 10): Promise<LocalFile[]> {
-  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!perm.granted && perm.accessPrivileges !== 'limited') {
-    permissionAlert('фото');
-    return [];
+  // На Android галерея открывается системным окном выбора фото — доступ к медиатеке не нужен и не запрашивается
+  if (Platform.OS !== 'android') {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted && perm.accessPrivileges !== 'limited') {
+      permissionAlert('фото');
+      return [];
+    }
   }
   const res = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
