@@ -1,0 +1,21 @@
+name: Probe Supabase (одноразовая проверка)
+
+# Разовая проверка: отвечает ли сервер Supabase (не «уснул» ли бесплатный проект).
+# Только чтение, письма не отправляются.
+on:
+  push:
+    branches: [probe-supabase]
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe
+        run: |
+          HOST=lsdejadmrwuxiavgficc.supabase.co
+          KEY=sb_publishable_oSrubEGO-L3oR5cGMPOfMw_LdHxyFEX
+          echo "::notice title=dns::$(getent hosts $HOST | head -2 | tr '\n' ' ') exit=$?"
+          for p in /auth/v1/health /auth/v1/settings /rest/v1/; do
+            code=$(curl -sS -m 25 -o body.txt -w '%{http_code}' -H "apikey: $KEY" "https://$HOST$p" 2>err.txt)
+            echo "::notice title=probe $p::HTTP $code | body: $(head -c 300 body.txt | tr '\n' ' ') | err: $(head -c 200 err.txt | tr '\n' ' ')"
+          done
