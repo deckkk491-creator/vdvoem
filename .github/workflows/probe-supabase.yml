@@ -1,7 +1,7 @@
 name: Probe Supabase (одноразовая проверка)
 
 # Разовая проверка: отвечает ли сервер Supabase (не «уснул» ли бесплатный проект).
-# Только чтение, письма не отправляются.
+# Только чтение, письма не отправляются. Ждёт до ~7 минут, пока проект проснётся.
 on:
   push:
     branches: [probe-supabase]
@@ -9,13 +9,25 @@ on:
 jobs:
   probe:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - name: Probe
         run: |
           HOST=lsdejadmrwuxiavgficc.supabase.co
           KEY=sb_publishable_oSrubEGO-L3oR5cGMPOfMw_LdHxyFEX
-          echo "::notice title=dns::$(getent hosts $HOST | head -2 | tr '\n' ' ') exit=$?"
-          for p in /auth/v1/health /auth/v1/settings /rest/v1/; do
-            code=$(curl -sS -m 25 -o body.txt -w '%{http_code}' -H "apikey: $KEY" "https://$HOST$p" 2>err.txt)
-            echo "::notice title=probe $p::HTTP $code | body: $(head -c 300 body.txt | tr '\n' ' ') | err: $(head -c 200 err.txt | tr '\n' ' ')"
+          ok=0
+          for i in $(seq 1 42); do
+            code=$(curl -sS -m 15 -o body.txt -w '%{http_code}' -H "apikey: $KEY" "https://$HOST/auth/v1/health" 2>err.txt); rc=$?
+            echo "попытка $i: curl=$rc http=$code"
+            if [ $rc -eq 0 ] && [ "$code" = "200" ]; then ok=1; break; fi
+            last="curl=$rc http=$code body=$(head -c 200 body.txt | tr '\n' ' ') err=$(head -c 150 err.txt | tr '\n' ' ')"
+            sleep 10
           done
+          if [ $ok -eq 1 ]; then
+            echo "::notice title=РЕЗУЛЬТАТ::Сервер отвечает (попытка $i), http=$code, body: $(head -c 200 body.txt | tr '\n' ' ')"
+            s=$(curl -sS -m 15 -H "apikey: $KEY" "https://$HOST/auth/v1/settings" | head -c 300 | tr '\n' ' ')
+            echo "::notice title=settings::$s"
+          else
+            echo "::error title=РЕЗУЛЬТАТ::Сервер не отвечает за 7 минут. Последнее: $last"
+            exit 1
+          fi
