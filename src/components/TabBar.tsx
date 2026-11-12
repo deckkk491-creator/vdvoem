@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Tabs } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,7 +20,7 @@ const MAX_WIDTH = 520;
  * По панели можно вести пальцем — подсветка идёт за ним, раздел открывается, когда палец отпущен.
  * Состав и порядок разделов — из настроек (`tabPrefs`), скрытые разделы открываются из «Мы».
  */
-export function FloatingTabBar({ state, navigation }: TabBarProps) {
+export function FloatingTabBar({ state }: TabBarProps) {
   const { c, dark } = useTheme();
   const insets = useSafeAreaInsets();
   const { width: winW } = useWindowDimensions();
@@ -60,14 +60,9 @@ export function FloatingTabBar({ state, navigation }: TabBarProps) {
 
   const go = (idx: number) => {
     const tab = tabs[idx];
-    const route = tab ? state.routes.find((r) => r.name === tab.key) : undefined;
-    if (!route) return;
-    const focused = activeName === route.name;
-    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-    if (!focused && !event.defaultPrevented) {
-      Haptics.selectionAsync().catch(() => undefined);
-      navigation.navigate(route.name, route.params);
-    }
+    if (!tab || activeName === tab.key) return;
+    Haptics.selectionAsync().catch(() => undefined);
+    router.navigate(`/(tabs)/${tab.key}`);
   };
 
   // PanResponder создаётся один раз, поэтому свежие размеры и обработчики берёт отсюда
