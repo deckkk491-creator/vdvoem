@@ -24,7 +24,8 @@ App Store Connect → your app → **App Privacy** → Get Started.
 | Identifiers | **User ID** | ✅ | Supabase account UUID that ties content to the user |
 | Contact Info | Phone Number, Physical Address, Other Contact Info | — | not collected |
 | Health & Fitness | — | — | not collected |
-| Financial Info | Payment Info, Credit Info, Other Financial Info | — | not collected (savings jar is manual numbers, not financial account data) |
+| Financial Info | Payment Info, Credit Info | — | not collected (no payments, no bank or card data) |
+| Financial Info | Other Financial Info | App Functionality, linked to identity, not used for tracking | **collected since the Budget section (Nov 2026)**: income and expense amounts the user types in (may include salary) |
 | Location | Precise / Coarse | — | not collected |
 | Sensitive Info | — | — | not collected |
 | Contacts | — | — | not collected (invite code is shared manually) |
@@ -36,7 +37,7 @@ App Store Connect → your app → **App Privacy** → Get Started.
 | Diagnostics | Crash Data, Performance Data, Other | — | not collected (no crash SDK) — **change if you add Sentry, Firebase Crashlytics, etc.** |
 | Other Data | — | — | not collected |
 
-Note on "Other Financial Info": Apple means things like salary or debts. A savings goal the user types in is user content, so it goes under **Other User Content**. If you want to be extra cautious, you may tick Other Financial Info with the same answers as below — it is not wrong, just broader.
+Note on "Other Financial Info": Apple means things like salary or debts. The Budget section lets users record income (e.g. salary) and expenses, so tick **Other Financial Info** — App Functionality, linked to the user, no tracking. Savings goals stay under **Other User Content**.
 
 ## Step 3. For EACH ticked type, answer the same way
 
