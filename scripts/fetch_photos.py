@@ -16,7 +16,8 @@ MEALS = {
   'b11': ['Eggs Benedict'], 'b12': ['Khachapuri'], 'b13': ['Açaí na tigela', 'Smoothie'], 'b14': ['ru:Рисовая каша', 'Rice pudding'],
   'b15': ['ru:Творожная запеканка', 'Quark (dairy product)'], 'b16': ['Breakfast burrito'], 'b17': ['French toast'], 'b18': ['Scrambled eggs'],
   'l1': ['Borscht'], 'l2': ['Chicken soup', 'Chicken noodle soup'], 'l3': ['Caesar salad'], 'l4': ['Plov', 'Pilaf'], 'l5': ['Shawarma'],
-  'l6': ['Carbonara'], 'l7': ['Cream of mushroom soup'], 'l8': ['Pelmeni'], 'l9': ['Poke (dish)', 'Poke (Hawaiian dish)'], 'l10': ['Tomato soup'],
+  # l9 «Боул с лососем»: в статье про поке на первом фото тунец — фото не берём, пока не подберём лосося вручную
+  'l6': ['Carbonara'], 'l7': ['Cream of mushroom soup'], 'l8': ['Pelmeni'], 'l10': ['Tomato soup'],
   'l11': ['Lentil soup'], 'l12': ['Taco'], 'l13': ['Ramen'], 'l14': ['Greek salad'], 'l15': ['Teriyaki'],
   'l16': ['Draniki', 'Potato pancake'], 'l17': ['Solyanka'], 'l18': ['Club sandwich'],
   'd1': ['Shrimp scampi', 'Spaghetti aglio e olio'], 'd2': ['Steak'], 'd3': ['Salmon as food'], 'd4': ['Pizza'], 'd5': ['Chicken curry'],

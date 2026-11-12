@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { itemMenu } from '../../src/components/ItemCard';
 import { Avatar, LikeButton } from '../../src/components/people';
@@ -9,12 +9,14 @@ import { Button, Card, Chip, EmptyState, ErrorNote, Input, Label, Loading, Scree
 import { useItems } from '../../src/hooks/useItems';
 import { humanError } from '../../src/lib/supabase';
 import type { ItemWithLikes } from '../../src/lib/types';
-import { plural } from '../../src/lib/format';
 import { useSpace } from '../../src/providers/SpaceProvider';
 import { radius, sectionStyle, useTheme } from '../../src/theme';
 
 const BASE_CATEGORIES = ['Продукты', 'Быт', 'Аптека', 'Другое'];
 const CAT_EMOJI: Record<string, string> = { Продукты: '🥦', Быт: '🧽', Аптека: '💊', Другое: '📦' };
+/** Через сколько отмеченная покупка сама пропадает из списка: на этом телефоне и у партнёра (чуть позже, чтобы успеть передумать) */
+const REMOVE_AFTER_MS = 4000;
+const REMOVE_REMOTE_MS = 15000;
 
 export default function ShoppingScreen() {
   const { c } = useTheme();
@@ -54,6 +56,52 @@ export default function ShoppingScreen() {
 
   const boughtCount = items.filter((i) => i.done).length;
 
+  // Купленное убирается само: отметил — через несколько секунд позиция исчезает у всех.
+  // Пока она зачёркнута, нажатие возвращает её в список.
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const failed = useRef(new Set<string>());
+  const scheduleRemoval = useCallback(
+    (id: string, delay: number) => {
+      if (timers.current.has(id) || failed.current.has(id)) return;
+      timers.current.set(
+        id,
+        setTimeout(() => {
+          timers.current.delete(id);
+          // не получилось (нет сети) — оставляем зачёркнутой и не пытаемся снова по кругу
+          remove(id).catch(() => failed.current.add(id));
+        }, delay),
+      );
+    },
+    [remove],
+  );
+  const cancelRemoval = useCallback((id: string) => {
+    const t = timers.current.get(id);
+    if (t) clearTimeout(t);
+    timers.current.delete(id);
+    failed.current.delete(id);
+  }, []);
+
+  // Отмеченное партнёром или оставшееся с прошлого раза
+  useEffect(() => {
+    const now = Date.now();
+    for (const i of items) {
+      if (!i.done) {
+        cancelRemoval(i.id);
+        continue;
+      }
+      const age = now - new Date(i.updated_at).getTime();
+      scheduleRemoval(i.id, Math.min(Math.max(REMOVE_REMOTE_MS - age, 0), REMOVE_REMOTE_MS));
+    }
+  }, [items, scheduleRemoval, cancelRemoval]);
+
+  useEffect(() => {
+    const map = timers.current;
+    return () => {
+      map.forEach((t) => clearTimeout(t));
+      map.clear();
+    };
+  }, []);
+
   async function quickAdd() {
     const t = title.trim();
     // onSubmitEditing не учитывает disabled у кнопки — защищаемся от двойной отправки сами
@@ -75,23 +123,14 @@ export default function ShoppingScreen() {
 
   function toggleBought(i: ItemWithLikes) {
     Haptics.selectionAsync().catch(() => undefined);
+    const done = !i.done;
+    cancelRemoval(i.id);
+    if (done) scheduleRemoval(i.id, REMOVE_AFTER_MS);
     // update() сразу меняет галочку и сам откатывает её, если сервер вернул ошибку
-    update(i.id, { done: !i.done }).catch((e) => Alert.alert('Не получилось отметить', humanError(e)));
-  }
-
-  function clearBought() {
-    Alert.alert('Убрать купленное?', `${boughtCount} ${plural(boughtCount, 'позиция пропадёт', 'позиции пропадут', 'позиций пропадут')} из списка у всех.`, [
-      { text: 'Отмена', style: 'cancel' },
-      {
-        text: 'Убрать',
-        style: 'destructive',
-        onPress: async () => {
-          const results = await Promise.allSettled(items.filter((i) => i.done).map((i) => remove(i.id)));
-          const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
-          if (failed) Alert.alert('Не всё получилось убрать', humanError(failed.reason));
-        },
-      },
-    ]);
+    update(i.id, { done }).catch((e) => {
+      cancelRemoval(i.id);
+      Alert.alert('Не получилось отметить', humanError(e));
+    });
   }
 
   return (
@@ -99,10 +138,9 @@ export default function ShoppingScreen() {
       <Screen>
         <SectionHeader
           title="Покупки"
-          subtitle={items.length ? `Осталось ${items.length - boughtCount} · куплено ${boughtCount}` : 'Общий список в магазин'}
+          subtitle={items.length ? `Осталось купить: ${items.length - boughtCount}` : 'Общий список в магазин'}
           emoji={st.emoji}
           color={st.fg}
-          right={boughtCount > 0 ? <Button title="Очистить" small variant="secondary" icon="checkmark-done" onPress={clearBought} /> : null}
         />
 
         <Card style={{ marginBottom: 18, padding: 12 }}>
@@ -217,7 +255,7 @@ export default function ShoppingScreen() {
           ))
         )}
         {items.length > 0 ? (
-          <Text style={{ textAlign: 'center', color: c.textFaint, fontSize: 12 }}>Нажми — куплено, удерживай — изменить</Text>
+          <Text style={{ textAlign: 'center', color: c.textFaint, fontSize: 12 }}>Нажми — куплено (через пару секунд исчезнет, нажми ещё раз — вернётся). Удерживай — изменить</Text>
         ) : null}
       </Screen>
 

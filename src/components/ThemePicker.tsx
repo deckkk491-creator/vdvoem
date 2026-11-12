@@ -152,7 +152,7 @@ export function ThemePicker() {
       </View>
       <Segmented
         options={[
-          { value: 'system', label: 'Как в системе' },
+          { value: 'system', label: 'Системная' },
           { value: 'light', label: '☀️ Светлая' },
           { value: 'dark', label: '🌙 Тёмная' },
         ]}
@@ -165,12 +165,15 @@ export function ThemePicker() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {SURFACE_KEYS.map((k) => {
           const s = SURFACES[k];
-          const sw = dark ? s.dark : s.light;
+          // «Чёрные» бывают только тёмными: показываем их чёрными и вместе с ними включаем тёмную тему
+          const oled = k === 'oled';
+          const swDark = dark || oled;
+          const sw = swDark ? s.dark : s.light;
           const active = prefs.surface === k;
           return (
             <Pressable
               key={k}
-              onPress={() => apply({ ...prefs, surface: k })}
+              onPress={() => apply({ ...prefs, surface: k, mode: oled && !dark ? 'dark' : prefs.mode })}
               accessibilityRole="radio"
               accessibilityState={{ checked: active }}
               accessibilityLabel={`Подложки: ${s.title}`}
@@ -191,7 +194,7 @@ export function ThemePicker() {
               <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: sw.card, borderWidth: 1, borderColor: sw.border, alignItems: 'center', justifyContent: 'center' }}>
                 <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: sw.bgAlt }} />
               </View>
-              <Text style={{ color: dark ? '#F6EBE1' : '#2B1D17', fontSize: 14, fontWeight: active ? '700' : '500' }}>{s.title}</Text>
+              <Text style={{ color: swDark ? '#F6EBE1' : '#2B1D17', fontSize: 14, fontWeight: active ? '700' : '500' }}>{s.title}</Text>
             </Pressable>
           );
         })}
