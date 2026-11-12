@@ -10,7 +10,7 @@ import { Button, Chip, ChipGroup, EmptyState, ErrorNote, Fab, Input, Label, Load
 import { useLinkAutofill } from '../../src/hooks/useLinkAutofill';
 import { useItems, useSorted, type SortMode } from '../../src/hooks/useItems';
 import { commitAttachments, emptyDraft, type AttachmentDraft } from '../../src/lib/files';
-import { formatDate, normalizeUrl, relativeDays, parseDate } from '../../src/lib/format';
+import { formatDate, normalizeUrl, relativeDays, parseDate, todayISO } from '../../src/lib/format';
 import { openMapSearch } from '../../src/lib/maps';
 import { humanError } from '../../src/lib/supabase';
 import type { Attachment, ItemWithLikes } from '../../src/lib/types';
@@ -31,7 +31,16 @@ export default function WeekendScreen() {
 
   const sorted = useSorted(items, sort);
   const { byParent } = useAttachmentsFor(items.map((i) => i.id));
+  const [showPast, setShowPast] = useState(false);
   const visible = useMemo(() => (cat ? sorted.filter((i) => i.category === cat) : sorted), [sorted, cat]);
+  // «Прошедшее»: дата (или последний день поездки) уже позади либо стоит отметка «сходили».
+  // Такие записи сами уходят из основного списка в свёрнутую историю внизу, ничего удалять не нужно.
+  const today = todayISO();
+  const isPast = (i: ItemWithLikes) => i.done || (!!i.event_date && (i.end_date ?? i.event_date).slice(0, 10) < today);
+  const current = visible.filter((i) => !isPast(i));
+  const past = visible
+    .filter(isPast)
+    .sort((x, y) => (y.end_date ?? y.event_date ?? y.updated_at).localeCompare(x.end_date ?? x.event_date ?? x.updated_at));
   const upcoming = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -39,6 +48,48 @@ export default function WeekendScreen() {
       .filter((i) => i.event_date && parseDate(i.event_date) >= today && !i.done)
       .sort((a, b) => a.event_date!.localeCompare(b.event_date!))[0];
   }, [items]);
+
+  const renderCard = (item: ItemWithLikes) => (
+      <ItemCard
+        key={item.id}
+        item={item}
+        accent={st.fg}
+        onLike={() => toggleLike(item)}
+        onDislike={() => toggleDislike(item)}
+        onPress={() => setEditing(item)}
+        extra={<AttachmentStrip attachments={byParent[item.id]} size={64} />}
+        onLongPress={() => itemMenu(item.title, () => setEditing(item), () => remove(item.id).catch((e) => Alert.alert('Ошибка', humanError(e))))}
+        badge={
+          <>
+            {item.category ? (
+              <Badge label={`${CATEGORY_EMOJI[item.category as WeekendCategory] ?? '✨'} ${item.category}`} color={st.fg} bg={st.bg} />
+            ) : null}
+            {item.event_date ? (
+              <Badge
+                label={`📅 ${formatDate(item.event_date)}${item.end_date && item.end_date !== item.event_date ? ` — ${formatDate(item.end_date)}` : ''}`}
+                color={c.textMuted}
+                bg={c.bgAlt}
+              />
+            ) : null}
+            {item.done ? <Badge label="✓ Сходили" color={c.sage} bg={c.sageSoft} /> : null}
+          </>
+        }
+        meta={
+          item.place ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+              <Ionicons name="location-outline" size={14} color={c.textMuted} />
+              <Text
+                style={{ fontSize: 14, color: c.textMuted, textDecorationLine: 'underline' }}
+                onPress={() => openMapSearch(`${item.place} ${space?.city ?? ''}`)}
+                numberOfLines={1}
+              >
+                {item.place}
+              </Text>
+            </View>
+          ) : null
+        }
+      />
+  );
 
   return (
     <View style={{ flex: 1 }}>
@@ -84,47 +135,40 @@ export default function WeekendScreen() {
             color={st.fg}
           />
         ) : (
-          visible.map((item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              accent={st.fg}
-              onLike={() => toggleLike(item)}
-              onDislike={() => toggleDislike(item)}
-              onPress={() => setEditing(item)}
-              extra={<AttachmentStrip attachments={byParent[item.id]} size={64} />}
-              onLongPress={() => itemMenu(item.title, () => setEditing(item), () => remove(item.id).catch((e) => Alert.alert('Ошибка', humanError(e))))}
-              badge={
-                <>
-                  {item.category ? (
-                    <Badge label={`${CATEGORY_EMOJI[item.category as WeekendCategory] ?? '✨'} ${item.category}`} color={st.fg} bg={st.bg} />
-                  ) : null}
-                  {item.event_date ? (
-                    <Badge
-                      label={`📅 ${formatDate(item.event_date)}${item.end_date && item.end_date !== item.event_date ? ` — ${formatDate(item.end_date)}` : ''}`}
-                      color={c.textMuted}
-                      bg={c.bgAlt}
-                    />
-                  ) : null}
-                  {item.done ? <Badge label="✓ Сходили" color={c.sage} bg={c.sageSoft} /> : null}
-                </>
-              }
-              meta={
-                item.place ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                    <Ionicons name="location-outline" size={14} color={c.textMuted} />
-                    <Text
-                      style={{ fontSize: 14, color: c.textMuted, textDecorationLine: 'underline' }}
-                      onPress={() => openMapSearch(`${item.place} ${space?.city ?? ''}`)}
-                      numberOfLines={1}
-                    >
-                      {item.place}
-                    </Text>
-                  </View>
-                ) : null
-              }
-            />
-          ))
+          <>
+            {current.map(renderCard)}
+            {current.length === 0 ? (
+              <Text style={{ color: c.textMuted, fontSize: 14, textAlign: 'center', paddingVertical: 20 }}>
+                {cat ? 'В этой категории новых планов нет.' : 'Новых планов нет — добавь идею кнопкой «+».'}
+              </Text>
+            ) : null}
+            {past.length > 0 ? (
+              <View style={{ marginTop: 6 }}>
+                <Pressable
+                  onPress={() => setShowPast(!showPast)}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: showPast }}
+                  accessibilityLabel={`Прошедшее, записей: ${past.length}`}
+                  style={({ pressed }) => ({
+                    minHeight: 48,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 8,
+                    paddingHorizontal: 14,
+                    borderRadius: radius.md,
+                    backgroundColor: c.bgAlt,
+                    marginBottom: 12,
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Ionicons name="time-outline" size={18} color={c.textMuted} />
+                  <Text style={{ flex: 1, color: c.text, fontSize: 15, fontWeight: '700' }}>Прошедшее · {past.length}</Text>
+                  <Ionicons name={showPast ? 'chevron-up' : 'chevron-down'} size={18} color={c.textMuted} />
+                </Pressable>
+                {showPast ? <View style={{ opacity: 0.72 }}>{past.map(renderCard)}</View> : null}
+              </View>
+            ) : null}
+          </>
         )}
       </Screen>
       {items.length > 0 ? <Fab onPress={() => setEditing('new')} color={st.fg} /> : null}

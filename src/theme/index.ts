@@ -97,8 +97,12 @@ export const radius = { sm: 10, md: 16, lg: 22, xl: 28, pill: 999 };
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
 /** Минимальный размер области нажатия (Apple HIG — 44 pt) */
 export const TAP = 44;
-/** Высота нижнего таб-бара без системного отступа */
-export const TAB_BAR_HEIGHT = 58;
+/** Высота плавающей нижней панели */
+export const TAB_BAR_HEIGHT = 62;
+/** На сколько панель приподнята над нижним краем экрана (учитывает системную полоску жестов и кнопки Android) */
+export function tabBarOffset(bottomInset: number): number {
+  return Math.max(bottomInset - 10, 10);
+}
 /** Содержимое страниц не шире этого (pt): на раскрытом iPhone Duo и в широких окнах оно остаётся по центру, а не растягивается */
 export const MAX_CONTENT_WIDTH = 720;
 
@@ -158,7 +162,7 @@ export const ACCENT_KEYS = Object.keys(ACCENTS) as AccentKey[];
 
 /* ------------------------- Цвет подложек ------------------------- */
 
-export type SurfaceKey = 'warm' | 'neutral' | 'cool' | 'rose' | 'sage' | 'lilac';
+export type SurfaceKey = 'warm' | 'neutral' | 'cool' | 'rose' | 'sage' | 'lilac' | 'oled';
 type SurfaceSet = Pick<Palette, 'bg' | 'bgAlt' | 'card' | 'cardPressed' | 'border'>;
 
 /*
@@ -195,6 +199,13 @@ export const SURFACES: Record<SurfaceKey, { title: string; light: SurfaceSet; da
     title: 'Сиреневые',
     light: { bg: '#F5F2FA', bgAlt: '#EBE6F3', card: '#FDFBFF', cardPressed: '#F1EDF7', border: '#DDD5EA' },
     dark: { bg: '#141119', bgAlt: '#1B1722', card: '#231E2C', cardPressed: '#2B2536', border: '#392F47' },
+  },
+  // Для OLED-экранов: фон — настоящий чёрный (пиксели выключены), карточки едва светлее.
+  // Работает в тёмной теме; при выборе ThemePicker сам включает тёмную. В светлой — как «Нейтральные».
+  oled: {
+    title: 'Чёрные (OLED)',
+    light: { bg: '#F5F5F4', bgAlt: '#ECEBE9', card: '#FFFFFF', cardPressed: '#F2F1EF', border: '#E0DEDA' },
+    dark: { bg: '#000000', bgAlt: '#171717', card: '#0C0C0C', cardPressed: '#1C1C1C', border: '#262626' },
   },
 };
 export const SURFACE_KEYS = Object.keys(SURFACES) as SurfaceKey[];

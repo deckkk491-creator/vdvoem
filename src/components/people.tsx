@@ -25,7 +25,10 @@ export function Avatar({ profile, size = 32, ring }: { profile?: Profile | null;
         justifyContent: 'center',
       }}
     >
-      <Text style={{ fontSize: size * 0.52 }}>{profile?.avatar_emoji ?? '🙂'}</Text>
+      {/* Эмодзи не растёт вместе с системным шрифтом (иначе вылезает из кружка) и стоит ровно по центру на Android */}
+      <Text allowFontScaling={false} style={{ fontSize: size * 0.52, textAlign: 'center', textAlignVertical: 'center', includeFontPadding: false }}>
+        {profile?.avatar_emoji ?? '🙂'}
+      </Text>
     </View>
   );
 }
