@@ -34,7 +34,7 @@
 - `supabase/migrations/0003_reactions_wish_photos.sql` — реакции в чате (удалены в 0006), фото к желаниям (вложения `parent_type='wish'`, только владелец). Применена 24.10.2026.
 - `supabase/migrations/0004_security_hardening.sql` — по итогам аудита: заморозка владельцев/авторов, `done_by` только свой, `message_reads` только через RPC, вложения только к записям своего пространства, файлы чата/желаний удаляет только автор, коды приглашения 8 символов + лимит 10 попыток за 10 минут (`join_space` возвращает NULL на неверный код), `kick_member`, `rotate_invite_code`, удаление аккаунта обезличивает общие записи, а не удаляет их; `space_changes` — realtime об удалениях только для участников.
 - `supabase/migrations/0005_budget_workdays_reminders.sql` — `budget_entries`, `work_days` (свои дни отмечает только сам участник), поля календаря `remind_before`/`remind_time`/`celebrate`, акцент `sand`; `remove_member_data` и `delete_my_data` учитывают новые таблицы. Только добавляет новое. Применена в Supabase 12.11.2026 (через SQL Editor в браузере пользователя). Клиент переживает отсутствие полей напоминаний (`useCalendar.save` повторяет запись без них), но бюджет и рабочие дни без миграции показывают ошибку.
-- `supabase/migrations/0006_remove_chat.sql` — удаление чата: таблицы `messages`, `message_reads`, `message_reactions`, RPC `mark_chat_read`/`message_in_space`; `my_file_paths`, `space_file_paths`, `remove_member_data`, `delete_my_data` и политика удаления в хранилище переписаны без них. Файлы чата в бакете (`<space>/chat/`) миграция не трогает. **Статус применения в Supabase — см. «Состояние».** Проверки — `rls_v6_test.sql`.
+- `supabase/migrations/0006_remove_chat.sql` — удаление чата: таблицы `messages`, `message_reads`, `message_reactions`, RPC `mark_chat_read`/`message_in_space`; `my_file_paths`, `space_file_paths`, `remove_member_data`, `delete_my_data` и политика удаления в хранилище переписаны без них. Файлы чата в бакете (`<space>/chat/`) миграция не трогает. Применена в Supabase 12.11.2026; в бакете остался 1 файл чата (0,1 МБ) — удалить вручную в Dashboard → Storage. Проверки — `rls_v6_test.sql`.
 - CI job `database` прогоняет 0001–0005, `rls_v2…v5`, затем 0006 и `rls_v6_test.sql` на чистом Postgres (заглушки auth/storage). Локально в облачной сессии есть Postgres 16 (`/usr/lib/postgresql/16/bin`) — миграции и проверки можно прогнать до отправки.
 - `supabase/tests/` — проверки RLS. Отметку «я подарю» владелец вишлиста не видит.
 - `supabase/demo/seed_demo.sql` — демо-данные для ревьюера Apple (две почты вписываются в начале, повторный запуск пересоздаёт демо). CI прогоняет его на чистой базе.
@@ -59,7 +59,7 @@
 - link-preview: редиректы вручную с перепроверкой, DNS-проверка на частные адреса, только порты 80/443. Скрытый WebView (`PageReader`) не открывает локальную сеть.
 
 ## Состояние на 12.11.2026
-- Ветки `polish-tabbar-oled` (PR #7) и `budget-workdays-reminders` (PR #8, поверх #7) ждут проверки тестового APK на телефоне, потом слияние в `main` (сначала #7, затем #8). Миграция 0005 применена.
+- Ветки `polish-tabbar-oled` (PR #7) и `budget-workdays-reminders` (PR #8, поверх #7) ждут проверки тестового APK на телефоне, потом слияние в `main` (сначала #7, затем #8). Миграции 0005 и 0006 применены. Тестовый APK с этими ветками — `android-test-7`.
 
 ## Состояние на 28.10.2026
 - `audit-fixes` влита в `main`. Миграция 0004 применена в Supabase, новая link-preview задеплоена (28.10.2026, через Chrome пользователя).
@@ -70,5 +70,5 @@
 1. Проверить в Expo Go вдвоём на двух телефонах (участники, исключение, смена кода, вход по ссылке, вишлист с маркетплейсов).
 2. Демо-аккаунт для ревьюера Apple: код и `store/review-notes.md` готовы, остаётся создать пользователей в Supabase, запустить `supabase/demo/seed_demo.sql`, задать `EXPO_PUBLIC_DEMO_EMAIL` в EAS и заполнить поля в App Store Connect.
 3. Проверить на двух телефонах: включить 2-2-2 на одном, свернуть и развернуть «Вместе» на другом — напоминания должны появиться.
-4. iPhone Duo: после оплаты Apple Developer собрать TestFlight-сборку и проверить на настоящем Duo (или у знакомого с Mac и Xcode 27.1): складывание и раскладывание, «рейка» с кнопками, отступы, фото, чат с клавиатурой.
+4. iPhone Duo: после оплаты Apple Developer собрать TestFlight-сборку и проверить на настоящем Duo (или у знакомого с Mac и Xcode 27.1): складывание и раскладывание, «рейка» с кнопками, отступы, фото, формы с клавиатурой.
 5. Android: поставить тестовый APK (`android-test-3`, он же отправлен в чат) и пройти список из `store/google-play.md`, раздел 5. На настоящем Android приложение ещё не запускалось. Черновик релиза `android-test-1` (без микрофона) удалить.
