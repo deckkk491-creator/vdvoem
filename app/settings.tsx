@@ -1,6 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect, useState } from 'react';
+import { router } from 'expo-router';
 import { Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileForm } from '../src/components/ProfileForm';
@@ -9,6 +10,7 @@ import { TabBarEditor } from '../src/components/TabBarEditor';
 import { ThemePicker } from '../src/components/ThemePicker';
 import { Body, Button, Card, ErrorNote, Input, Label, pageStyle, Row, Sheet } from '../src/components/ui';
 import { PRIVACY_URL } from '../src/lib/env';
+import { openTour } from '../src/lib/tour';
 import { humanError, supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/providers/AuthProvider';
 import { useSpace } from '../src/providers/SpaceProvider';
@@ -218,6 +220,18 @@ export default function Settings() {
 
       <Label>О приложении</Label>
       <Card style={{ marginBottom: 16 }}>
+        <Button
+          title="Показать обучение"
+          small
+          variant="ghost"
+          icon="school-outline"
+          onPress={() => {
+            // настройки открыты поверх разделов — закрываем их, тур покажется на главном экране
+            if (router.canGoBack()) router.back();
+            setTimeout(openTour, 500);
+          }}
+          style={{ alignSelf: 'flex-start' }}
+        />
         <Button
           title="Политика конфиденциальности"
           small

@@ -110,7 +110,7 @@ export type Theme = { c: Palette; dark: boolean };
 
 /* ------------------------- Личная тема оформления ------------------------- */
 
-export type AccentKey = 'terracotta' | 'lavender' | 'mint' | 'ocean' | 'berry' | 'sun' | 'graphite';
+export type AccentKey = 'terracotta' | 'lavender' | 'mint' | 'ocean' | 'berry' | 'sun' | 'graphite' | 'sand';
 export type ThemeMode = 'system' | 'light' | 'dark';
 
 type AccentSet = { accent: string; accentSoft: string; onAccent: string };
@@ -156,13 +156,19 @@ export const ACCENTS: Record<AccentKey, { title: string; light: AccentSet; dark:
     light: { accent: '#3F4652', accentSoft: '#E4E6EA', onAccent: '#FFFFFF' },
     dark: { accent: '#C3CAD6', accentSoft: '#262A31', onAccent: '#12151A' },
   },
+  // Тёплый песочный: в тёмной теме — светлые кнопки с тёмным текстом. Хорошо смотрится с подложками «Кофейные».
+  sand: {
+    title: 'Песок',
+    light: { accent: '#875610', accentSoft: '#F8E8CC', onAccent: '#FFFFFF' },
+    dark: { accent: '#F5CB8E', accentSoft: '#3A2F1E', onAccent: '#231A0C' },
+  },
 };
 
 export const ACCENT_KEYS = Object.keys(ACCENTS) as AccentKey[];
 
 /* ------------------------- Цвет подложек ------------------------- */
 
-export type SurfaceKey = 'warm' | 'neutral' | 'cool' | 'rose' | 'sage' | 'lilac' | 'oled';
+export type SurfaceKey = 'warm' | 'neutral' | 'cool' | 'rose' | 'sage' | 'lilac' | 'coffee' | 'oled';
 type SurfaceSet = Pick<Palette, 'bg' | 'bgAlt' | 'card' | 'cardPressed' | 'border'>;
 
 /*
@@ -199,6 +205,12 @@ export const SURFACES: Record<SurfaceKey, { title: string; light: SurfaceSet; da
     title: 'Сиреневые',
     light: { bg: '#F5F2FA', bgAlt: '#EBE6F3', card: '#FDFBFF', cardPressed: '#F1EDF7', border: '#DDD5EA' },
     dark: { bg: '#141119', bgAlt: '#1B1722', card: '#231E2C', cardPressed: '#2B2536', border: '#392F47' },
+  },
+  // Почти чёрный с тёплым оттенком и мягкими серо-коричневыми карточками
+  coffee: {
+    title: 'Кофейные',
+    light: { bg: '#F7F3EC', bgAlt: '#EDE6DA', card: '#FFFDF9', cardPressed: '#F3EDE2', border: '#E2D8C8' },
+    dark: { bg: '#141311', bgAlt: '#2A2723', card: '#1E1C19', cardPressed: '#302C27', border: '#3A362F' },
   },
   // Для OLED-экранов: фон — настоящий чёрный (пиксели выключены), карточки едва светлее.
   // Работает в тёмной теме; при выборе ThemePicker сам включает тёмную. В светлой — как «Нейтральные».
@@ -327,7 +339,7 @@ export function useTheme(): Theme {
   return useMemo(() => buildTheme(prefs, scheme === 'dark'), [prefs, scheme]);
 }
 
-export type SectionKey = 'watch' | 'recipe' | 'weekend' | 'shopping' | 'savings' | 'wishlist' | 'rule' | 'calendar' | 'chat' | 'dates' | 'events' | 'tasks';
+export type SectionKey = 'watch' | 'recipe' | 'weekend' | 'shopping' | 'savings' | 'wishlist' | 'rule' | 'calendar' | 'chat' | 'dates' | 'events' | 'tasks' | 'budget' | 'work';
 
 /** Цвет и эмодзи каждого раздела — у каждого свой характер */
 export function sectionStyle(c: Palette, key: SectionKey): { fg: string; bg: string; emoji: string } {
@@ -356,5 +368,9 @@ export function sectionStyle(c: Palette, key: SectionKey): { fg: string; bg: str
       return { fg: c.sky, bg: c.skySoft, emoji: '📌' };
     case 'tasks':
       return { fg: c.honey, bg: c.honeySoft, emoji: '✅' };
+    case 'budget':
+      return { fg: c.sage, bg: c.sageSoft, emoji: '💰' };
+    case 'work':
+      return { fg: c.honey, bg: c.honeySoft, emoji: '💼' };
   }
 }

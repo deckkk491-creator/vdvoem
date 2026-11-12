@@ -3,8 +3,10 @@ import { Alert, Switch, Text, View } from 'react-native';
 import { hhmm, type EventInput } from '../../hooks/useCalendar';
 import { commitAttachments, draftIsDirty, emptyDraft, loadAttachments, type AttachmentDraft } from '../../lib/files';
 import { normalizeUrl, todayISO } from '../../lib/format';
+import { ensurePermission } from '../../lib/notifications';
+import { DEFAULT_REMIND_TIME, REMIND_OPTIONS, nextReminder, reminderWhenLabel } from '../../lib/reminders';
 import { humanError } from '../../lib/supabase';
-import type { CalendarEvent, CalendarKind } from '../../lib/types';
+import type { CalendarEvent, CalendarKind, Celebration } from '../../lib/types';
 import { useAuth } from '../../providers/AuthProvider';
 import { useSpace } from '../../providers/SpaceProvider';
 import { useTheme } from '../../theme';
@@ -25,6 +27,12 @@ const KIND_OPTIONS: { value: CalendarKind; label: string }[] = [
   { value: 'event', label: 'Событие' },
   { value: 'task', label: 'Задача' },
   { value: 'date', label: 'Важная дата' },
+];
+
+const CELEBRATIONS: { value: Celebration | null; label: string }[] = [
+  { value: null, label: 'Нет' },
+  { value: 'fireworks', label: '🎆 Фейерверк' },
+  { value: 'confetti', label: '🎊 Конфетти' },
 ];
 
 const PLACEHOLDER: Record<CalendarKind, string> = {
@@ -71,6 +79,9 @@ export function EventSheet({
   const [end, setEnd] = useState<string | null>(null);
   const [yearly, setYearly] = useState(true);
   const [assignee, setAssignee] = useState<string | null>(null);
+  const [remind, setRemind] = useState<number | null>(null);
+  const [remindTime, setRemindTime] = useState(DEFAULT_REMIND_TIME);
+  const [celebrate, setCelebrate] = useState<Celebration | null>(null);
   const [note, setNote] = useState('');
   const [url, setUrl] = useState('');
   const [draft, setDraft] = useState<AttachmentDraft>(emptyDraft());
@@ -90,6 +101,10 @@ export function EventSheet({
     setEnd(hhmm(event?.end_time));
     setYearly(event ? event.yearly : true);
     setAssignee(event?.assignee ?? null);
+    // О новой важной дате по умолчанию напоминаем накануне
+    setRemind(event ? event.remind_before ?? null : k === 'date' ? 1 : null);
+    setRemindTime(hhmm(event?.remind_time) ?? DEFAULT_REMIND_TIME);
+    setCelebrate(event?.celebrate ?? null);
     setNote(event?.note ?? '');
     setUrl(event?.url ?? '');
     setDraft(emptyDraft());
@@ -119,6 +134,10 @@ export function EventSheet({
   }, [eventId]);
 
   const st = kindStyle(c, kind);
+  const nextRemind =
+    date && remind !== null
+      ? nextReminder({ kind, starts_on: date, yearly: kind === 'date' ? yearly : false, done: false, remind_before: remind, remind_time: remindTime }, new Date())
+      : null;
   const others = members.filter((m) => m.user_id !== userId);
   const quick = EMOJI[kind];
   const emojiChoices = emoji && !quick.includes(emoji) ? [emoji, ...quick] : quick;
@@ -151,7 +170,12 @@ export function EventSheet({
       end_time: e,
       yearly: kind === 'date' ? yearly : false,
       assignee: kind === 'task' ? assignee : null,
+      remind_before: date ? remind : null,
+      remind_time: remindTime,
+      celebrate: kind !== 'task' ? celebrate : null,
     };
+    // Системное окно «Разрешить уведомления» показываем сразу, пока понятно, зачем оно
+    if (input.remind_before !== null) ensurePermission().catch(() => undefined);
     setBusy(true);
     setError(null);
     try {
@@ -288,6 +312,41 @@ export function EventSheet({
           ) : null}
           <Body muted style={{ fontSize: 13, marginBottom: 16 }}>
             Общую задачу видят все — кто сможет, нажмёт «Я сделаю».
+          </Body>
+        </>
+      ) : null}
+
+      {date ? (
+        <>
+          <Label>Когда напомнить</Label>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+            {REMIND_OPTIONS.map((o) => (
+              <Chip key={String(o.value)} label={o.label} active={remind === o.value} onPress={() => setRemind(o.value)} color={st.fg} />
+            ))}
+          </View>
+          {remind !== null ? (
+            <>
+              <TimeField label="Время уведомления" value={remindTime} onChange={(v) => setRemindTime(v ?? DEFAULT_REMIND_TIME)} />
+              <Body muted style={{ fontSize: 13, marginTop: -4, marginBottom: 16 }}>
+                {nextRemind ? `Ближайшее напоминание: ${reminderWhenLabel(nextRemind.at)}. Придёт на телефоны всех участников.` : 'Это время уже прошло — напоминание не придёт.'}
+              </Body>
+            </>
+          ) : (
+            <View style={{ height: 8 }} />
+          )}
+        </>
+      ) : null}
+
+      {kind !== 'task' ? (
+        <>
+          <Label>Поздравление</Label>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+            {CELEBRATIONS.map((o) => (
+              <Chip key={String(o.value)} label={o.label} active={celebrate === o.value} onPress={() => setCelebrate(o.value)} color={st.fg} />
+            ))}
+          </View>
+          <Body muted style={{ fontSize: 13, marginBottom: 16 }}>
+            Если выбрано — при первом открытии приложения в день события на весь экран покажется поздравление.
           </Body>
         </>
       ) : null}

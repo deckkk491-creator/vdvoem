@@ -17,6 +17,18 @@ export function toISODate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+function isLeap(y: number): boolean {
+  return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+}
+
+/** Та же дата в другом году; 29 февраля в невисокосный год — 28 февраля */
+export function sameDayInYear(iso: string, year: number): string {
+  const m = Number(iso.slice(5, 7));
+  let d = Number(iso.slice(8, 10));
+  if (m === 2 && d === 29 && !isLeap(year)) d = 28;
+  return `${String(year).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
 export function todayISO(): string {
   return toISODate(new Date());
 }

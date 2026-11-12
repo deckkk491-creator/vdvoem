@@ -128,7 +128,9 @@ export type RealtimeTable =
   | 'messages'
   | 'message_reads'
   | 'message_reactions'
-  | 'attachments';
+  | 'attachments'
+  | 'budget_entries'
+  | 'work_days';
 
 export type CalendarKind = 'event' | 'task' | 'date';
 
@@ -148,10 +150,35 @@ export type CalendarEvent = {
   done: boolean;
   done_by: string | null;
   done_at: string | null;
+  /** За сколько дней напомнить (0 — в этот день); null — не напоминать */
+  remind_before: number | null;
+  /** Во сколько прислать напоминание, 'HH:MM[:SS]' */
+  remind_time: string;
+  /** Поздравление на весь экран в день события */
+  celebrate: Celebration | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
 };
+
+export type Celebration = 'fireworks' | 'confetti';
+
+export type BudgetKind = 'expense' | 'income';
+
+export type BudgetEntry = {
+  id: string;
+  space_id: string;
+  kind: BudgetKind;
+  amount: number;
+  category: string;
+  note: string;
+  spent_on: string; // YYYY-MM-DD
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type WorkDay = { space_id: string; user_id: string; day: string };
 
 export type Message = {
   id: string;

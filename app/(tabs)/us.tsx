@@ -22,7 +22,7 @@ export default function UsScreen() {
   const unread = useUnreadCount();
   const { events } = useCalendar();
   const openTasks = openTaskCount(events);
-  const tiles: { key: SectionKey; title: string; text: string; href: '/wishlists' | '/rule222' | '/savings' | '/dates' | '/chat' | '/events' | '/tasks' }[] = [
+  const tiles: { key: SectionKey; title: string; text: string; href: '/wishlists' | '/rule222' | '/savings' | '/dates' | '/chat' | '/events' | '/tasks' | '/budget' | '/workdays' }[] = [
     { key: 'chat', title: unread ? `Чат · ${unread} новых` : 'Чат', text: 'Сообщения, фото и документы только для вас', href: '/chat' },
     { key: 'events', title: 'События', text: 'Все планы списком: что впереди и что уже было', href: '/events' },
     {
@@ -32,6 +32,8 @@ export default function UsScreen() {
       href: '/tasks',
     },
     { key: 'dates', title: 'Важные даты', text: 'Годовщины, дни рождения и всё, что нельзя забыть', href: '/dates' },
+    { key: 'work', title: 'Рабочие дни', text: 'Отметь свои смены — партнёр увидит их в календаре', href: '/workdays' },
+    { key: 'budget', title: 'Бюджет', text: 'Расходы и доходы по категориям — куда уходят деньги', href: '/budget' },
     { key: 'savings', title: 'Копилка', text: 'Копим на мечты вместе', href: '/savings' },
     { key: 'wishlist', title: 'Вишлисты', text: 'Что подарить друг другу — и тайно забронировать подарок', href: '/wishlists' },
     {

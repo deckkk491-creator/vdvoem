@@ -51,6 +51,8 @@ const TABLES: RealtimeTable[] = [
   'message_reads',
   'message_reactions',
   'attachments',
+  'budget_entries',
+  'work_days',
 ];
 
 export function SpaceProvider({ children }: { children: React.ReactNode }) {

@@ -4,7 +4,8 @@ import { plural, toISODate } from '../../lib/format';
 import { fonts, radius, useTheme } from '../../theme';
 import { Button, IconButton } from '../ui';
 
-export type DayMark = { colors: string[]; count: number };
+/** bars — цвета участников, у которых в этот день рабочий день (полоски под числом) */
+export type DayMark = { colors: string[]; count: number; bars?: string[]; barsLabel?: string };
 
 export const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 const MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -23,10 +24,15 @@ export function MonthGrid({
   onSelect,
   onMonthChange,
   accent,
+  filled,
+  fillColor,
 }: {
+  /** Дни, закрашенные целиком (свои рабочие дни на экране «Рабочие дни») */
+  filled?: Set<string>;
+  fillColor?: string;
   /** Любой день отображаемого месяца */
   month: Date;
-  selected: string;
+  selected: string | null;
   today: string;
   /** По дням 'YYYY-MM-DD': цвета точек и число записей */
   marks: Record<string, DayMark>;
@@ -55,7 +61,7 @@ export function MonthGrid({
   }, [y, m]);
 
   const isCurrentMonth = today.slice(0, 7) === toISODate(new Date(y, m, 1)).slice(0, 7);
-  const showToday = !isCurrentMonth || selected !== today;
+  const showToday = !isCurrentMonth || (selected !== null && selected !== today);
 
   return (
     <View style={{ backgroundColor: c.card, borderRadius: radius.lg, borderWidth: 1, borderColor: c.border, paddingVertical: 8, paddingHorizontal: 4 }}>
@@ -91,11 +97,12 @@ export function MonthGrid({
                 isToday={iso === today}
                 isSelected={iso === selected}
                 mark={marks[iso]}
+                fill={filled?.has(iso) ? fillColor ?? accent : undefined}
                 accent={accent}
                 onPress={() => onSelect(iso)}
               />
             ) : (
-              <View key={`e${di}`} style={{ flex: 1, height: 48 }} />
+              <View key={`e${di}`} style={{ flex: 1, height: 52 }} />
             ),
           )}
         </View>
@@ -124,8 +131,10 @@ function DayCell({
   isSelected,
   mark,
   accent,
+  fill,
   onPress,
 }: {
+  fill?: string;
   iso: string;
   isToday: boolean;
   isSelected: boolean;
@@ -140,6 +149,8 @@ function DayCell({
     `${day} ${MONTHS_GEN[month]}`,
     isToday ? 'сегодня' : '',
     mark?.count ? `${mark.count} ${plural(mark.count, 'запись', 'записи', 'записей')}` : '',
+    fill ? 'рабочий день' : '',
+    mark?.barsLabel ?? '',
   ]
     .filter(Boolean)
     .join(', ');
@@ -149,7 +160,7 @@ function DayCell({
       accessibilityRole="button"
       accessibilityLabel={a11y}
       accessibilityState={{ selected: isSelected }}
-      style={({ pressed }) => ({ flex: 1, height: 48, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
+      style={({ pressed }) => ({ flex: 1, height: 52, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
     >
       <View
         style={{
@@ -158,9 +169,9 @@ function DayCell({
           borderRadius: 17,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: isSelected ? accent : 'transparent',
-          borderWidth: isToday && !isSelected ? 1.5 : 0,
-          borderColor: accent,
+          backgroundColor: isSelected ? accent : fill ? fill + '40' : 'transparent',
+          borderWidth: (isToday && !isSelected) || (fill && !isSelected) ? 1.5 : 0,
+          borderColor: fill && !isToday ? fill : accent,
         }}
       >
         <Text
@@ -177,6 +188,11 @@ function DayCell({
       <View style={{ flexDirection: 'row', gap: 3, height: 5, marginTop: 2 }}>
         {(mark?.colors ?? []).slice(0, 3).map((col, i) => (
           <View key={i} style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: col }} />
+        ))}
+      </View>
+      <View style={{ flexDirection: 'row', gap: 2, height: 3, marginTop: 2 }}>
+        {(mark?.bars ?? []).slice(0, 4).map((col, i) => (
+          <View key={i} style={{ width: 9, height: 3, borderRadius: 1.5, backgroundColor: col }} />
         ))}
       </View>
     </Pressable>

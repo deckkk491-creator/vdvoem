@@ -107,8 +107,40 @@ export function ThemePicker() {
     </Pressable>
   );
 
+  const sandOn = prefs.accent === 'sand' && prefs.surface === 'coffee' && dark;
+
   return (
     <View>
+      {/* Готовое сочетание: тёмная тема в песочно-кофейных тонах */}
+      <Pressable
+        onPress={() => apply({ ...prefs, accent: 'sand', surface: 'coffee', mode: 'dark' })}
+        accessibilityRole="button"
+        accessibilityState={{ selected: sandOn }}
+        accessibilityLabel="Готовое сочетание «Песок и кофе»"
+        style={({ pressed }) => ({
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          padding: 12,
+          borderRadius: radius.md,
+          backgroundColor: SURFACES.coffee.dark.bg,
+          borderWidth: 2,
+          borderColor: sandOn ? ACCENTS.sand.dark.accent : SURFACES.coffee.dark.border,
+          marginBottom: 16,
+          opacity: pressed ? 0.85 : 1,
+        })}
+      >
+        <View style={{ flexDirection: 'row' }}>
+          <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: ACCENTS.sand.dark.accent }} />
+          <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: SURFACES.coffee.dark.bgAlt, marginLeft: -10, borderWidth: 1, borderColor: SURFACES.coffee.dark.border }} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: '#F6EBE1', fontSize: 15, fontWeight: '700' }}>Песок и кофе</Text>
+          <Text style={{ color: '#B7A293', fontSize: 12 }}>Тёмная тема в тёплых песочных тонах — одним нажатием</Text>
+        </View>
+        {sandOn ? <Ionicons name="checkmark-circle" size={22} color={ACCENTS.sand.dark.accent} /> : null}
+      </Pressable>
+
       {/* Цвет */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
         {ACCENT_KEYS.map((k) => {
