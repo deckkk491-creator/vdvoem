@@ -32,7 +32,6 @@ declare
   v_spare  uuid;
   v_goal   uuid;
   v_wish_a uuid;
-  v_msg    uuid;
 begin
   if v_reviewer_email = 'demo-reviewer@example.com' or v_partner_email = 'demo-partner@example.com' then
     raise exception 'Впишите настоящие почты ревьюера и партнёра в начале скрипта (см. комментарий сверху)';
@@ -138,17 +137,6 @@ begin
     (v_space, 'date',    'Ужин в грузинском ресторане', 'Хинкали и хачапури', current_date - 12,  v_a),
     (v_space, 'place',   'Прогулка по Коломенскому',    '',                    current_date - 40,  v_b),
     (v_space, 'country', 'Грузия, Тбилиси',             'Поездка на выходные', current_date - 400, v_a);
-
-  -- Чат
-  insert into public.messages (space_id, sender_id, body, created_at) values
-    (v_space, v_b, 'Привет! Я добавил борщ в рецепты, посмотри 🙂',          now() - interval '3 hours'),
-    (v_space, v_a, 'Класс! В субботу приготовим, а сегодня возьмём хлеб.',    now() - interval '2 hours 30 minutes'),
-    (v_space, v_b, 'Договорились. И не забудь про билеты в театр.',           now() - interval '2 hours')
-  ;
-  insert into public.messages (space_id, sender_id, body, created_at)
-  values (v_space, v_a, 'Помню, куплю на этой неделе 🎭', now() - interval '1 hour 40 minutes')
-  returning id into v_msg;
-  insert into public.message_reactions (message_id, space_id, user_id, emoji) values (v_msg, v_space, v_b, '👍');
 
   -- Запасное пространство: создаётся один раз, чтобы код в заметках для ревьюера не менялся
   if v_spare is null then

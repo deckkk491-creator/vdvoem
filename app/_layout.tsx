@@ -10,12 +10,11 @@ import { CalendarEffects } from '../src/components/CalendarEffects';
 import { RuleReminderSync } from '../src/components/RuleReminderSync';
 import { PageReaderHost } from '../src/components/PageReader';
 import { useAuthDeepLinks } from '../src/lib/authLink';
-import { UnreadProvider } from '../src/hooks/useUnread';
 import { ThemeProvider, useTheme } from '../src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
-const IN_APP = ['(tabs)', 'wishlists', 'rule222', 'settings', 'onboarding', 'savings', 'dates', 'chat', 'events', 'tasks', 'budget', 'workdays'];
+const IN_APP = ['(tabs)', 'wishlists', 'rule222', 'settings', 'onboarding', 'savings', 'dates', 'events', 'tasks', 'budget', 'workdays'];
 
 type Target = '/setup' | '/sign-in' | '/onboarding' | '/(tabs)/calendar' | null;
 
@@ -91,7 +90,6 @@ function Shell() {
         <Stack.Screen name="budget" />
         <Stack.Screen name="workdays" options={{ headerShown: true, title: 'Рабочие дни' }} />
         <Stack.Screen name="dates" options={{ headerShown: true, title: 'Важные даты' }} />
-        <Stack.Screen name="chat" options={{ headerShown: true, title: 'Чат' }} />
         <Stack.Screen name="events" options={{ headerShown: true, title: 'События' }} />
         <Stack.Screen name="tasks" options={{ headerShown: true, title: 'Задачи' }} />
       </Stack>
@@ -113,9 +111,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <SpaceProvider>
-          <UnreadProvider>
-            <ThemedShell />
-          </UnreadProvider>
+          <ThemedShell />
         </SpaceProvider>
       </AuthProvider>
     </SafeAreaProvider>

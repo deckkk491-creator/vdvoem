@@ -5,7 +5,6 @@ import { Pressable, Text, View } from 'react-native';
 import { Avatar } from '../../src/components/people';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { Body, Card, Label, Row, Screen } from '../../src/components/ui';
-import { useUnreadCount } from '../../src/hooks/useUnread';
 import { useCalendar } from '../../src/hooks/useCalendar';
 import { openTaskCount } from '../../src/components/calendar/TasksPanel';
 import { useAuth } from '../../src/providers/AuthProvider';
@@ -19,11 +18,9 @@ export default function UsScreen() {
   const { space, members, people } = useSpace();
   const st = sectionStyle(c, 'rule');
 
-  const unread = useUnreadCount();
   const { events } = useCalendar();
   const openTasks = openTaskCount(events);
-  const tiles: { key: SectionKey; title: string; text: string; href: '/wishlists' | '/rule222' | '/savings' | '/dates' | '/chat' | '/events' | '/tasks' | '/budget' | '/workdays' }[] = [
-    { key: 'chat', title: unread ? `Чат · ${unread} новых` : 'Чат', text: 'Сообщения, фото и документы только для вас', href: '/chat' },
+  const tiles: { key: SectionKey; title: string; text: string; href: '/wishlists' | '/rule222' | '/savings' | '/dates' | '/events' | '/tasks' | '/budget' | '/workdays' }[] = [
     { key: 'events', title: 'События', text: 'Все планы списком: что впереди и что уже было', href: '/events' },
     {
       key: 'tasks',

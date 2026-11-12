@@ -125,9 +125,6 @@ export type RealtimeTable =
   | 'wishlist_claims'
   | 'rule_events'
   | 'calendar_events'
-  | 'messages'
-  | 'message_reads'
-  | 'message_reactions'
   | 'attachments'
   | 'budget_entries'
   | 'work_days';
@@ -179,24 +176,6 @@ export type BudgetEntry = {
 };
 
 export type WorkDay = { space_id: string; user_id: string; day: string };
-
-export type Message = {
-  id: string;
-  space_id: string;
-  sender_id: string;
-  body: string;
-  attachment_path: string | null;
-  attachment_name: string | null;
-  attachment_mime: string | null;
-  attachment_size: number | null;
-  image_width: number | null;
-  image_height: number | null;
-  created_at: string;
-};
-
-export type MessageReaction = { message_id: string; space_id: string; user_id: string; emoji: string; created_at: string };
-
-export type MessageRead = { space_id: string; user_id: string; last_read_at: string };
 
 export type AttachmentParent = 'item' | 'event' | 'rule_event' | 'wish';
 export type AttachmentKind = 'photo' | 'file' | 'link';

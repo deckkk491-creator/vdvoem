@@ -17,9 +17,9 @@ App Store Connect → your app → **App Privacy** → Get Started.
 | Contact Info | **Email Address** | ✅ | Email-code sign-in |
 | Contact Info | **Name** | ✅ | Profile name shown to space members |
 | User Content | **Other User Content** | ✅ | Movies, recipes and links, weekend ideas/trips, savings goals/amounts, shopping list, wishlists, "I'll gift this" marks, likes/dislikes, 2-2-2 settings, calendar events/tasks/important dates, theme choice |
-| User Content | **Emails or Text Messages** | ✅ | In-app chat messages between members of a space |
-| User Content | **Photos or Videos** | ✅ | Photos the user attaches to dates, trips, events, wishes and chat (private storage, members only) |
-| User Content | **Audio Data** | ✅ | Voice messages the user records in chat (private storage, members only) |
+| User Content | **Emails or Text Messages** | ❌ | No chat or messaging in the app |
+| User Content | **Photos or Videos** | ✅ | Photos the user attaches to dates, trips, events and wishes (private storage, members only) |
+| User Content | **Audio Data** | ❌ | No voice recording |
 | User Content | **Other User Content** (files) | ✅ (same row as above) | Documents the user attaches (tickets, PDFs) |
 | Identifiers | **User ID** | ✅ | Supabase account UUID that ties content to the user |
 | Contact Info | Phone Number, Physical Address, Other Contact Info | — | not collected |

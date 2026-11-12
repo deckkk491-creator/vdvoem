@@ -339,7 +339,7 @@ export function useTheme(): Theme {
   return useMemo(() => buildTheme(prefs, scheme === 'dark'), [prefs, scheme]);
 }
 
-export type SectionKey = 'watch' | 'recipe' | 'weekend' | 'shopping' | 'savings' | 'wishlist' | 'rule' | 'calendar' | 'chat' | 'dates' | 'events' | 'tasks' | 'budget' | 'work';
+export type SectionKey = 'watch' | 'recipe' | 'weekend' | 'shopping' | 'savings' | 'wishlist' | 'rule' | 'calendar' | 'dates' | 'events' | 'tasks' | 'budget' | 'work';
 
 /** Цвет и эмодзи каждого раздела — у каждого свой характер */
 export function sectionStyle(c: Palette, key: SectionKey): { fg: string; bg: string; emoji: string } {
@@ -360,8 +360,6 @@ export function sectionStyle(c: Palette, key: SectionKey): { fg: string; bg: str
       return { fg: c.accent, bg: c.accentSoft, emoji: '✨' };
     case 'calendar':
       return { fg: c.sky, bg: c.skySoft, emoji: '📅' };
-    case 'chat':
-      return { fg: c.sage, bg: c.sageSoft, emoji: '💬' };
     case 'dates':
       return { fg: c.plum, bg: c.plumSoft, emoji: '💞' };
     case 'events':

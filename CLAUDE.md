@@ -5,7 +5,8 @@
 
 ## Стек и сборка
 - Expo SDK 58, expo-router 58, React Native 0.88, React 19.3, TypeScript 6 strict.
-- Вкладки: Календарь, Кино, Еда, Выходные, Покупки, Мы. События, Задачи, Копилка, Вишлисты, Важные даты, 2-2-2 и Чат — экраны из «Мы»; чат также кнопкой в шапке.
+- Вкладки: Календарь, Кино, Еда, Выходные, Покупки, Мы. События, Задачи, Копилка, Вишлисты, Важные даты, 2-2-2, Бюджет и Рабочие дни — экраны из «Мы».
+- Чата нет намеренно (удалён 12.11.2026, миграция 0006): переписка между пользователями делает сервис ОРИ по ст. 10.1 149-ФЗ с обязанностью хранить сообщения и метаданные. Не добавлять личные сообщения, комментарии и голосовые без отдельного решения владельца. Микрофон приложению не нужен: `expo-audio` убран, у `expo-image-picker` `microphonePermission: false`, CI проверяет, что `RECORD_AUDIO` и `NSMicrophoneUsageDescription` в сборку не попали.
 - Нижняя панель своя (`src/components/TabBar.tsx`, подключена через `tabBar` в `app/(tabs)/_layout.tsx`): плавающая «таблетка», подсветка плавно переезжает к разделу, по панели можно вести пальцем. Состав и порядок разделов — `src/lib/tabPrefs.ts` (хранится на телефоне), редактор — Настройки → «Нижняя панель» (`TabBarEditor`). «Мы» убрать нельзя; скрытые разделы открываются плитками из «Мы». Высота и отступ панели — `TAB_BAR_HEIGHT` и `tabBarOffset` в теме (их же использует кнопка «+»). Подписи на панели не растут с системным шрифтом: размер подобран под ширину кнопки.
 - Подложки «Чёрные (OLED)» (`SURFACES.oled`): в тёмной теме фон `#000000`; при выборе включается тёмная тема.
 - Выходные: записи с прошедшей датой или отметкой «сходили» сами уходят в свёрнутый блок «Прошедшее» (только на экране, в базе ничего не меняется).
@@ -24,17 +25,17 @@
 - Android: тот же код. Профили EAS: `preview` — APK, `production` — AAB, `production-apk` — APK для RuStore/раздачи. Календарь телефона (`deviceCalendarSupported`) работает только на iOS, разрешения на календарь для Android заблокированы в `app.json`. На Android: галерея без запроса доступа (системный выбор фото), «Сделать фото» из меню вложений, без «Apple Maps», окна-шторки и экраны сами обходят клавиатуру и системные панели (`Screen`, `Sheet` в `src/components/ui.tsx`). Всё про публикацию и проверку на телефоне — `store/google-play.md`.
 - Тестовый APK без Expo и без Android Studio: GitHub → Actions → «Android APK (тестовая сборка)» → Run workflow (`android-apk.yml`, ~20 минут); файл — в закрытом черновике релиза. Для магазинов — EAS.
 - `locales/ru.json`: у iOS и Android разные ключи (`ios.CFBundleDisplayName`, `android.app_name`). Ключи iOS в Android-строках ломают lint релизной сборки.
-- Микрофон на Android: `expo-image-picker` с `microphonePermission: false` блокирует `RECORD_AUDIO` и ломает голосовые (в `app.json` у него тот же текст, что у `expo-audio`). CI это проверяет.
 - iPhone Duo (складной, внутренний экран ≈ 669 × 951 pt, внешний ≈ 466 × 678 pt): сборки SDK 58 на образе EAS `latest` идут на iOS 27 SDK, окно меняет размер при складывании. Поэтому размер окна — только `useWindowDimensions` (не `Dimensions.get`), боковые отступы страниц учитывают `insets.left/right` (`Screen`, `pageStyle` в `src/components/ui.tsx`), ширина содержимого ≤ `MAX_CONTENT_WIDTH` (720). Нативные Stack-заголовки не трогаем. Нижняя панель своя: она учитывает `insets.left/right` и не шире 520 pt. Не проверено на устройстве. Подробности — `PROGRESS.md`.
 - CI (`.github/workflows/ci.yml`): npm install, tsc, expo export ios и android, `expo prebuild --platform android` с проверкой манифеста, проверки логики сроков 2-2-2 (`tests/rule222.test.mjs`, запуск `npx tsx --test tests/rule222.test.mjs`). CI должен оставаться зелёным.
 
 ## Где что лежит
 - `supabase/migrations/0001_init.sql` — схема, RLS и RPC: `create_space`, `join_space`, `leave_space`, `delete_my_data`.
-- `supabase/migrations/0002_calendar_chat_files.sql` — календарь/задачи/важные даты, чат, вложения, бакет `space-files`, дизлайки, ритм 2-2-2, личная тема, RPC `mark_chat_read`, `my_file_paths`, `space_file_paths`. Применена 24.10.2026.
-- `supabase/migrations/0003_reactions_wish_photos.sql` — реакции в чате (`message_reactions`, одна на человека), фото к желаниям (вложения `parent_type='wish'`, только владелец). Применена 24.10.2026.
+- `supabase/migrations/0002_calendar_chat_files.sql` — календарь/задачи/важные даты, чат (удалён в 0006), вложения, бакет `space-files`, дизлайки, ритм 2-2-2, личная тема, RPC `mark_chat_read`, `my_file_paths`, `space_file_paths`. Применена 24.10.2026.
+- `supabase/migrations/0003_reactions_wish_photos.sql` — реакции в чате (удалены в 0006), фото к желаниям (вложения `parent_type='wish'`, только владелец). Применена 24.10.2026.
 - `supabase/migrations/0004_security_hardening.sql` — по итогам аудита: заморозка владельцев/авторов, `done_by` только свой, `message_reads` только через RPC, вложения только к записям своего пространства, файлы чата/желаний удаляет только автор, коды приглашения 8 символов + лимит 10 попыток за 10 минут (`join_space` возвращает NULL на неверный код), `kick_member`, `rotate_invite_code`, удаление аккаунта обезличивает общие записи, а не удаляет их; `space_changes` — realtime об удалениях только для участников.
 - `supabase/migrations/0005_budget_workdays_reminders.sql` — `budget_entries`, `work_days` (свои дни отмечает только сам участник), поля календаря `remind_before`/`remind_time`/`celebrate`, акцент `sand`; `remove_member_data` и `delete_my_data` учитывают новые таблицы. Только добавляет новое. Применена в Supabase 12.11.2026 (через SQL Editor в браузере пользователя). Клиент переживает отсутствие полей напоминаний (`useCalendar.save` повторяет запись без них), но бюджет и рабочие дни без миграции показывают ошибку.
-- CI job `database` прогоняет 0001–0005 и `supabase/tests/rls_v2_test.sql` … `rls_v5_test.sql` на чистом Postgres (заглушки auth/storage). Локально в облачной сессии есть Postgres 16 (`/usr/lib/postgresql/16/bin`) — миграции и проверки можно прогнать до отправки.
+- `supabase/migrations/0006_remove_chat.sql` — удаление чата: таблицы `messages`, `message_reads`, `message_reactions`, RPC `mark_chat_read`/`message_in_space`; `my_file_paths`, `space_file_paths`, `remove_member_data`, `delete_my_data` и политика удаления в хранилище переписаны без них. Файлы чата в бакете (`<space>/chat/`) миграция не трогает. **Статус применения в Supabase — см. «Состояние».** Проверки — `rls_v6_test.sql`.
+- CI job `database` прогоняет 0001–0005, `rls_v2…v5`, затем 0006 и `rls_v6_test.sql` на чистом Postgres (заглушки auth/storage). Локально в облачной сессии есть Postgres 16 (`/usr/lib/postgresql/16/bin`) — миграции и проверки можно прогнать до отправки.
 - `supabase/tests/` — проверки RLS. Отметку «я подарю» владелец вишлиста не видит.
 - `supabase/demo/seed_demo.sql` — демо-данные для ревьюера Apple (две почты вписываются в начале, повторный запуск пересоздаёт демо). CI прогоняет его на чистой базе.
 - `supabase/functions/` — `link-preview` (Open Graph для рецептов) и `delete-account` (удаление пользователя через service role).
@@ -62,12 +63,11 @@
 
 ## Состояние на 28.10.2026
 - `audit-fixes` влита в `main`. Миграция 0004 применена в Supabase, новая link-preview задеплоена (28.10.2026, через Chrome пользователя).
-- Чат: очередь неотправленных сообщений переживает смену пространства (сбрасывается при смене аккаунта или если пространство пропало).
 - Подробности и план — `PROGRESS.md`. Разбор перспектив: https://claude.ai/artifact/PDKHfaUnDwC9zWJrBRpSPp
 - Apple Developer аккаунт ещё не оплачен.
 
 ## Следующие шаги
-1. Проверить в Expo Go вдвоём на двух телефонах (участники, исключение, смена кода, вход по ссылке, вишлист с маркетплейсов, голосовые).
+1. Проверить в Expo Go вдвоём на двух телефонах (участники, исключение, смена кода, вход по ссылке, вишлист с маркетплейсов).
 2. Демо-аккаунт для ревьюера Apple: код и `store/review-notes.md` готовы, остаётся создать пользователей в Supabase, запустить `supabase/demo/seed_demo.sql`, задать `EXPO_PUBLIC_DEMO_EMAIL` в EAS и заполнить поля в App Store Connect.
 3. Проверить на двух телефонах: включить 2-2-2 на одном, свернуть и развернуть «Вместе» на другом — напоминания должны появиться.
 4. iPhone Duo: после оплаты Apple Developer собрать TestFlight-сборку и проверить на настоящем Duo (или у знакомого с Mac и Xcode 27.1): складывание и раскладывание, «рейка» с кнопками, отступы, фото, чат с клавиатурой.
