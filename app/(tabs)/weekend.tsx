@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { Badge, ItemCard, itemMenu } from '../../src/components/ItemCard';
 import { SectionHeader, SortToggle } from '../../src/components/SectionHeader';
+import { SwipeAction } from '../../src/components/SwipeAction';
 import { AttachmentEditor, AttachmentStrip, useAttachmentsFor } from '../../src/components/Attachments';
 import { DateField } from '../../src/components/DateField';
 import { Button, Chip, ChipGroup, EmptyState, ErrorNote, Fab, Input, Label, Loading, Row, Screen, Sheet } from '../../src/components/ui';
@@ -34,10 +35,12 @@ export default function WeekendScreen() {
   const [showPast, setShowPast] = useState(false);
   const visible = useMemo(() => (cat ? sorted.filter((i) => i.category === cat) : sorted), [sorted, cat]);
   // «Прошедшее»: дата (или последний день поездки) уже позади либо стоит отметка «сходили».
-  // Такие записи сами уходят из основного списка в свёрнутую историю внизу, ничего удалять не нужно.
+  // Такие записи сами уходят из основного списка во вкладку «Прошедшее» в верхнем ряду, ничего удалять не нужно.
+  // Запись без даты туда можно смахнуть влево — это та же отметка «сходили».
   const today = todayISO();
   const isPast = (i: ItemWithLikes) => i.done || (!!i.event_date && (i.end_date ?? i.event_date).slice(0, 10) < today);
   const current = visible.filter((i) => !isPast(i));
+  const pastAll = items.filter(isPast).length;
   const past = visible
     .filter(isPast)
     .sort((x, y) => (y.end_date ?? y.event_date ?? y.updated_at).localeCompare(x.end_date ?? x.event_date ?? x.updated_at));
@@ -49,7 +52,22 @@ export default function WeekendScreen() {
       .sort((a, b) => a.event_date!.localeCompare(b.event_date!))[0];
   }, [items]);
 
-  const renderCard = (item: ItemWithLikes) => (
+  const markDone = (item: ItemWithLikes, done: boolean) =>
+    update(item.id, { done }).catch((e) => Alert.alert('Не получилось', humanError(e)));
+
+  const renderCard = (item: ItemWithLikes) => {
+    const inPast = isPast(item);
+    // Из прошедшего обратно можно вернуть только то, что отмечено вручную: дату назад не повернёшь
+    const canSwipe = !inPast || (item.done && !(item.event_date && (item.end_date ?? item.event_date).slice(0, 10) < today));
+    return (
+      <SwipeAction
+        key={item.id}
+        enabled={canSwipe}
+        label={inPast ? 'Вернуть в планы' : 'В прошедшее'}
+        icon={inPast ? 'arrow-undo-outline' : 'time-outline'}
+        color={inPast ? st.fg : c.sage}
+        onAction={() => markDone(item, !inPast)}
+      >
       <ItemCard
         key={item.id}
         item={item}
@@ -89,7 +107,9 @@ export default function WeekendScreen() {
           ) : null
         }
       />
-  );
+      </SwipeAction>
+    );
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -116,10 +136,13 @@ export default function WeekendScreen() {
         ) : null}
         {items.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 14 }}>
-            <Chip label="Все" active={!cat} onPress={() => setCat(null)} color={st.fg} />
+            <Chip label="Все" active={!cat && !showPast} onPress={() => { setCat(null); setShowPast(false); }} color={st.fg} />
             {WEEKEND_CATEGORIES.filter((k) => items.some((i) => i.category === k)).map((k) => (
               <Chip key={k} label={`${CATEGORY_EMOJI[k]} ${k}`} active={cat === k} onPress={() => setCat(cat === k ? null : k)} color={st.fg} />
             ))}
+            {pastAll > 0 ? (
+              <Chip label={`🕓 Прошедшее · ${pastAll}`} active={showPast} onPress={() => setShowPast(!showPast)} color={st.fg} />
+            ) : null}
           </ScrollView>
         ) : null}
         <ErrorNote text={error} onRetry={retry} />
@@ -136,38 +159,20 @@ export default function WeekendScreen() {
           />
         ) : (
           <>
-            {current.map(renderCard)}
-            {current.length === 0 ? (
+            {(showPast ? past : current).map(renderCard)}
+            {(showPast ? past : current).length === 0 ? (
               <Text style={{ color: c.textMuted, fontSize: 14, textAlign: 'center', paddingVertical: 20 }}>
-                {cat ? 'В этой категории новых планов нет.' : 'Новых планов нет — добавь идею кнопкой «+».'}
+                {showPast
+                  ? 'В прошедшем пока пусто.'
+                  : cat
+                    ? 'В этой категории новых планов нет.'
+                    : 'Новых планов нет — добавь идею кнопкой «+».'}
               </Text>
-            ) : null}
-            {past.length > 0 ? (
-              <View style={{ marginTop: 6 }}>
-                <Pressable
-                  onPress={() => setShowPast(!showPast)}
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: showPast }}
-                  accessibilityLabel={`Прошедшее, записей: ${past.length}`}
-                  style={({ pressed }) => ({
-                    minHeight: 48,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 8,
-                    paddingHorizontal: 14,
-                    borderRadius: radius.md,
-                    backgroundColor: c.bgAlt,
-                    marginBottom: 12,
-                    opacity: pressed ? 0.7 : 1,
-                  })}
-                >
-                  <Ionicons name="time-outline" size={18} color={c.textMuted} />
-                  <Text style={{ flex: 1, color: c.text, fontSize: 15, fontWeight: '700' }}>Прошедшее · {past.length}</Text>
-                  <Ionicons name={showPast ? 'chevron-up' : 'chevron-down'} size={18} color={c.textMuted} />
-                </Pressable>
-                {showPast ? <View style={{ opacity: 0.72 }}>{past.map(renderCard)}</View> : null}
-              </View>
-            ) : null}
+            ) : (
+              <Text style={{ color: c.textFaint, fontSize: 12, textAlign: 'center', marginTop: 4 }}>
+                {showPast ? 'Смахни отмеченное влево, чтобы вернуть в планы' : 'Смахни карточку влево, чтобы убрать в прошедшее'}
+              </Text>
+            )}
           </>
         )}
       </Screen>

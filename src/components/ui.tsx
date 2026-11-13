@@ -19,6 +19,7 @@ import {
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 import { fonts, MAX_CONTENT_WIDTH, radius, space, TAB_BAR_HEIGHT, tabBarOffset, TAP, useTheme } from '../theme';
 
+import { useInTab } from '../lib/inTab';
 import { AppBackground, useHasBackground } from './AppBackground';
 
 export type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -602,7 +603,10 @@ export function Fab({
 }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const bottom = overTabBar ? tabBarOffset(insets.bottom) + TAB_BAR_HEIGHT + space.md : Math.max(insets.bottom, space.lg) + space.sm;
+  const inTab = useInTab();
+  // Экран из «Мы», открытый вкладкой нижней панели, тоже держит кнопку над панелью
+  const over = overTabBar || inTab;
+  const bottom = over ? tabBarOffset(insets.bottom) + TAB_BAR_HEIGHT + space.md : Math.max(insets.bottom, space.lg) + space.sm;
   return (
     <Pressable
       onPress={onPress}
@@ -632,5 +636,78 @@ export function Fab({
       <Ionicons name={icon} size={28} color={c.onAccent} />
       {label ? <Text style={{ color: c.onAccent, fontWeight: '700', fontSize: 16 }}>{label}</Text> : null}
     </Pressable>
+  );
+}
+
+/* ------------------------------ Меню по кнопке «+» ------------------------------ */
+
+export type FabAction = { icon: IconName; label: string; onPress: () => void };
+
+/** Кнопка «+», которая раскрывает меню быстрых действий: что именно добавить */
+export function FabMenu({ actions, color, overTabBar = true }: { actions: FabAction[]; color?: string; overTabBar?: boolean }) {
+  const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  const inTab = useInTab();
+  const [open, setOpen] = React.useState(false);
+  const bottom = (overTabBar || inTab ? tabBarOffset(insets.bottom) + TAB_BAR_HEIGHT + space.md : Math.max(insets.bottom, space.lg) + space.sm) + 58 + space.md;
+  return (
+    <>
+      {open ? (
+        <>
+          <Pressable
+            onPress={() => setOpen(false)}
+            accessibilityLabel="Закрыть меню"
+            style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.35)' }]}
+          />
+          <View
+            accessibilityRole="menu"
+            style={{
+              position: 'absolute',
+              right: 20 + insets.right,
+              bottom,
+              minWidth: 230,
+              backgroundColor: c.card,
+              borderRadius: radius.lg,
+              borderWidth: 1,
+              borderColor: c.border,
+              paddingVertical: 6,
+              shadowColor: '#000',
+              shadowOpacity: 0.25,
+              shadowRadius: 16,
+              shadowOffset: { width: 0, height: 8 },
+              elevation: 8,
+            }}
+          >
+            {actions.map((a) => (
+              <Pressable
+                key={a.label}
+                onPress={() => {
+                  setOpen(false);
+                  a.onPress();
+                }}
+                accessibilityRole="menuitem"
+                accessibilityLabel={a.label}
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  minHeight: 50,
+                  paddingHorizontal: 12,
+                  backgroundColor: pressed ? c.cardPressed : 'transparent',
+                })}
+              >
+                <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: c.bgAlt, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name={a.icon} size={18} color={color ?? c.accent} />
+                </View>
+                <Text style={{ color: c.text, fontSize: 16, fontWeight: '600', flexShrink: 1 }} numberOfLines={1}>
+                  {a.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      ) : null}
+      <Fab onPress={() => setOpen(!open)} color={color} icon={open ? 'close' : 'add'} overTabBar={overTabBar} />
+    </>
   );
 }

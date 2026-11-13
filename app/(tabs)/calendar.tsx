@@ -9,7 +9,10 @@ import { TasksPanel, openTaskCount } from '../../src/components/calendar/TasksPa
 import { MonthGrid, dayTitle, type DayMark } from '../../src/components/calendar/MonthGrid';
 import { itemMenu } from '../../src/components/ItemCard';
 import { SectionHeader } from '../../src/components/SectionHeader';
-import { Body, Card, EmptyState, ErrorNote, Fab, Label, Loading, Screen, Segmented } from '../../src/components/ui';
+import { QuickBuySheet } from '../../src/components/QuickBuySheet';
+import { useNameOf } from '../../src/components/people';
+import { Body, Card, EmptyState, ErrorNote, FabMenu, Label, Loading, Screen, Segmented, type FabAction } from '../../src/components/ui';
+import { useWorkDays } from '../../src/hooks/useWorkDays';
 import { addDays, expandEntries, useCalendar, type Entry } from '../../src/hooks/useCalendar';
 import {
   deviceCalendarSupported,
@@ -35,7 +38,10 @@ const SOON_LIMIT = 5;
 export default function CalendarScreen() {
   const { c } = useTheme();
   const st = sectionStyle(c, 'calendar');
-  const { space } = useSpace();
+  const { space, people } = useSpace();
+  const nameOf = useNameOf();
+  const work = useWorkDays();
+  const [buyOpen, setBuyOpen] = useState(false);
   const cal = useCalendar();
   const { events, weekend, loading, error, loadedSpace, retry, setDone } = cal;
 
@@ -65,8 +71,18 @@ export default function CalendarScreen() {
       }
       out[iso] = { colors, count: list.length };
     }
+    // Рабочие дни участников — полосками цвета аватара
+    for (const [iso, users] of Object.entries(work.byDay)) {
+      if (iso < monthStart || iso > monthEnd) continue;
+      const mark = (out[iso] ??= { colors: [], count: 0 });
+      mark.bars = users.map((u) => people[u]?.avatar_color ?? c.textFaint);
+      mark.barsLabel = `работают: ${users.length}`;
+    }
     return out;
-  }, [events, weekend, monthStart, monthEnd, c]);
+  }, [events, weekend, monthStart, monthEnd, c, work.byDay, people]);
+
+  const workingToday = work.byDay[selected] ?? [];
+  const hasWorkDays = Object.keys(work.byDay).length > 0;
 
   const agenda = useMemo(() => expandEntries(events, weekend, selected, selected)[selected] ?? [], [events, weekend, selected]);
 
@@ -99,7 +115,15 @@ export default function CalendarScreen() {
   /* ---------------- Действия ---------------- */
 
   const sheets = useCalendarSheets(cal, { onSaved: reloadAttachments, spaceId });
-  const openNew = () => sheets.openNew(mode === 'tasks' ? 'task' : 'event', mode === 'tasks' ? null : selected);
+  // Меню по кнопке «+»: сразу выбор, что добавить
+  const fabActions: FabAction[] = [
+    { icon: 'pin-outline', label: 'Событие', onPress: () => sheets.openNew('event', selected) },
+    { icon: 'checkbox-outline', label: 'Задача', onPress: () => sheets.openNew('task', mode === 'tasks' ? null : selected) },
+    { icon: 'heart-outline', label: 'Важная дата', onPress: () => sheets.openNew('date', selected) },
+    { icon: 'basket-outline', label: 'Покупка', onPress: () => setBuyOpen(true) },
+    { icon: 'wallet-outline', label: 'Расход или доход', onPress: () => router.push('/budget?add=1') },
+    { icon: 'briefcase-outline', label: 'Рабочие дни', onPress: () => router.push('/workdays') },
+  ];
   const menuFor = (ev: CalendarEvent) => itemMenu(ev.title, () => sheets.editEvent(ev), () => sheets.deleteEvent(ev));
 
   const changeMonth = (first: Date, selectToday?: boolean) => {
@@ -195,6 +219,7 @@ export default function CalendarScreen() {
   }
 
   const datesSt = sectionStyle(c, 'dates');
+  const workSt = sectionStyle(c, 'work');
 
   return (
     <View style={{ flex: 1 }}>
@@ -214,7 +239,7 @@ export default function CalendarScreen() {
         {mode === 'calendar' ? (
           <>
             <MonthGrid month={month} selected={selected} today={today} marks={marks} onSelect={selectDay} onMonthChange={changeMonth} accent={st.fg} />
-            <Legend />
+            <Legend workDays={hasWorkDays} />
             <Pressable
               onPress={() => router.push('/dates')}
               accessibilityRole="button"
@@ -227,13 +252,35 @@ export default function CalendarScreen() {
                 borderRadius: 16,
                 paddingHorizontal: 14,
                 minHeight: 48,
-                marginBottom: 18,
+                marginBottom: 8,
                 opacity: pressed ? 0.8 : 1,
               })}
             >
               <Text style={{ fontSize: 20 }}>{datesSt.emoji}</Text>
               <Text style={{ flex: 1, color: datesSt.fg, fontWeight: '700', fontSize: 15 }}>Важные даты</Text>
               <Ionicons name="chevron-forward" size={18} color={datesSt.fg} />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/workdays')}
+              accessibilityRole="button"
+              accessibilityLabel="Рабочие дни"
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                backgroundColor: workSt.bg,
+                borderRadius: 16,
+                paddingHorizontal: 14,
+                minHeight: 48,
+                marginBottom: 18,
+                opacity: pressed ? 0.8 : 1,
+              })}
+            >
+              <Text style={{ fontSize: 20 }}>{workSt.emoji}</Text>
+              <Text style={{ flex: 1, color: workSt.fg, fontWeight: '700', fontSize: 15 }} numberOfLines={1}>
+                {workingToday.length ? `Рабочие дни: ${workingToday.map((u) => nameOf(u)).join(', ')}` : 'Рабочие дни'}
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color={workSt.fg} />
             </Pressable>
 
             <Label>{selected === today ? `Сегодня · ${dayTitle(selected)}` : dayTitle(selected)}</Label>
@@ -283,13 +330,14 @@ export default function CalendarScreen() {
           <TasksPanel cal={cal} onOpen={(t) => sheets.openEvent(t)} onLongPress={menuFor} onNew={() => sheets.openNew('task', null)} />
         )}
       </Screen>
-      <Fab onPress={openNew} color={st.fg} />
+      <FabMenu actions={fabActions} color={st.fg} />
       {sheets.sheets}
+      <QuickBuySheet visible={buyOpen} onClose={() => setBuyOpen(false)} />
     </View>
   );
 }
 
-function Legend() {
+function Legend({ workDays }: { workDays: boolean }) {
   const { c } = useTheme();
   const items: { kind: 'event' | 'task' | 'date' | 'weekend'; label: string }[] = [
     { kind: 'event', label: 'События' },
@@ -305,6 +353,12 @@ function Legend() {
           <Text style={{ fontSize: 12, color: c.textMuted }}>{i.label}</Text>
         </View>
       ))}
+      {workDays ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          <View style={{ width: 10, height: 3, borderRadius: 1.5, backgroundColor: c.textMuted }} />
+          <Text style={{ fontSize: 12, color: c.textMuted }}>Рабочие дни</Text>
+        </View>
+      ) : null}
     </View>
   );
 }

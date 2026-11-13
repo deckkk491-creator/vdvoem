@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Pressable, Text, View } from 'react-native';
 import { confirmDelete } from '../src/components/ItemCard';
 import { Avatar, useNameOf } from '../src/components/people';
+import { useInTab } from '../src/lib/inTab';
 import { SectionHeader } from '../src/components/SectionHeader';
 import { Body, Button, Card, EmptyState, ErrorNote, Fab, Input, Label, Loading, ProgressBar, Row, Screen, Sheet } from '../src/components/ui';
 import { formatDate, isoToRu, normalizeDateInput, parseAmount, plural, rub, todayISO } from '../src/lib/format';
@@ -16,6 +17,7 @@ import { fonts, sectionStyle, useTheme } from '../src/theme';
 const GOAL_EMOJI = ['🐷', '✈️', '🏖️', '🏠', '🚗', '💍', '🎁', '🛋️', '📱', '🎓', '👶', '🐶'];
 
 export default function SavingsScreen() {
+  const inTab = useInTab();
   const { c } = useTheme();
   const st = sectionStyle(c, 'savings');
   const { space, people } = useSpace();
@@ -91,7 +93,7 @@ export default function SavingsScreen() {
   return (
     <View style={{ flex: 1 }}>
       <Screen>
-        <SectionHeader title="Копилка" subtitle="Копим на мечты вместе" emoji={st.emoji} color={st.fg} onBack={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/us'))} />
+        <SectionHeader title="Копилка" subtitle="Копим на мечты вместе" emoji={st.emoji} color={st.fg} onBack={inTab ? undefined : () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/us'))} />
         {goals.length > 0 ? (
           <Card tint={st.bg} style={{ marginBottom: 16, borderColor: 'transparent' }}>
             <Label style={{ color: st.fg }}>Всего отложено</Label>

@@ -1,6 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect, useState } from 'react';
+import { router } from 'expo-router';
 import { Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileForm } from '../src/components/ProfileForm';
@@ -9,6 +10,7 @@ import { TabBarEditor } from '../src/components/TabBarEditor';
 import { ThemePicker } from '../src/components/ThemePicker';
 import { Body, Button, Card, ErrorNote, Input, Label, pageStyle, Row, Sheet } from '../src/components/ui';
 import { PRIVACY_URL } from '../src/lib/env';
+import { openTour } from '../src/lib/tour';
 import { humanError, supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/providers/AuthProvider';
 import { useSpace } from '../src/providers/SpaceProvider';
@@ -84,7 +86,7 @@ export default function Settings() {
   function confirmDeleteAccount() {
     Alert.alert(
       'Удалить аккаунт?',
-      'Безвозвратно удалятся твой профиль, сообщения, лайки, вишлист и учётная запись. Общие записи (фильмы, рецепты, события, копилки) останутся у партнёра — без твоего имени. Отменить это нельзя.',
+      'Безвозвратно удалятся твой профиль, лайки, вишлист, рабочие дни и учётная запись. Общие записи (фильмы, рецепты, события, копилки, бюджет) останутся у остальных участников — без твоего имени. Отменить это нельзя.',
       [
         { text: 'Отмена', style: 'cancel' },
         { text: 'Удалить навсегда', style: 'destructive', onPress: deleteAccount },
@@ -101,7 +103,7 @@ export default function Settings() {
             {space.invite_code}
           </Text>
           <Body muted style={{ textAlign: 'center', fontSize: 13 }}>
-            Пусть партнёр или родные введут этот код после входа в приложение.
+            Пусть близкие введут этот код после входа в приложение.
           </Body>
           <Row style={{ marginTop: 14 }}>
             <Button title="Копировать" small variant="secondary" icon="copy-outline" style={{ flex: 1 }} onPress={() => Clipboard.setStringAsync(space.invite_code)} />
@@ -219,6 +221,18 @@ export default function Settings() {
       <Label>О приложении</Label>
       <Card style={{ marginBottom: 16 }}>
         <Button
+          title="Показать обучение"
+          small
+          variant="ghost"
+          icon="school-outline"
+          onPress={() => {
+            // настройки открыты поверх разделов — закрываем их, тур покажется на главном экране
+            if (router.canGoBack()) router.back();
+            setTimeout(openTour, 500);
+          }}
+          style={{ alignSelf: 'flex-start' }}
+        />
+        <Button
           title="Политика конфиденциальности"
           small
           variant="ghost"
@@ -238,7 +252,7 @@ export default function Settings() {
         ) : null}
         <Button title="Удалить аккаунт" small variant="danger" icon="trash-outline" loading={deleting} onPress={confirmDeleteAccount} style={{ alignSelf: 'flex-start' }} />
         <Body muted style={{ fontSize: 13, marginTop: 8 }}>
-          Удалит профиль, сообщения, вишлист и учётную запись. Общие записи останутся у партнёра без твоего имени.
+          Удалит профиль, вишлист и учётную запись. Общие записи останутся у остальных участников без твоего имени.
         </Body>
       </Card>
 

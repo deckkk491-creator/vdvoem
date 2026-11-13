@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { useUnreadCount } from '../hooks/useUnread';
 import { useAuth } from '../providers/AuthProvider';
 import { useSpace } from '../providers/SpaceProvider';
 import { fonts, useTheme } from '../theme';
@@ -24,10 +23,9 @@ export function SectionHeader({
   color: string;
   right?: React.ReactNode;
 }) {
-  const { c, dark } = useTheme();
+  const { c } = useTheme();
   const { profile } = useAuth();
   const { space, live } = useSpace();
-  const unread = useUnreadCount();
   return (
     <View style={{ marginBottom: 16 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 10 }}>
@@ -72,20 +70,6 @@ export function SectionHeader({
           </Pressable>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Pressable
-            onPress={() => router.push('/chat')}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={unread ? `Чат, непрочитанных: ${unread}` : 'Чат'}
-            style={({ pressed }) => ({ width: 38, height: 38, borderRadius: 19, backgroundColor: c.bgAlt, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}
-          >
-            <Ionicons name="chatbubble-ellipses-outline" size={20} color={c.text} />
-            {unread ? (
-              <View style={{ position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: c.heart, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg }}>
-                <Text style={{ color: dark ? c.bg : '#fff', fontSize: 10, fontWeight: '800' }}>{unread > 99 ? '99+' : unread}</Text>
-              </View>
-            ) : null}
-          </Pressable>
           <Pressable onPress={() => router.push('/settings')} hitSlop={8} accessibilityLabel="Настройки">
             <Avatar profile={profile} size={34} />
           </Pressable>
