@@ -278,7 +278,7 @@ export default function CalendarScreen() {
             >
               <Text style={{ fontSize: 20 }}>{workSt.emoji}</Text>
               <Text style={{ flex: 1, color: workSt.fg, fontWeight: '700', fontSize: 15 }} numberOfLines={1}>
-                {workingToday.length ? `Работают: ${workingToday.map((u) => nameOf(u)).join(', ')}` : 'Рабочие дни'}
+                {workingToday.length ? `Рабочие дни: ${workingToday.map((u) => nameOf(u)).join(', ')}` : 'Рабочие дни'}
               </Text>
               <Ionicons name="chevron-forward" size={18} color={workSt.fg} />
             </Pressable>

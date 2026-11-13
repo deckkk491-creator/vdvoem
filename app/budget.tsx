@@ -7,6 +7,8 @@ import { DateField } from '../src/components/DateField';
 import { MONTHS } from '../src/components/calendar/MonthGrid';
 import { confirmDelete } from '../src/components/ItemCard';
 import { Avatar, useNameOf } from '../src/components/people';
+import { ReceiptScanButtons } from '../src/components/ReceiptScanner';
+import { useInTab } from '../src/lib/inTab';
 import { SectionHeader } from '../src/components/SectionHeader';
 import { Body, Button, Card, Chip, EmptyState, ErrorNote, Fab, IconButton, Input, Label, Loading, ProgressBar, Row, Screen, Segmented, Sheet } from '../src/components/ui';
 import { formatDate, parseAmount, rub, todayISO, toISODate } from '../src/lib/format';
@@ -43,6 +45,7 @@ type Filter = 'all' | BudgetKind;
 
 /** Бюджет: расходы и доходы пространства по месяцам и категориям */
 export default function BudgetScreen() {
+  const inTab = useInTab();
   const { c } = useTheme();
   const st = sectionStyle(c, 'budget');
   const { space, people } = useSpace();
@@ -156,7 +159,7 @@ export default function BudgetScreen() {
           subtitle="Расходы и доходы вместе"
           emoji={st.emoji}
           color={st.fg}
-          onBack={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/us'))}
+          onBack={inTab ? undefined : () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/us'))}
         />
 
         <Row style={{ justifyContent: 'space-between', marginBottom: 12 }}>
@@ -418,6 +421,18 @@ function BudgetSheet({
         onChange={changeKind}
       />
       <View style={{ height: 16 }} />
+      {!entry ? (
+        <ReceiptScanButtons
+          color={st.fg}
+          onResult={(r) => {
+            changeKind(r.kind);
+            setAmount(String(r.amount).replace('.', ','));
+            setDate(r.date);
+            setNote((n) => n || `Чек ${formatDate(r.date)} в ${r.time}`);
+            setError(null);
+          }}
+        />
+      ) : null}
       <Input
         label="Сумма, ₽"
         value={amount}

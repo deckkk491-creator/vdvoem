@@ -295,7 +295,7 @@ export function EventSheet({
             {others.map((m) => (
               <Chip
                 key={m.user_id}
-                label={people[m.user_id]?.display_name || 'Партнёр'}
+                label={people[m.user_id]?.display_name || 'Участник'}
                 active={assignee === m.user_id}
                 onPress={() => setAssignee(m.user_id)}
                 color={st.fg}
@@ -306,7 +306,7 @@ export function EventSheet({
             <Row style={{ marginBottom: 6 }}>
               <Avatar profile={people[assignee]} size={20} />
               <Body muted style={{ fontSize: 13, flex: 1 }}>
-                Задача сразу будет на {people[assignee]?.display_name || 'партнёре'} — отказаться можно в любой момент
+                Задача сразу будет на {people[assignee]?.display_name || 'этом участнике'} — отказаться можно в любой момент
               </Body>
             </Row>
           ) : null}

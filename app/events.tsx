@@ -87,7 +87,7 @@ export default function EventsScreen() {
               <EmptyState
                 emoji="📌"
                 title="Событий пока нет"
-                text="Кино, поездка, запись к врачу — добавь событие, и оно появится в общем календаре у вас обоих."
+                text="Кино, поездка, запись к врачу — добавь событие, и оно появится в общем календаре у всех участников."
                 action="Добавить событие"
                 onAction={() => sheets.openNew('event', today)}
                 color={st.fg}

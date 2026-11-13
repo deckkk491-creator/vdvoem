@@ -19,6 +19,7 @@ import {
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 import { fonts, MAX_CONTENT_WIDTH, radius, space, TAB_BAR_HEIGHT, tabBarOffset, TAP, useTheme } from '../theme';
 
+import { useInTab } from '../lib/inTab';
 import { AppBackground, useHasBackground } from './AppBackground';
 
 export type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -602,7 +603,10 @@ export function Fab({
 }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const bottom = overTabBar ? tabBarOffset(insets.bottom) + TAB_BAR_HEIGHT + space.md : Math.max(insets.bottom, space.lg) + space.sm;
+  const inTab = useInTab();
+  // Экран из «Мы», открытый вкладкой нижней панели, тоже держит кнопку над панелью
+  const over = overTabBar || inTab;
+  const bottom = over ? tabBarOffset(insets.bottom) + TAB_BAR_HEIGHT + space.md : Math.max(insets.bottom, space.lg) + space.sm;
   return (
     <Pressable
       onPress={onPress}
@@ -643,8 +647,9 @@ export type FabAction = { icon: IconName; label: string; onPress: () => void };
 export function FabMenu({ actions, color, overTabBar = true }: { actions: FabAction[]; color?: string; overTabBar?: boolean }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
+  const inTab = useInTab();
   const [open, setOpen] = React.useState(false);
-  const bottom = (overTabBar ? tabBarOffset(insets.bottom) + TAB_BAR_HEIGHT + space.md : Math.max(insets.bottom, space.lg) + space.sm) + 58 + space.md;
+  const bottom = (overTabBar || inTab ? tabBarOffset(insets.bottom) + TAB_BAR_HEIGHT + space.md : Math.max(insets.bottom, space.lg) + space.sm) + 58 + space.md;
   return (
     <>
       {open ? (

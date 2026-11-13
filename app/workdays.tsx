@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useInTab } from '../src/lib/inTab';
 import { AppBackground } from '../src/components/AppBackground';
 import { MonthGrid, MONTHS, type DayMark } from '../src/components/calendar/MonthGrid';
 import { Avatar, useNameOf } from '../src/components/people';
@@ -10,13 +11,15 @@ import { plural, todayISO, toISODate } from '../src/lib/format';
 import { humanError } from '../src/lib/supabase';
 import { useAuth } from '../src/providers/AuthProvider';
 import { useSpace } from '../src/providers/SpaceProvider';
-import { sectionStyle, useTheme } from '../src/theme';
+import { sectionStyle, TAB_BAR_HEIGHT, useTheme } from '../src/theme';
 
 /** Рабочие дни: отмечаешь свои смены — остальные участники видят их в календаре */
 export default function WorkDaysScreen() {
   const { c } = useTheme();
   const st = sectionStyle(c, 'work');
   const insets = useSafeAreaInsets();
+  // Открыт вкладкой нижней панели — оставляем под ней место
+  const tabPad = useInTab() ? TAB_BAR_HEIGHT + 40 : 0;
   const { userId, profile } = useAuth();
   const { members, people } = useSpace();
   const nameOf = useNameOf();
@@ -62,7 +65,7 @@ export default function WorkDaysScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <AppBackground />
-      <ScrollView contentContainerStyle={pageStyle(insets, insets.bottom + 40)}>
+      <ScrollView contentContainerStyle={pageStyle(insets, insets.bottom + 40 + tabPad)}>
         <Body muted style={{ marginBottom: 14 }}>
           Нажимай на дни, когда работаешь. Остальные участники увидят их в календаре полоской твоего цвета — и наоборот.
         </Body>

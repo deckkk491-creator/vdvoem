@@ -9,7 +9,7 @@ import { useCalendar } from '../../src/hooks/useCalendar';
 import { openTaskCount } from '../../src/components/calendar/TasksPanel';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useSpace } from '../../src/providers/SpaceProvider';
-import { ALL_TABS, TAB_DEFS, useTabBarTabs, type TabKey } from '../../src/lib/tabPrefs';
+import { ALL_TABS, EXTRA_HREF, EXTRA_TABS, TAB_DEFS, useTabBarTabs, type CoreTabKey } from '../../src/lib/tabPrefs';
 import { sectionStyle, useTheme, type SectionKey } from '../../src/theme';
 
 export default function UsScreen() {
@@ -29,14 +29,14 @@ export default function UsScreen() {
       href: '/tasks',
     },
     { key: 'dates', title: 'Важные даты', text: 'Годовщины, дни рождения и всё, что нельзя забыть', href: '/dates' },
-    { key: 'work', title: 'Рабочие дни', text: 'Отметь свои смены — партнёр увидит их в календаре', href: '/workdays' },
+    { key: 'work', title: 'Рабочие дни', text: 'Отметь свои смены — остальные увидят их в календаре', href: '/workdays' },
     { key: 'budget', title: 'Бюджет', text: 'Расходы и доходы по категориям — куда уходят деньги', href: '/budget' },
-    { key: 'savings', title: 'Копилка', text: 'Копим на мечты вместе', href: '/savings' },
+    { key: 'savings', title: 'Копилка', text: 'Копим на общие цели', href: '/savings' },
     { key: 'wishlist', title: 'Вишлисты', text: 'Что подарить друг другу — и тайно забронировать подарок', href: '/wishlists' },
     {
       key: 'rule',
       title: 'Правило 2-2-2',
-      text: space?.rule222_enabled ? 'Свидания, новые места и страны — в вашем ритме' : 'Выключено · включи, чтобы не забывать о свиданиях',
+      text: space?.rule222_enabled ? 'Встречи, новые места и страны — в вашем ритме' : 'Выключено · включи, чтобы не забывать о встречах и поездках',
       href: '/rule222',
     },
   ];
@@ -45,7 +45,7 @@ export default function UsScreen() {
   // Разделы, которые пользователь убрал с нижней панели, открываются отсюда
   const shownTabs = useTabBarTabs();
   const hiddenTabs = ALL_TABS.filter((k) => !shownTabs.includes(k));
-  const tabSection: Record<Exclude<TabKey, 'us'>, SectionKey> = { calendar: 'calendar', watch: 'watch', recipes: 'recipe', weekend: 'weekend', shopping: 'shopping' };
+  const tabSection: Record<Exclude<CoreTabKey, 'us'>, SectionKey> = { calendar: 'calendar', watch: 'watch', recipes: 'recipe', weekend: 'weekend', shopping: 'shopping' };
 
   return (
     <Screen>
@@ -109,8 +109,10 @@ export default function UsScreen() {
 
       {tiles.map((t) => {
         const s = sectionStyle(c, t.key);
+        // Если раздел вынесен на нижнюю панель — переходим на его вкладку, чтобы панель осталась на месте
+        const tab = EXTRA_TABS.find((k) => EXTRA_HREF[k] === t.href && shownTabs.includes(k));
         return (
-          <Card key={t.key} onPress={() => router.push(t.href)} style={{ marginBottom: 12 }}>
+          <Card key={t.key} onPress={() => (tab ? router.navigate(`/(tabs)/${tab}`) : router.push(t.href))} style={{ marginBottom: 12 }}>
             <Row gap={14}>
               <View style={{ width: 52, height: 52, borderRadius: 18, backgroundColor: s.bg, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 26 }}>{s.emoji}</Text>

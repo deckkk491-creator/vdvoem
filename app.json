@@ -60,6 +60,15 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "«Вместе» использует камеру, чтобы считать QR-код с чека и заполнить расход.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "«Вместе» открывает галерею, чтобы ты мог прикрепить фото к свиданию, поездке, событию или желанию.",
