@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Вместе — вход через Яндекс ID</title>
+<style>
+  body { margin: 0; font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background: #fcf9f7; color: #1d1d1f; display: flex; min-height: 100vh; align-items: center; justify-content: center; }
+  @media (prefers-color-scheme: dark) { body { background: #171516; color: #eeeaec; } }
+  main { max-width: 420px; padding: 24px; text-align: center; }
+  a { color: #b5476b; }
+</style>
+</head>
+<body>
+<main>
+  <p id="msg">Возвращаемся в приложение «Вместе»…</p>
+  <p id="link" hidden><a id="open" href="#">Открыть «Вместе»</a></p>
+</main>
+<script>
+// Сюда Яндекс возвращает результат входа (Redirect URI приложения на oauth.yandex.ru).
+// Страница ничего не хранит и никуда не отправляет: она только передаёт ответ Яндекса обратно в приложение.
+// Адрес возврата приходит в state (после точки, base64url) и принимается только со схемой приложения —
+// так токен нельзя увести на посторонний сайт.
+(function () {
+  var hash = location.hash.slice(1) || location.search.slice(1);
+  // Убираем токен из адресной строки и истории
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  var params = {};
+  hash.split('&').forEach(function (pair) {
+    if (!pair) return;
+    var i = pair.indexOf('=');
+    var k = decodeURIComponent(i < 0 ? pair : pair.slice(0, i));
+    params[k] = i < 0 ? '' : decodeURIComponent(pair.slice(i + 1).replace(/\+/g, ' '));
+  });
+  var target = null;
+  var state = params.state || '';
+  var dot = state.indexOf('.');
+  if (dot > 0) {
+    try {
+      var b64 = state.slice(dot + 1).replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+      var url = atob(b64);
+      if (/^(vdvoem:\/\/|exps?:\/\/)[^\s#]*yandex-callback$/.test(url)) target = url;
+    } catch (e) {}
+  }
+  if (!target) {
+    document.getElementById('msg').textContent = 'Не получилось вернуться в приложение. Открой «Вместе» и попробуй войти ещё раз.';
+    return;
+  }
+  var dest = target + '#' + hash;
+  document.getElementById('open').href = dest;
+  location.replace(dest);
+  setTimeout(function () {
+    document.getElementById('msg').textContent = 'Если приложение не открылось само, нажми на ссылку.';
+    document.getElementById('link').hidden = false;
+  }, 1500);
+})();
+</script>
+</body>
+</html>

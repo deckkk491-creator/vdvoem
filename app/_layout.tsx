@@ -81,6 +81,7 @@ function Shell() {
         <Stack.Screen name="setup" />
         <Stack.Screen name="sign-in" />
         <Stack.Screen name="auth-callback" />
+        <Stack.Screen name="yandex-callback" />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="wishlists" options={{ headerShown: true, title: 'Вишлисты' }} />
