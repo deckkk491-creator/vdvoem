@@ -2,9 +2,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { Body, Button, ErrorNote, Input, Screen, Spacer, Title } from '../src/components/ui';
 import { AUTH_REDIRECT_URL } from '../src/lib/authLink';
-import { DEMO_EMAIL } from '../src/lib/env';
+import * as WebBrowser from 'expo-web-browser';
+import { DEMO_EMAIL, PRIVACY_URL, TERMS_URL } from '../src/lib/env';
+import { isRuEmail, RU_EMAIL_REQUIRED_TEXT } from '../src/lib/ruEmail';
+import { signInWithYandex, yandexSignInAvailable } from '../src/lib/yandexAuth';
 import { humanError, supabase } from '../src/lib/supabase';
 import { fonts, radius, useTheme } from '../src/theme';
+
+function openDoc(url: string) {
+  WebBrowser.openBrowserAsync(url).catch(() => undefined);
+}
 
 export default function SignIn() {
   const { c } = useTheme();
@@ -28,6 +35,19 @@ export default function SignIn() {
   const validEmail = /^\S+@\S+\.\S+$/.test(email.trim());
   // Демо-аккаунт для ревьюера Apple: письмо не отправляем, вместо него просим код доступа
   const isDemo = DEMO_EMAIL !== '' && email.trim().toLowerCase() === DEMO_EMAIL;
+  // Иностранную почту не блокируем: с ней может войти старый аккаунт. Новый аккаунт с ней не создаст сервер.
+  const foreignEmail = validEmail && !isDemo && !isRuEmail(email);
+  const [yandexBusy, setYandexBusy] = useState(false);
+
+  async function yandex() {
+    setError(null);
+    setYandexBusy(true);
+    try {
+      await signInWithYandex();
+    } finally {
+      setYandexBusy(false);
+    }
+  }
 
   async function sendCode() {
     if (isDemo) {
@@ -105,10 +125,35 @@ export default function SignIn() {
             returnKeyType="send"
             onSubmitEditing={() => validEmail && sendCode()}
           />
+          {foreignEmail && !error ? (
+            <Body faint style={{ marginTop: -4, marginBottom: 12, fontSize: 13 }}>
+              {RU_EMAIL_REQUIRED_TEXT}
+            </Body>
+          ) : null}
           <ErrorNote text={error} />
-          <Button title="Получить письмо" onPress={sendCode} loading={busy} disabled={!validEmail} icon="mail-outline" />
+          <Button title="Получить письмо" onPress={sendCode} loading={busy} disabled={!validEmail || yandexBusy} icon="mail-outline" />
           <Body faint style={{ marginTop: 14, fontSize: 13, textAlign: 'center' }}>
             Пароль не нужен — пришлём на почту код или ссылку для входа.
+          </Body>
+          {yandexSignInAvailable ? (
+            <>
+              <Spacer h={20} />
+              <Body faint style={{ fontSize: 13, textAlign: 'center' }}>или</Body>
+              <Spacer h={12} />
+              <Button title="Войти с Яндекс ID" variant="secondary" onPress={yandex} loading={yandexBusy} disabled={busy} />
+            </>
+          ) : null}
+          <Spacer h={24} />
+          <Body faint style={{ fontSize: 12, lineHeight: 17, textAlign: 'center' }}>
+            Продолжая, ты принимаешь{' '}
+            <Text style={{ color: c.accent }} accessibilityRole="link" onPress={() => openDoc(TERMS_URL)}>
+              пользовательское соглашение
+            </Text>{' '}
+            и условия{' '}
+            <Text style={{ color: c.accent }} accessibilityRole="link" onPress={() => openDoc(PRIVACY_URL)}>
+              обработки персональных данных
+            </Text>
+            .
           </Body>
         </>
       ) : isDemo ? (
