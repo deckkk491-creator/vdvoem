@@ -5,6 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useInTab } from '../src/lib/inTab';
 import { AttachmentEditor, AttachmentStrip, useAttachmentsFor } from '../src/components/Attachments';
 import { AppBackground } from '../src/components/AppBackground';
 import { DateField } from '../src/components/DateField';
@@ -33,7 +34,7 @@ import { humanError, supabase } from '../src/lib/supabase';
 import type { Attachment, ItemKind, RuleEvent, RuleKind } from '../src/lib/types';
 import { useAuth } from '../src/providers/AuthProvider';
 import { useRealtimeRefetch, useSpace } from '../src/providers/SpaceProvider';
-import { fonts, MAX_CONTENT_WIDTH, radius, sectionStyle, useTheme } from '../src/theme';
+import { fonts, MAX_CONTENT_WIDTH, radius, sectionStyle, TAB_BAR_HEIGHT, useTheme } from '../src/theme';
 
 const KINDS: RuleKind[] = ['date', 'place', 'country'];
 const IDEAS_SHOWN = 3;
@@ -44,6 +45,8 @@ export default function Rule222() {
   const { c } = useTheme();
   const st = sectionStyle(c, 'rule');
   const insets = useSafeAreaInsets();
+  // Открыт вкладкой нижней панели — оставляем под ней место
+  const tabPad = useInTab() ? TAB_BAR_HEIGHT + 40 : 0;
   const { space, loaded, updateSpace, people } = useSpace();
   const { userId } = useAuth();
   const [events, setEvents] = useState<RuleEvent[]>([]);
@@ -124,7 +127,7 @@ export default function Rule222() {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
     <AppBackground />
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={pageStyle(insets, insets.bottom + 40)}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={pageStyle(insets, insets.bottom + 40 + tabPad)}>
       <Card tint={st.bg} style={{ borderColor: 'transparent', marginBottom: 16 }}>
         <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View style={{ flex: 1, paddingRight: 12 }}>

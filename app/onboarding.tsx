@@ -59,7 +59,7 @@ export default function Onboarding() {
         <Text style={{ color: c.accent, fontWeight: '700', marginBottom: 6 }}>Шаг 1 из 2</Text>
         <Title>Знакомимся</Title>
         <Body muted style={{ marginTop: 6, marginBottom: 20 }}>
-          Так тебя увидят партнёр и семья: в лайках, вишлистах и копилке.
+          Так тебя увидят остальные участники: в лайках, вишлистах и копилке.
         </Body>
         <ProfileForm submitTitle="Дальше" />
         <Spacer />
@@ -73,7 +73,7 @@ export default function Onboarding() {
       <Text style={{ color: c.accent, fontWeight: '700', marginBottom: 6 }}>Шаг 2 из 2</Text>
       <Title>Ваше общее пространство</Title>
       <Body muted style={{ marginTop: 6, marginBottom: 20 }}>
-        Всё, что вы добавляете, хранится в общем пространстве. Создай его и пригласи партнёра — или присоединись по коду.
+        Всё, что вы добавляете, хранится в общем пространстве. Создай его и пригласи близких — или присоединись по коду.
       </Body>
       {/* Если список пространств не загрузился, человек мог попасть сюда, хотя пространство у него есть */}
       {!created ? <ErrorNote text={loadError} onRetry={refresh} /> : null}
@@ -85,7 +85,7 @@ export default function Onboarding() {
             {created}
           </Text>
           <Body muted style={{ textAlign: 'center' }}>
-            Партнёру нужно установить «Вместе», войти по почте и ввести этот код. Код всегда есть в настройках.
+            Остальным нужно установить «Вместе», войти по почте и ввести этот код. Код всегда есть в настройках.
           </Body>
           <Spacer />
           <View style={{ flexDirection: 'row', gap: 10 }}>

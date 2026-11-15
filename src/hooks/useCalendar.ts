@@ -2,9 +2,11 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { deleteWithFiles } from '../lib/files';
-import { parseDate, plural, toISODate } from '../lib/format';
+import { parseDate, plural, sameDayInYear, toISODate } from '../lib/format';
+
+export { sameDayInYear };
 import { humanError, supabase } from '../lib/supabase';
-import type { CalendarEvent, CalendarKind, Item } from '../lib/types';
+import type { CalendarEvent, CalendarKind, Celebration, Item } from '../lib/types';
 import { useAuth } from '../providers/AuthProvider';
 import { useRealtimeRefetch, useSpace } from '../providers/SpaceProvider';
 
@@ -20,6 +22,9 @@ export type EventInput = {
   end_time: string | null;
   yearly: boolean;
   assignee: string | null;
+  remind_before: number | null;
+  remind_time: string;
+  celebrate: Celebration | null;
 };
 
 /** Идея из «Выходных» с датой — в календаре только для чтения */
@@ -113,17 +118,27 @@ export function useCalendar() {
   const save = useCallback(
     async (input: EventInput, id?: string): Promise<string> => {
       if (!spaceId || !userId) throw new Error('Нет пространства');
+      // База ещё без полей напоминаний (миграция 0005 не применена) — сохраняем запись без них
+      const { remind_before: _rb, remind_time: _rt, celebrate: _cb, ...basic } = input;
+      const noColumn = (err: { code?: string } | null) => err?.code === 'PGRST204' || err?.code === '42703';
       if (id) {
-        const { error: e } = await supabase.from('calendar_events').update(input).eq('id', id);
+        let { error: e } = await supabase.from('calendar_events').update(input).eq('id', id);
+        if (noColumn(e)) ({ error: e } = await supabase.from('calendar_events').update(basic).eq('id', id));
         if (e) throw e;
         await load();
         return id;
       }
-      const { data, error: e } = await supabase
+      let { data, error: e } = await supabase
         .from('calendar_events')
         .insert({ ...input, space_id: spaceId, created_by: userId })
         .select('id')
         .single();
+      if (noColumn(e))
+        ({ data, error: e } = await supabase
+          .from('calendar_events')
+          .insert({ ...basic, space_id: spaceId, created_by: userId })
+          .select('id')
+          .single());
       if (e) throw e;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
       await load();
@@ -199,18 +214,6 @@ export function addDays(iso: string, n: number): string {
 /** Разница в днях между двумя датами 'YYYY-MM-DD' (b − a) */
 export function daysBetween(a: string, b: string): number {
   return Math.round((parseDate(b).getTime() - parseDate(a).getTime()) / 86_400_000);
-}
-
-function isLeap(y: number): boolean {
-  return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-}
-
-/** Та же дата в другом году; 29 февраля в невисокосный год — 28 февраля */
-export function sameDayInYear(iso: string, year: number): string {
-  const m = Number(iso.slice(5, 7));
-  let d = Number(iso.slice(8, 10));
-  if (m === 2 && d === 29 && !isLeap(year)) d = 28;
-  return `${String(year).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
 /** Ближайший день, когда запись наступает (для ежегодных — в этом или следующем году) */

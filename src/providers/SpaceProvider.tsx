@@ -47,10 +47,9 @@ const TABLES: RealtimeTable[] = [
   'wishlist_claims',
   'rule_events',
   'calendar_events',
-  'messages',
-  'message_reads',
-  'message_reactions',
   'attachments',
+  'budget_entries',
+  'work_days',
 ];
 
 export function SpaceProvider({ children }: { children: React.ReactNode }) {

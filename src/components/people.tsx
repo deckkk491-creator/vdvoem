@@ -54,7 +54,7 @@ export function useNameOf() {
   return (id: string | null | undefined, opts?: { you?: string }) => {
     if (!id) return 'кто-то';
     if (id === userId) return opts?.you ?? 'ты';
-    return people[id]?.display_name || 'партнёр';
+    return people[id]?.display_name || 'участник';
   };
 }
 

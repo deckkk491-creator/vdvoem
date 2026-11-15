@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { planReminders, type Remindable } from './reminders';
 import { RULE_META, nextDue, rhythmLabel, rhythmOf } from './rule222';
 import type { RuleEvent, RuleKind, Space } from './types';
 
@@ -25,6 +26,10 @@ async function ensureChannel(): Promise<void> {
   await Notifications.setNotificationChannelAsync('rule222', {
     name: 'Правило 2-2-2',
     importance: Notifications.AndroidImportance.DEFAULT,
+  });
+  await Notifications.setNotificationChannelAsync('reminders', {
+    name: 'Напоминания о событиях',
+    importance: Notifications.AndroidImportance.HIGH,
   });
 }
 
@@ -101,5 +106,39 @@ export async function syncRuleReminders(space: Space | null, events: RuleEvent[]
     }
   } catch (e) {
     console.warn('syncRuleReminders failed', e);
+  }
+}
+
+/* ------------------------- Напоминания о событиях и важных датах ------------------------- */
+
+const CAL_PREFIX = 'cal-';
+
+/**
+ * Пересоздаёт локальные напоминания о записях календаря («Когда напомнить» в форме записи).
+ * Напоминание живёт на телефоне: у каждого участника оно приходит со своего устройства.
+ * Разрешение на уведомления спрашиваем, только если есть что запланировать.
+ */
+export async function syncEventReminders(events: Remindable[]): Promise<void> {
+  if (Platform.OS === 'web') return;
+  try {
+    const all = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(all.filter((n) => n.identifier.startsWith(CAL_PREFIX)).map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
+    const plan = planReminders(events, new Date());
+    if (!plan.length) return;
+    const granted = await ensurePermission();
+    if (!granted) return;
+    for (const p of plan) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${CAL_PREFIX}${p.id}`,
+        content: { title: p.title, body: p.body },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: p.at,
+          channelId: Platform.OS === 'android' ? 'reminders' : undefined,
+        },
+      });
+    }
+  } catch (e) {
+    console.warn('syncEventReminders failed', e);
   }
 }

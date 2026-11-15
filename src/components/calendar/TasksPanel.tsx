@@ -81,7 +81,7 @@ export function TasksPanel({
         {others.map((m) => (
           <Chip
             key={m.user_id}
-            label={people[m.user_id]?.display_name || 'Партнёр'}
+            label={people[m.user_id]?.display_name || 'Участник'}
             active={filter === `user:${m.user_id}`}
             onPress={() => setFilter(`user:${m.user_id}`)}
             color={st.fg}
@@ -95,7 +95,7 @@ export function TasksPanel({
         <EmptyState
           emoji="✅"
           title="Задач пока нет"
-          text="Поставь задачу вроде «Отнести кошку к ветеринару» — партнёр увидит её и сможет нажать «Я сделаю»."
+          text="Поставь задачу вроде «Отнести кошку к ветеринару» — остальные увидят её, и кто-нибудь нажмёт «Я сделаю»."
           action="Поставить задачу"
           onAction={onNew}
           color={st.fg}

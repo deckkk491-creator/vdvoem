@@ -6,15 +6,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { isConfigured } from '../src/lib/env';
 import { AuthProvider, useAuth } from '../src/providers/AuthProvider';
 import { SpaceProvider, useSpace } from '../src/providers/SpaceProvider';
+import { CalendarEffects } from '../src/components/CalendarEffects';
 import { RuleReminderSync } from '../src/components/RuleReminderSync';
 import { PageReaderHost } from '../src/components/PageReader';
 import { useAuthDeepLinks } from '../src/lib/authLink';
-import { UnreadProvider } from '../src/hooks/useUnread';
 import { ThemeProvider, useTheme } from '../src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
-const IN_APP = ['(tabs)', 'wishlists', 'rule222', 'settings', 'onboarding', 'savings', 'dates', 'chat', 'events', 'tasks'];
+const IN_APP = ['(tabs)', 'wishlists', 'rule222', 'settings', 'onboarding', 'savings', 'dates', 'events', 'tasks', 'budget', 'workdays'];
 
 type Target = '/setup' | '/sign-in' | '/onboarding' | '/(tabs)/calendar' | null;
 
@@ -64,6 +64,7 @@ function Shell() {
       <AuthLinks />
       <Gate />
       <RuleReminderSync />
+      <CalendarEffects />
       <PageReaderHost />
       <Stack
         screenOptions={{
@@ -86,8 +87,9 @@ function Shell() {
         <Stack.Screen name="rule222" options={{ headerShown: true, title: 'Правило 2-2-2' }} />
         <Stack.Screen name="settings" options={{ headerShown: true, title: 'Настройки', presentation: 'modal' }} />
         <Stack.Screen name="savings" />
+        <Stack.Screen name="budget" />
+        <Stack.Screen name="workdays" options={{ headerShown: true, title: 'Рабочие дни' }} />
         <Stack.Screen name="dates" options={{ headerShown: true, title: 'Важные даты' }} />
-        <Stack.Screen name="chat" options={{ headerShown: true, title: 'Чат' }} />
         <Stack.Screen name="events" options={{ headerShown: true, title: 'События' }} />
         <Stack.Screen name="tasks" options={{ headerShown: true, title: 'Задачи' }} />
       </Stack>
@@ -109,9 +111,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <SpaceProvider>
-          <UnreadProvider>
-            <ThemedShell />
-          </UnreadProvider>
+          <ThemedShell />
         </SpaceProvider>
       </AuthProvider>
     </SafeAreaProvider>

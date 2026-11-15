@@ -189,7 +189,7 @@ export default function ShoppingScreen() {
         {loading ? (
           <Loading />
         ) : items.length === 0 ? (
-          <EmptyState emoji="🧺" title="Список пуст" text="Напиши, что купить, — партнёр сразу увидит, даже если он уже в магазине." />
+          <EmptyState emoji="🧺" title="Список пуст" text="Напиши, что купить, — остальные сразу увидят, даже если кто-то уже в магазине." />
         ) : (
           groups.map(({ cat: k, list }) => (
             <View key={k} style={{ marginBottom: 18 }}>

@@ -43,17 +43,17 @@ FEATURES TO CHECK
 - Savings jar («Копилка»): a manual tracker only. The app does not process payments or connect to banks.
 - 2-2-2 rule («Мы» tab → «Правило 2-2-2»): date night every 2 weeks, a new place every 2 months, a new country every 2 years; the couple can change the rhythm. When enabled, the app asks for notification permission and schedules LOCAL notifications. No remote push. Country ideas show landmark photos from Wikimedia Commons (free licences, author credited on each photo).
 - «Календарь» tab: shared events, tasks («Я сделаю», I'll do it, to take a task) and important dates. The optional switch «Добавлять в календарь iPhone» (Add to iPhone Calendar) writes events to a separate «Вместе» calendar on the device; calendar permission is asked only when the user turns it on.
-- Chat (bubble icon at the top of every tab): private messages between members of the space, with photo and document attachments stored in private storage (signed URLs, members only).
+- There is no chat or messaging feature. Members share planning content only (lists, events, photos attached to entries).
 - Photos: the photo library / camera permission is asked only when the user attaches a picture («Фото из галереи» / «Сделать фото»).
 
 ACCOUNT DELETION
-«Мы» tab → «Настройки» (Settings) → «Удалить аккаунт» (Delete account) → confirm. This permanently deletes the account, profile, messages, likes, wishlist and uploaded files of the user (Guideline 5.1.1(v)). Shared entries that the user added to a space (movies, recipes, events, savings) stay for the remaining member without the user's name.
+«Мы» tab → «Настройки» (Settings) → «Удалить аккаунт» (Delete account) → confirm. This permanently deletes the account, profile, likes, wishlist and uploaded files of the user (Guideline 5.1.1(v)). Shared entries that the user added to a space (movies, recipes, events, savings) stay for the remaining member without the user's name.
 
 USER-GENERATED CONTENT
-Content and chat messages are visible only to members of the same private space, who joined by an invite code they received from someone they know (typically a partner or family). There is no public feed and no way to find or message strangers. Safeguards:
-- Any member can leave a space at any time («Настройки» → «Выйти из пространства», or long-press a message in the chat → «Выйти из пространства»), which immediately stops all contact.
+Content is visible only to members of the same private space, who joined by an invite code they received from someone they know (typically a partner or family). There is no public feed, no chat and no way to find or message strangers. Safeguards:
+- Any member can leave a space at any time («Настройки» → «Выйти из пространства»), which immediately stops all contact.
 - The space owner can remove a member («Настройки» → «Участники» → «Исключить») and can change the invite code.
-- Long-pressing a partner's chat message offers «Пожаловаться» (Report), which emails the message to the developer (deckkk491@gmail.com) for review within 24 hours.
+- Abuse can be reported to the developer (deckkk491@gmail.com) from the Support page.
 
 DATA
 Data is stored in Supabase (EU region). No ads, no analytics, no tracking, no in-app purchases.
@@ -90,7 +90,6 @@ Contact: deckkk491@gmail.com
 - [ ] Account deletion is easy to find («Мы» → «Настройки» → «Удалить аккаунт») and actually deletes data.
 - [ ] Notification permission is asked only when the user turns on the 2-2-2 rule, not at first launch.
 - [ ] Calendar permission is asked only when the user turns on «Добавлять в календарь iPhone»; photo/camera permission only when attaching a photo.
-- [ ] Chat: long-press → «Пожаловаться» works (opens mail to the developer).
 - [ ] Recipe links open in Safari / SFSafariViewController.
 - [ ] Privacy Policy URL is also linked inside the app (Settings/Profile).
 - [ ] UGC (Guideline 1.2): leaving a space, removing a member and reporting a message are all in place and listed in the Notes.

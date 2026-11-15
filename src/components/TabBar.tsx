@@ -170,7 +170,7 @@ export function FloatingTabBar({ state }: TabBarProps) {
               <Ionicons name={on ? t.iconActive : t.icon} size={22} color={color} />
               {/* Размер подписи подобран под ширину кнопки, поэтому системное увеличение шрифта здесь выключено */}
               <Text numberOfLines={1} allowFontScaling={false} style={{ fontSize, fontWeight: '700', color, includeFontPadding: false }}>
-                {t.title}
+                {t.short}
               </Text>
             </Pressable>
           );
