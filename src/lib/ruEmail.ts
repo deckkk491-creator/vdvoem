@@ -38,3 +38,45 @@ export function isRuEmail(email: string): boolean {
 
 export const RU_EMAIL_REQUIRED_TEXT =
   'Новый аккаунт можно создать с почтой Яндекса, Mail.ru или Рамблера — так требует закон. Если ты уже входил с этой почтой раньше, всё работает как прежде.';
+
+/** Часовые пояса России (IANA), включая Крым */
+const RU_TIME_ZONES = new Set([
+  'Europe/Moscow', 'Europe/Kaliningrad', 'Europe/Samara', 'Europe/Volgograd', 'Europe/Saratov', 'Europe/Ulyanovsk',
+  'Europe/Astrakhan', 'Europe/Kirov', 'Europe/Simferopol', 'Asia/Yekaterinburg', 'Asia/Omsk', 'Asia/Novosibirsk',
+  'Asia/Barnaul', 'Asia/Tomsk', 'Asia/Novokuznetsk', 'Asia/Krasnoyarsk', 'Asia/Irkutsk', 'Asia/Chita', 'Asia/Yakutsk',
+  'Asia/Khandyga', 'Asia/Vladivostok', 'Asia/Ust-Nera', 'Asia/Magadan', 'Asia/Sakhalin', 'Asia/Srednekolymsk',
+  'Asia/Kamchatka', 'Asia/Anadyr', 'W-SU',
+]);
+
+export type SignupRegion = 'RU' | 'other';
+
+/**
+ * Похоже ли устройство на российское. Закон про регистрацию через иностранную почту касается российских
+ * пользователей, поэтому для остальных почта может быть любой.
+ * Устройство считается нероссийским, только если И часовой пояс, И регион телефона известны и оба не российские.
+ * Если хоть что-то российское или неизвестно — 'RU' (строгий вариант). Признак уходит на сервер при регистрации
+ * (миграция 0007), сервер запоминает его в app_metadata.
+ */
+export function signupRegionFrom(timeZone: string | undefined, locale: string | undefined): SignupRegion {
+  const tz = (timeZone ?? '').trim();
+  const region = regionOf(locale);
+  if (!tz || !region) return 'RU';
+  if (RU_TIME_ZONES.has(tz) || region === 'RU') return 'RU';
+  return 'other';
+}
+
+function regionOf(locale: string | undefined): string {
+  // «ru-RU», «en_US», «de-Latn-DE», «ru-RU-u-ca-gregory» → регион из двух букв
+  const parts = (locale ?? '').replace(/_/g, '-').split('-u-')[0].split('-');
+  const r = parts.slice(1).find((p) => /^[A-Za-z]{2}$/.test(p));
+  return r ? r.toUpperCase() : '';
+}
+
+export function deviceSignupRegion(): SignupRegion {
+  try {
+    const o = Intl.DateTimeFormat().resolvedOptions();
+    return signupRegionFrom(o.timeZone, o.locale);
+  } catch {
+    return 'RU';
+  }
+}

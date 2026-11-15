@@ -33,6 +33,27 @@ select count(*) > 0 as old_foreign_accounts_exist from auth.users where email li
 update auth.users set email = email where email = 'a6@x';
 select true as old_foreign_account_update_ok;
 
+-- Устройство не из России: любая почта, признак уходит в app_metadata
+insert into auth.users (id, email, raw_user_meta_data) values ('00000000-0000-0000-0000-0000000000a8', 'tom@gmail.com', '{"signup_region": "other"}');
+select raw_app_meta_data ->> 'signup_region' = 'other' as foreign_device_gmail_ok from auth.users where id = '00000000-0000-0000-0000-0000000000a8';
+update auth.users set email = 'tom@outlook.com' where id = '00000000-0000-0000-0000-0000000000a8';
+select true as foreign_device_email_change_ok;
+-- Российское устройство или признак не пришёл — только российская почта; подделать признак в user_metadata позже нельзя
+do $$ begin
+  begin insert into auth.users (id, email, raw_user_meta_data) values ('00000000-0000-0000-0000-0000000000b8', 'ivan@gmail.com', '{"signup_region": "RU"}'); raise exception 'should fail';
+  exception when raise_exception then raise notice 'ru device gmail blocked ok'; end;
+  begin insert into auth.users (id, email, raw_user_meta_data) values ('00000000-0000-0000-0000-0000000000b8', 'ivan@gmail.com', '{"signup_region": "XX"}'); raise exception 'should fail';
+  exception when raise_exception then raise notice 'unknown region blocked ok'; end;
+end $$;
+insert into auth.users (id, email, raw_user_meta_data) values ('00000000-0000-0000-0000-0000000000b8', 'ivan@yandex.ru', '{"signup_region": "RU"}');
+update auth.users set raw_user_meta_data = '{"signup_region": "other"}' where id = '00000000-0000-0000-0000-0000000000b8';
+do $$ begin
+  begin update auth.users set email = 'ivan@gmail.com' where id = '00000000-0000-0000-0000-0000000000b8'; raise exception 'should fail';
+  exception when raise_exception then raise notice 'spoofed user_metadata ignored ok'; end;
+end $$;
+select raw_app_meta_data ->> 'signup_region' = 'RU' as ru_device_flag_kept from auth.users where id = '00000000-0000-0000-0000-0000000000b8';
+delete from auth.users where id in ('00000000-0000-0000-0000-0000000000a8', '00000000-0000-0000-0000-0000000000b8');
+
 -- Исключения: отдельная почта и дополнительный домен
 insert into public.signup_allowed_emails (email, note) values ('reviewer@apple-review.test', 'демо');
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000e7', 'Reviewer@apple-review.test');

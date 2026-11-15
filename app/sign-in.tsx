@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { Body, Button, ErrorNote, Input, Screen, Spacer, Title } from '../src/components/ui';
 import { AUTH_REDIRECT_URL } from '../src/lib/authLink';
 import * as WebBrowser from 'expo-web-browser';
 import { DEMO_EMAIL, PRIVACY_URL, TERMS_URL } from '../src/lib/env';
-import { isRuEmail, RU_EMAIL_REQUIRED_TEXT } from '../src/lib/ruEmail';
+import { deviceSignupRegion, isRuEmail, RU_EMAIL_REQUIRED_TEXT } from '../src/lib/ruEmail';
 import { signInWithYandex, yandexSignInAvailable } from '../src/lib/yandexAuth';
 import { humanError, supabase } from '../src/lib/supabase';
 import { fonts, radius, useTheme } from '../src/theme';
@@ -35,8 +35,9 @@ export default function SignIn() {
   const validEmail = /^\S+@\S+\.\S+$/.test(email.trim());
   // Демо-аккаунт для ревьюера Apple: письмо не отправляем, вместо него просим код доступа
   const isDemo = DEMO_EMAIL !== '' && email.trim().toLowerCase() === DEMO_EMAIL;
-  // Иностранную почту не блокируем: с ней может войти старый аккаунт. Новый аккаунт с ней не создаст сервер.
-  const foreignEmail = validEmail && !isDemo && !isRuEmail(email);
+  // Иностранную почту не блокируем: с ней может войти старый аккаунт, а новый с ней на российском устройстве не создаст сервер.
+  const signupRegion = useMemo(deviceSignupRegion, []);
+  const foreignEmail = signupRegion === 'RU' && validEmail && !isDemo && !isRuEmail(email);
   const [yandexBusy, setYandexBusy] = useState(false);
 
   async function yandex() {
@@ -59,7 +60,8 @@ export default function SignIn() {
     setError(null);
     const { error: e } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { shouldCreateUser: true, emailRedirectTo: AUTH_REDIRECT_URL },
+      // signup_region нужен серверу только для нового аккаунта: российским пользователям — только российская почта
+      options: { shouldCreateUser: true, emailRedirectTo: AUTH_REDIRECT_URL, data: { signup_region: signupRegion } },
     });
     setBusy(false);
     if (e) return setError(humanError(e));

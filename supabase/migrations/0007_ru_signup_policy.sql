@@ -5,6 +5,12 @@
 -- Outlook…) таким способом не считается. Поэтому новый пользователь создаётся только с адресом российского
 -- почтового сервиса (Яндекс, Почта Mail.ru, Рамблер) — вход по коду из письма или через Яндекс ID.
 --
+-- Требование касается российских пользователей. Приложение при регистрации сообщает, похоже ли устройство на
+-- российское (часовой пояс и регион телефона): signInWithOtp({ options: { data: { signup_region: 'RU' | 'other' } } }),
+-- см. src/lib/ruEmail.ts. Если устройство явно не российское ('other'), почта может быть любой. Если признак не пришёл
+-- или он 'RU' — только российская. Признак переносится в app_metadata (пользователь сам его не поменяет) и
+-- учитывается и при смене почты. Это разумная мера, а не гарантия: IP-адрес сервис входа триггеру не передаёт.
+--
 -- Уже созданные аккаунты не трогаем: закон обратной силы не имеет, их вход по-прежнему работает
 -- (проверка срабатывает только при создании пользователя и при смене почты).
 --
@@ -80,7 +86,17 @@ begin
   if new.email is null or new.email = '' then
     return new;
   end if;
-  if tg_op = 'UPDATE' and lower(coalesce(old.email, '')) = lower(new.email) then
+  if tg_op = 'INSERT' then
+    -- Признак региона из регистрации — в app_metadata, где пользователь не может его изменить
+    new.raw_app_meta_data := coalesce(new.raw_app_meta_data, '{}'::jsonb) || jsonb_build_object(
+      'signup_region',
+      case when new.raw_user_meta_data ->> 'signup_region' = 'other' then 'other' else 'RU' end
+    );
+  elsif lower(coalesce(old.email, '')) = lower(new.email) then
+    return new;
+  end if;
+  -- Пользователь не из России — любая почта
+  if new.raw_app_meta_data ->> 'signup_region' = 'other' then
     return new;
   end if;
   if not public.signup_email_allowed(new.email) then

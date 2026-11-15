@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { RU_EMAIL_DOMAINS, emailDomain, isRuEmail } from '../src/lib/ruEmail.ts';
+import { RU_EMAIL_DOMAINS, emailDomain, isRuEmail, signupRegionFrom } from '../src/lib/ruEmail.ts';
 
 test('список в приложении совпадает со списком в миграции 0007', () => {
   const sql = readFileSync(new URL('../supabase/migrations/0007_ru_signup_policy.sql', import.meta.url), 'utf8');
@@ -24,4 +24,23 @@ test('иностранные и похожие адреса', () => {
 
 test('домен берётся после последней @', () => {
   assert.equal(emailDomain('"a@b"@Yandex.Ru'), 'yandex.ru');
+});
+
+test('российское устройство: российский часовой пояс или регион', () => {
+  assert.equal(signupRegionFrom('Europe/Moscow', 'en-US'), 'RU');
+  assert.equal(signupRegionFrom('Asia/Vladivostok', 'de-DE'), 'RU');
+  assert.equal(signupRegionFrom('Europe/Berlin', 'ru-RU'), 'RU');
+});
+
+test('неизвестно — строгий вариант', () => {
+  assert.equal(signupRegionFrom(undefined, 'en-US'), 'RU');
+  assert.equal(signupRegionFrom('Europe/Berlin', 'ru'), 'RU');
+  assert.equal(signupRegionFrom('', ''), 'RU');
+});
+
+test('явно не Россия — любая почта', () => {
+  assert.equal(signupRegionFrom('Europe/Berlin', 'de-DE'), 'other');
+  assert.equal(signupRegionFrom('Asia/Almaty', 'ru-KZ'), 'other');
+  assert.equal(signupRegionFrom('Europe/Minsk', 'ru_BY'), 'other');
+  assert.equal(signupRegionFrom('America/New_York', 'en-US-u-ca-gregory'), 'other');
 });
