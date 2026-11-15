@@ -10,6 +10,7 @@ import { useCalendar } from '../../src/hooks/useCalendar';
 import { openTaskCount } from '../../src/components/calendar/TasksPanel';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useSpace } from '../../src/providers/SpaceProvider';
+import { ALL_TABS, TAB_DEFS, useTabBarTabs, type TabKey } from '../../src/lib/tabPrefs';
 import { sectionStyle, useTheme, type SectionKey } from '../../src/theme';
 
 export default function UsScreen() {
@@ -40,6 +41,12 @@ export default function UsScreen() {
       href: '/rule222',
     },
   ];
+
+
+  // Разделы, которые пользователь убрал с нижней панели, открываются отсюда
+  const shownTabs = useTabBarTabs();
+  const hiddenTabs = ALL_TABS.filter((k) => !shownTabs.includes(k));
+  const tabSection: Record<Exclude<TabKey, 'us'>, SectionKey> = { calendar: 'calendar', watch: 'watch', recipes: 'recipe', weekend: 'weekend', shopping: 'shopping' };
 
   return (
     <Screen>
@@ -78,6 +85,28 @@ export default function UsScreen() {
           </Pressable>
         </View>
       </Card>
+
+      {hiddenTabs.map((k) => {
+        if (k === 'us') return null;
+        const s = sectionStyle(c, tabSection[k]);
+        const t = TAB_DEFS[k];
+        return (
+          <Card key={k} onPress={() => router.navigate(`/(tabs)/${k}`)} style={{ marginBottom: 12 }}>
+            <Row gap={14}>
+              <View style={{ width: 52, height: 52, borderRadius: 18, backgroundColor: s.bg, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 26 }}>{s.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>{t.title}</Text>
+                <Body muted style={{ fontSize: 14, marginTop: 2 }}>
+                  {t.text}
+                </Body>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={c.textFaint} />
+            </Row>
+          </Card>
+        );
+      })}
 
       {tiles.map((t) => {
         const s = sectionStyle(c, t.key);

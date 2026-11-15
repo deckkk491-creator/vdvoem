@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileForm } from '../src/components/ProfileForm';
+import { Avatar } from '../src/components/people';
+import { TabBarEditor } from '../src/components/TabBarEditor';
 import { ThemePicker } from '../src/components/ThemePicker';
 import { Body, Button, Card, ErrorNote, Input, Label, pageStyle, Row, Sheet } from '../src/components/ui';
 import { PRIVACY_URL } from '../src/lib/env';
@@ -140,9 +142,9 @@ export default function Settings() {
               return (
                 <View
                   key={m.user_id}
-                  style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: i ? 1 : 0, borderColor: c.border }}
+                  style={{ minHeight: 56, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: i ? 1 : 0, borderColor: c.border }}
                 >
-                  <Text style={{ fontSize: 20 }}>{p?.avatar_emoji || '🙂'}</Text>
+                  <Avatar profile={p} size={36} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: c.text, fontSize: 16 }} numberOfLines={1}>{name}</Text>
                     {m.role === 'owner' ? <Text style={{ color: c.textMuted, fontSize: 13 }}>создатель</Text> : null}
@@ -197,7 +199,8 @@ export default function Settings() {
       <Label>Профиль</Label>
       <Card style={{ marginBottom: 16 }}>
         <Body muted style={{ fontSize: 14 }}>{email}</Body>
-        <Row style={{ marginTop: 12 }}>
+        {/* Кнопки переносятся на новую строку, если не помещаются рядом (узкий экран, крупный шрифт) */}
+        <Row style={{ marginTop: 12, flexWrap: 'wrap' }}>
           <Button title="Изменить профиль" small variant="secondary" icon="person-outline" onPress={() => setProfileOpen(true)} />
           <Button title="Выйти из аккаунта" small variant="ghost" icon="log-out-outline" onPress={() => signOut()} />
         </Row>
@@ -206,6 +209,11 @@ export default function Settings() {
       <Label>Оформление</Label>
       <Card style={{ marginBottom: 16 }}>
         <ThemePicker />
+      </Card>
+
+      <Label>Нижняя панель</Label>
+      <Card style={{ marginBottom: 16 }}>
+        <TabBarEditor />
       </Card>
 
       <Label>О приложении</Label>

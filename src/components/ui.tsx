@@ -17,9 +17,9 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
-import { fonts, MAX_CONTENT_WIDTH, radius, space, TAB_BAR_HEIGHT, TAP, useTheme } from '../theme';
+import { fonts, MAX_CONTENT_WIDTH, radius, space, TAB_BAR_HEIGHT, tabBarOffset, TAP, useTheme } from '../theme';
 
-import { AppBackground } from './AppBackground';
+import { AppBackground, useHasBackground } from './AppBackground';
 
 export type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -112,6 +112,7 @@ export function Screen({
 }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
+  const hasBackground = useHasBackground();
   // Боковые отступы плюс системные вставки: на iPhone Duo с одной стороны бывает «рейка» шириной около 84 pt
   const side = padded ? space.lg : 0;
   const base: ViewStyle = {
@@ -139,6 +140,10 @@ export function Screen({
           {children}
         </ScrollView>
       </KeyboardSafe>
+      {/* Подложка под часы и значки телефона: при прокрутке текст страницы не наезжает на них */}
+      {insets.top > 0 ? (
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: c.bg, opacity: hasBackground ? 0.8 : 1 }} />
+      ) : null}
     </View>
   );
 }
@@ -270,7 +275,7 @@ export function Button({
       ) : (
         <>
           {icon ? <Ionicons name={icon} size={small ? 16 : 19} color={fg} /> : null}
-          <Text style={{ color: fg, fontSize: small ? 14 : 16, fontWeight: '700' }}>{title}</Text>
+          <Text numberOfLines={1} style={{ color: fg, fontSize: small ? 14 : 16, fontWeight: '700', flexShrink: 1 }}>{title}</Text>
         </>
       )}
     </Pressable>
@@ -436,7 +441,7 @@ export function Segmented<T extends string>({
               minHeight: 38,
               justifyContent: 'center',
               paddingVertical: 7,
-              paddingHorizontal: 10,
+              paddingHorizontal: 4,
               borderRadius: radius.pill,
               backgroundColor: active ? c.card : 'transparent',
               alignItems: 'center',
@@ -446,7 +451,17 @@ export function Segmented<T extends string>({
               shadowOffset: { width: 0, height: 1 },
             }}
           >
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontSize: 13, fontWeight: '700', color: active ? c.text : c.textMuted }}>{o.label}</Text>
+            {/* Место под подпись жёстко ограничено: крупный системный шрифт здесь почти не увеличиваем.
+                adjustsFontSizeToFit на Android прятал подпись целиком («Завтрак» в генераторе блюд), поэтому он только для iOS. */}
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={1.1}
+              adjustsFontSizeToFit={Platform.OS === 'ios'}
+              minimumFontScale={0.8}
+              style={{ fontSize: 13, fontWeight: '700', color: active ? c.text : c.textMuted, includeFontPadding: false }}
+            >
+              {o.label}
+            </Text>
           </Pressable>
         );
       })}
@@ -587,7 +602,7 @@ export function Fab({
 }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const bottom = overTabBar ? TAB_BAR_HEIGHT + Math.max(insets.bottom, space.sm) + space.lg : Math.max(insets.bottom, space.lg) + space.sm;
+  const bottom = overTabBar ? tabBarOffset(insets.bottom) + TAB_BAR_HEIGHT + space.md : Math.max(insets.bottom, space.lg) + space.sm;
   return (
     <Pressable
       onPress={onPress}
