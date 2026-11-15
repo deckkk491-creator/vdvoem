@@ -9,7 +9,7 @@ import { Avatar } from '../src/components/people';
 import { TabBarEditor } from '../src/components/TabBarEditor';
 import { ThemePicker } from '../src/components/ThemePicker';
 import { Body, Button, Card, ErrorNote, Input, Label, pageStyle, Row, Sheet } from '../src/components/ui';
-import { PRIVACY_URL } from '../src/lib/env';
+import { PRIVACY_URL, TERMS_URL } from '../src/lib/env';
 import { openTour } from '../src/lib/tour';
 import { humanError, supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/providers/AuthProvider';
@@ -233,11 +233,19 @@ export default function Settings() {
           style={{ alignSelf: 'flex-start' }}
         />
         <Button
-          title="Политика конфиденциальности"
+          title="Обработка персональных данных"
           small
           variant="ghost"
           icon="document-text-outline"
           onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL).catch(() => Alert.alert('Не получилось открыть ссылку', PRIVACY_URL))}
+          style={{ alignSelf: 'flex-start' }}
+        />
+        <Button
+          title="Пользовательское соглашение"
+          small
+          variant="ghost"
+          icon="reader-outline"
+          onPress={() => WebBrowser.openBrowserAsync(TERMS_URL).catch(() => Alert.alert('Не получилось открыть ссылку', TERMS_URL))}
           style={{ alignSelf: 'flex-start' }}
         />
       </Card>
