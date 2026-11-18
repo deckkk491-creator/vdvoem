@@ -1,11 +1,13 @@
 import * as Clipboard from 'expo-clipboard';
 import React, { useMemo, useState } from 'react';
 import { Image } from 'expo-image';
-import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { AttachmentEditor, useAttachmentsFor } from '../../src/components/Attachments';
-import { Badge, ItemCard, itemMenu } from '../../src/components/ItemCard';
+import { Badge, itemMenu, openLink } from '../../src/components/ItemCard';
+import { AddedBy, DislikeButton, LikeButton } from '../../src/components/people';
 import { SectionHeader, SortToggle } from '../../src/components/SectionHeader';
-import { Body, Button, Chip, EmptyState, ErrorNote, Fab, Input, Label, Loading, Row, Screen, Sheet } from '../../src/components/ui';
+import { Body, Button, Card, Chip, EmptyState, ErrorNote, Fab, Input, Label, Loading, Row, Screen, Sheet } from '../../src/components/ui';
 import { MealGenerator } from '../../src/components/MealGenerator';
 import { MEAL_META, mealByTitle, recipeSearchUrl } from '../../src/data/meals';
 import { mealPhoto } from '../../src/data/photos';
@@ -13,7 +15,7 @@ import { commitAttachments, emptyDraft, loadAttachments, useSignedUrls, type Att
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useSpace } from '../../src/providers/SpaceProvider';
 import { useItems, useSorted, type SortMode } from '../../src/hooks/useItems';
-import { normalizeUrl } from '../../src/lib/format';
+import { formatDate, hostOf, normalizeUrl } from '../../src/lib/format';
 import { fetchLinkPreview } from '../../src/lib/linkPreview';
 import { humanError } from '../../src/lib/supabase';
 import type { ItemWithLikes } from '../../src/lib/types';
@@ -39,7 +41,7 @@ export default function RecipesScreen() {
   const coverOf = (item: ItemWithLikes): { uri: string; cacheKey?: string } | null => {
     const path = byParent[item.id]?.find((a) => a.kind === 'photo')?.storage_path;
     if (path && coverUrls[path]) return { uri: coverUrls[path], cacheKey: path };
-    if (item.image_url) return null; // ItemCard покажет image_url
+    if (item.image_url) return null; // RecipeCard возьмёт image_url
     const meal = mealByTitle(item.title);
     const ph = meal ? mealPhoto(meal.id) : null;
     return ph ? { uri: ph.url } : null;
@@ -98,17 +100,18 @@ export default function RecipesScreen() {
           />
         ) : (
           visible.map((item) => (
-            <ItemCard
+            <RecipeCard
               key={item.id}
               item={item}
               accent={st.fg}
-              image={coverOf(item)}
-              placeholder={{ emoji: mealByTitle(item.title)?.emoji ?? st.emoji, bg: st.bg }}
+              accentBg={st.bg}
+              image={coverOf(item) ?? (item.image_url ? { uri: item.image_url } : null)}
+              emoji={mealByTitle(item.title)?.emoji ?? st.emoji}
+              minutes={mealByTitle(item.title)?.minutes}
               onLike={() => toggleLike(item)}
               onDislike={() => toggleDislike(item)}
               onPress={() => setEditing(item)}
               onLongPress={() => itemMenu(item.title, () => setEditing(item), () => remove(item.id).catch((e) => Alert.alert('Ошибка', humanError(e))))}
-              badge={item.tags.length ? item.tags.map((t) => <Badge key={t} label={t} color={st.fg} bg={st.bg} />) : undefined}
             />
           ))
         )}
@@ -133,6 +136,86 @@ export default function RecipesScreen() {
         onDelete={editing && editing !== 'new' ? async () => { await remove(editing.id); setEditing(null); } : undefined}
       />
     </View>
+  );
+}
+
+/**
+ * Карточка рецепта из книги — в том же виде, что варианты в «Что приготовить сегодня?»:
+ * фото слева, справа название, описание и время. Так свои и предложенные рецепты выглядят одинаково.
+ */
+function RecipeCard({
+  item,
+  accent,
+  accentBg,
+  image,
+  emoji,
+  minutes,
+  onLike,
+  onDislike,
+  onPress,
+  onLongPress,
+}: {
+  item: ItemWithLikes;
+  accent: string;
+  accentBg: string;
+  image: { uri: string; cacheKey?: string } | null;
+  emoji: string;
+  minutes?: number;
+  onLike: () => void;
+  onDislike: () => void;
+  onPress: () => void;
+  onLongPress: () => void;
+}) {
+  const { c } = useTheme();
+  const host = item.url ? hostOf(item.url) : '';
+  return (
+    <Card onPress={onPress} onLongPress={onLongPress} style={{ marginBottom: 10, padding: 12 }}>
+      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+        {image ? (
+          <Image source={image} style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: c.bgAlt }} contentFit="cover" transition={150} />
+        ) : (
+          <View style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: accentBg, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 34 }}>{emoji}</Text>
+          </View>
+        )}
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: c.text, fontWeight: '700', fontSize: 16 }}>{item.title}</Text>
+          {item.note ? (
+            <Text style={{ color: c.textMuted, fontSize: 13, marginTop: 2 }} numberOfLines={3}>
+              {item.note}
+            </Text>
+          ) : null}
+          {minutes ? <Text style={{ color: c.textFaint, fontSize: 12, marginTop: 4 }}>⏱ ~{minutes} мин</Text> : null}
+          {item.tags.length || host ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 6 }}>
+              {item.tags.map((t) => (
+                <Badge key={t} label={t} color={accent} bg={accentBg} />
+              ))}
+              {host ? (
+                <Pressable
+                  onPress={() => openLink(item.url)}
+                  hitSlop={8}
+                  accessibilityRole="link"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 1 }}
+                >
+                  <Ionicons name="link-outline" size={14} color={accent} />
+                  <Text style={{ color: accent, fontSize: 13, fontWeight: '600', flexShrink: 1 }} numberOfLines={1}>
+                    {host}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', rowGap: 10, columnGap: 8, marginTop: 12 }}>
+        <AddedBy userId={item.created_by} date={formatDate(item.created_at)} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+          <DislikeButton dislikes={item.dislikes} onPress={onDislike} />
+          <LikeButton likes={item.likes} onPress={onLike} />
+        </View>
+      </View>
+    </Card>
   );
 }
 

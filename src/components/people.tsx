@@ -63,9 +63,9 @@ export function AddedBy({ userId, date }: { userId: string | null; date?: string
   const nameOf = useNameOf();
   const { c } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1, minWidth: 0 }}>
       <Avatar profile={userId ? people[userId] : null} size={20} />
-      <Text style={{ fontSize: 13, color: c.textMuted }}>
+      <Text style={{ fontSize: 13, color: c.textMuted, flexShrink: 1 }} numberOfLines={1}>
         {nameOf(userId, { you: 'Ты' })}
         {date ? ` · ${date}` : ''}
       </Text>
@@ -101,7 +101,7 @@ export function LikeButton({ likes, onPress }: { likes: string[]; onPress: () =>
       {likes.length > 0 ? (
         <>
           <AvatarStack ids={likes} size={18} />
-          <Text style={{ fontSize: 12, color: c.textMuted, maxWidth: 120 }} numberOfLines={1}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: c.textMuted, maxWidth: 96, flexShrink: 1 }} numberOfLines={1}>
             {who}
           </Text>
         </>

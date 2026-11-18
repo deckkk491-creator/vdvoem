@@ -96,27 +96,26 @@ export default function WatchScreen() {
                 item={item}
                 accent={st.fg}
                 onLike={() => toggleLike(item)}
-              onDislike={() => toggleDislike(item)}
+                onDislike={() => toggleDislike(item)}
                 onPress={() => setEditing(item)}
                 onLongPress={() => itemMenu(item.title, () => setEditing(item), () => remove(item.id).catch((e) => Alert.alert('Ошибка', humanError(e))))}
                 badge={
                   <>
                     <Badge label={TYPE_LABEL[item.media_type ?? 'movie']} color={st.fg} bg={st.bg} />
+                    {/* Статус — рядом с типом, а не в нижней строке: там ему не хватало места рядом с лайками */}
+                    <Pressable
+                      onPress={() => update(item.id, { status: STATUS_NEXT[status] }).catch((e) => Alert.alert('Не получилось сменить статус', humanError(e)))}
+                      hitSlop={12}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Статус: ${STATUS_LABEL[status]}. Нажми, чтобы сменить`}
+                    >
+                      <Badge
+                        label={`${status === 'watched' ? '✓ ' : status === 'watching' ? '▶ ' : ''}${STATUS_LABEL[status]}`}
+                        color={status === 'watched' ? c.sage : status === 'watching' ? c.honey : c.textMuted}
+                        bg={status === 'watched' ? c.sageSoft : status === 'watching' ? c.honeySoft : c.bgAlt}
+                      />
+                    </Pressable>
                   </>
-                }
-                footerExtra={
-                  <Pressable
-                    onPress={() => update(item.id, { status: STATUS_NEXT[status] }).catch((e) => Alert.alert('Не получилось сменить статус', humanError(e)))}
-                    hitSlop={12}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Статус: ${STATUS_LABEL[status]}. Нажми, чтобы сменить`}
-                  >
-                    <Badge
-                      label={`${status === 'watched' ? '✓ ' : status === 'watching' ? '▶ ' : ''}${STATUS_LABEL[status]}`}
-                      color={status === 'watched' ? c.sage : status === 'watching' ? c.honey : c.textMuted}
-                      bg={status === 'watched' ? c.sageSoft : status === 'watching' ? c.honeySoft : c.bgAlt}
-                    />
-                  </Pressable>
                 }
               />
             );
