@@ -8,6 +8,14 @@ export const SUPABASE_URL = (process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').trim() 
 export const SUPABASE_ANON_KEY = (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '').trim() || DEFAULT_SUPABASE_KEY;
 export const DEFAULT_PRIVACY_URL = 'https://deckkk491-creator.github.io/vdvoem/privacy-policy.html';
 export const PRIVACY_URL = (process.env.EXPO_PUBLIC_PRIVACY_URL ?? '').trim() || DEFAULT_PRIVACY_URL;
+export const DEFAULT_TERMS_URL = 'https://deckkk491-creator.github.io/vdvoem/terms.html';
+export const TERMS_URL = (process.env.EXPO_PUBLIC_TERMS_URL ?? '').trim() || DEFAULT_TERMS_URL;
+
+// Вход через Яндекс ID (src/lib/yandexAuth.ts). ClientID приложения на oauth.yandex.ru — публичный, не секрет.
+// Без него кнопки «Войти с Яндекс ID» нет. Тот же ClientID — в секрете YANDEX_CLIENT_ID функции yandex-signin.
+export const YANDEX_CLIENT_ID = (process.env.EXPO_PUBLIC_YANDEX_CLIENT_ID ?? '').trim();
+// Страница, куда Яндекс возвращает вход (docs/yandex-callback.html); этот же адрес — Redirect URI в настройках Яндекса
+export const YANDEX_CALLBACK_PAGE = 'https://deckkk491-creator.github.io/vdvoem/yandex-callback.html';
 
 // Почта демо-аккаунта для ревьюера Apple (store/review-notes.md). Если переменная не задана, демо-входа нет.
 // Для этой почты вместо кода из письма принимается код доступа (пароль пользователя в Supabase).

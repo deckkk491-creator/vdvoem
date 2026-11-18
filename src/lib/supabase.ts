@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { AppState } from 'react-native';
 import { isConfigured, SUPABASE_ANON_KEY, SUPABASE_URL } from './env';
+import { RU_EMAIL_REQUIRED_TEXT } from './ruEmail';
 
 // Если .env не заполнен, создаём клиент-заглушку: приложение покажет экран настройки
 // и не будет делать к нему запросов.
@@ -59,6 +60,9 @@ export function humanError(e: unknown): string {
   if (/token has expired|invalid.*otp|otp.*(invalid|expired)|otp_expired/i.test(msg) || code === 'otp_expired')
     return 'Код неверный или устарел. Запроси новый.';
   if (/invalid login credentials/i.test(msg) || code === 'invalid_credentials') return 'Неверный код доступа.';
+  // Новый аккаунт с иностранной почтой отклоняет сервер (миграция 0007); сервис входа сообщает об этом
+  // общей фразой «Database error saving new user»
+  if (/ru_email_required|database error saving new user/i.test(msg)) return RU_EMAIL_REQUIRED_TEXT;
   if (/invalid.*email|email.*invalid|email_address_invalid/i.test(msg) || code === 'email_address_invalid')
     return 'Проверь адрес почты.';
   if (/row-level security|permission denied/i.test(msg) || code === '42501' || status === 403)
