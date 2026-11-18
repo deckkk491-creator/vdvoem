@@ -13,7 +13,7 @@ import { Avatar } from '../src/components/people';
 import { Body, Button, Card, Chip, EmptyState, ErrorNote, H2, Input, Loading, pageStyle, ProgressBar, Row, Segmented, Sheet } from '../src/components/ui';
 import { countryPhotos } from '../src/data/countryPhotos';
 import { ideaPhoto } from '../src/data/photos';
-import { COUNTRY_CARDS, COUNTRY_IDEAS, DATE_IDEAS, PLACE_IDEAS, type CountryCard, type CountryIdea, type DateIdea, type PlaceIdea } from '../src/data/ideas';
+import { COUNTRY_CARDS, COUNTRY_IDEAS, DATE_IDEAS, inSeason, PLACE_IDEAS, type CountryCard, type CountryIdea, type DateIdea, type PlaceIdea } from '../src/data/ideas';
 import { commitAttachments, deleteWithFiles, emptyDraft, type AttachmentDraft } from '../src/lib/files';
 import { formatDate, normalizeUrl, relativeDays, todayISO } from '../src/lib/format';
 import { openMapSearch } from '../src/lib/maps';
@@ -268,9 +268,10 @@ export default function Rule222() {
 
 type AnyIdea = { kind: 'date'; idea: DateIdea } | { kind: 'place'; idea: PlaceIdea } | { kind: 'country'; idea: CountryIdea };
 
+/** Только идеи по сезону: в ноябре не предлагаем велосипеды и сапы, летом — каток */
 function poolOf(kind: RuleKind): AnyIdea[] {
-  if (kind === 'date') return DATE_IDEAS.map((idea) => ({ kind, idea }));
-  if (kind === 'place') return PLACE_IDEAS.map((idea) => ({ kind, idea }));
+  if (kind === 'date') return DATE_IDEAS.filter((idea) => inSeason(idea)).map((idea) => ({ kind, idea }));
+  if (kind === 'place') return PLACE_IDEAS.filter((idea) => inSeason(idea)).map((idea) => ({ kind, idea }));
   return COUNTRY_IDEAS.map((idea) => ({ kind, idea }));
 }
 

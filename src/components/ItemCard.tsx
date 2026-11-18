@@ -114,9 +114,10 @@ export function ItemCard({
             {extra}
           </View>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
+        {/* Если кнопкам не хватает места рядом с автором, они переносятся на строку ниже, а не наезжают на имя */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', rowGap: 10, columnGap: 8, marginTop: 14 }}>
           <AddedBy userId={item.created_by} date={formatDate(item.created_at)} />
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
             {footerExtra}
             {onDislike ? <DislikeButton dislikes={item.dislikes} onPress={onDislike} /> : null}
             <LikeButton likes={item.likes} onPress={onLike} />

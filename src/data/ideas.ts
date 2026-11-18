@@ -9,6 +9,8 @@ export type DateIdea = {
   section: 'weekend' | 'watch' | 'recipe';
   category?: string; // категория для раздела «На выходные»
   athome?: boolean;
+  /** Месяцы (1–12), когда идея уместна; нет поля — круглый год */
+  months?: number[];
 };
 
 export type PlaceIdea = {
@@ -20,6 +22,8 @@ export type PlaceIdea = {
   query: string;
   category: string; // категория раздела «На выходные»
   nearby?: boolean; // поездка за город
+  /** Месяцы (1–12), когда идея уместна; нет поля — круглый год */
+  months?: number[];
 };
 
 export type CountryIdea = {
@@ -31,6 +35,18 @@ export type CountryIdea = {
   vibe: string;
 };
 
+/** Сезоны для средней полосы России: идеи на улице не предлагаем, когда для них холодно или нет сезона */
+const WARM = [5, 6, 7, 8, 9]; // май–сентябрь: велосипеды, пикники, теплоходы
+const SUMMER = [6, 7, 8]; // купание, сапы, кино под открытым небом
+const MILD = [4, 5, 6, 7, 8, 9, 10]; // апрель–октябрь: долгие прогулки по лесу, конные прогулки
+const ICE = [11, 12, 1, 2, 3]; // катки
+const SNOW = [12, 1, 2, 3]; // горнолыжные склоны
+
+/** Подходит ли идея к месяцу даты (по умолчанию — сегодня) */
+export function inSeason(idea: { months?: number[] }, date: Date = new Date()): boolean {
+  return !idea.months || idea.months.includes(date.getMonth() + 1);
+}
+
 export const DATE_IDEAS: DateIdea[] = [
   { id: 'd1', emoji: '🍝', title: 'Готовим пасту с нуля', description: 'Замесить тесто, нарезать тальятелле и сварить соус. Вино и музыка — обязательно.', section: 'recipe', athome: true },
   { id: 'd2', emoji: '🎬', title: 'Киномарафон трилогии', description: 'Выберите трилогию, которую никто из вас не смотрел целиком, и устройте вечер с пледом.', section: 'watch', athome: true },
@@ -39,25 +55,25 @@ export const DATE_IDEAS: DateIdea[] = [
   { id: 'd5', emoji: '🎤', title: 'Караоке на двоих', description: 'Отдельная комната и обещание спеть хотя бы одну песню дуэтом.', section: 'weekend', category: 'активность' },
   { id: 'd6', emoji: '🎳', title: 'Боулинг или бильярд', description: 'Немного соревнования: проигравший выбирает десерт для победителя.', section: 'weekend', category: 'активность' },
   { id: 'd7', emoji: '🖼️', title: 'Выставка и кофе после', description: 'Сходите на новую выставку, а потом обсудите, что понравилось каждому.', section: 'weekend', category: 'выставка' },
-  { id: 'd8', emoji: '🌅', title: 'Встретить рассвет', description: 'Термос с чаем, смотровая площадка или набережная — и город, который только просыпается.', section: 'weekend', category: 'прогулка' },
-  { id: 'd9', emoji: '🧺', title: 'Пикник в парке', description: 'Сэндвичи, фрукты, плед и настольная игра. Зимой — пикник на полу в гостиной.', section: 'weekend', category: 'прогулка' },
+  { id: 'd8', emoji: '🌅', title: 'Встретить рассвет', description: 'Термос с чаем, смотровая площадка или набережная — и город, который только просыпается.', section: 'weekend', category: 'прогулка', months: MILD },
+  { id: 'd9', emoji: '🧺', title: 'Пикник в парке', description: 'Сэндвичи, фрукты, плед и настольная игра на траве.', section: 'weekend', category: 'прогулка', months: WARM },
   { id: 'd10', emoji: '🍣', title: 'Ресторан незнакомой кухни', description: 'Грузинская, перуанская, корейская — кухня, которую вы ещё не пробовали.', section: 'weekend', category: 'ресторан' },
   { id: 'd11', emoji: '🎨', title: 'Мастер-класс вдвоём', description: 'Гончарный круг, живопись, свечи или коктейли — сделать что-то руками вместе.', section: 'weekend', category: 'активность' },
-  { id: 'd12', emoji: '⛸️', title: 'Каток', description: 'Держаться за руки — уважительная причина. Потом глинтвейн или какао.', section: 'weekend', category: 'активность' },
+  { id: 'd12', emoji: '⛸️', title: 'Каток', description: 'Держаться за руки — уважительная причина. Потом глинтвейн или какао.', section: 'weekend', category: 'активность', months: ICE },
   { id: 'd13', emoji: '🎲', title: 'Вечер настольных игр', description: 'Кооперативная игра, где вы в одной команде, — отличный тест на сыгранность.', section: 'weekend', category: 'другое', athome: true },
   { id: 'd14', emoji: '📸', title: 'Фотопрогулка', description: 'Тема на вечер — «красное» или «окна». Потом выберите лучшие кадры друг друга.', section: 'weekend', category: 'прогулка' },
   { id: 'd15', emoji: '🌌', title: 'Планетарий или звёзды', description: 'Сеанс в планетарии или выезд за город, где видно Млечный Путь.', section: 'weekend', category: 'выставка' },
   { id: 'd16', emoji: '🧖', title: 'Баня или спа', description: 'Медленный вечер: парная, травяной чай и никакой спешки.', section: 'weekend', category: 'активность' },
   { id: 'd17', emoji: '🍷', title: 'Дегустация дома', description: 'Три сыра, три вина (или три вида чая). Ставьте оценки и спорьте.', section: 'recipe', athome: true },
   { id: 'd18', emoji: '🎶', title: 'Живая музыка', description: 'Джаз-клуб, органный концерт или квартирник — главное, чтобы вживую.', section: 'weekend', category: 'другое' },
-  { id: 'd19', emoji: '🚲', title: 'Велопрогулка', description: 'Арендуйте велосипеды или самокаты и доедьте до места, где давно не были.', section: 'weekend', category: 'прогулка' },
+  { id: 'd19', emoji: '🚲', title: 'Велопрогулка', description: 'Арендуйте велосипеды или самокаты и доедьте до места, где давно не были.', section: 'weekend', category: 'прогулка', months: WARM },
   { id: 'd20', emoji: '📚', title: 'Книги друг для друга', description: 'Выберите друг другу по книге в книжном магазине — с ограниченным бюджетом.', section: 'weekend', category: 'другое' },
   { id: 'd21', emoji: '🥞', title: 'Долгий бранч', description: 'Выходной без будильника и неспешный поздний завтрак в новом кафе или дома.', section: 'recipe' },
   { id: 'd22', emoji: '🧗', title: 'Скалодром или верёвочный парк', description: 'Немного адреналина и страховка друг друга — во всех смыслах.', section: 'weekend', category: 'активность' },
-  { id: 'd23', emoji: '🍿', title: 'Кино под открытым небом', description: 'Летний кинотеатр или проектор на балконе с гирляндами.', section: 'watch' },
+  { id: 'd23', emoji: '🍿', title: 'Кино под открытым небом', description: 'Летний кинотеатр или проектор на балконе с гирляндами.', section: 'watch', months: SUMMER },
   { id: 'd24', emoji: '✍️', title: 'Письма в будущее', description: 'Напишите друг другу письма и договоритесь открыть их через год.', section: 'weekend', category: 'другое', athome: true },
   { id: 'd25', emoji: '🍫', title: 'Десертный тур', description: 'Три кафе за вечер — в каждом только один десерт на двоих.', section: 'weekend', category: 'ресторан' },
-  { id: 'd26', emoji: '🛶', title: 'Прогулка на теплоходе', description: 'Город с воды выглядит совсем иначе, особенно на закате.', section: 'weekend', category: 'прогулка' },
+  { id: 'd26', emoji: '🛶', title: 'Прогулка на теплоходе', description: 'Город с воды выглядит совсем иначе, особенно на закате.', section: 'weekend', category: 'прогулка', months: WARM },
   { id: 'd27', emoji: '🧩', title: 'Квест-комната', description: 'Час, чтобы выбраться вместе. Узнаете, кто из вас генератор идей.', section: 'weekend', category: 'активность' },
   { id: 'd28', emoji: '💃', title: 'Урок танцев', description: 'Сальса, бачата или вальс — пробное занятие для пар.', section: 'weekend', category: 'активность' },
   { id: 'd29', emoji: '🏮', title: 'Вечер одной страны', description: 'Блюдо, музыка и фильм из страны, куда вы мечтаете поехать.', section: 'recipe', athome: true },
@@ -69,14 +85,14 @@ export const PLACE_IDEAS: PlaceIdea[] = [
   { id: 'p2', emoji: '🌳', title: 'Новый парк или усадьба', description: 'Парк на другом конце города или старинная усадьба с аллеями.', query: 'парк усадьба', category: 'прогулка' },
   { id: 'p3', emoji: '🔭', title: 'Смотровая площадка', description: 'Найдите точку, откуда ваш город видно целиком.', query: 'смотровая площадка', category: 'прогулка' },
   { id: 'p4', emoji: '🏰', title: 'Крепость или кремль рядом', description: 'Однодневная поездка к старым стенам и башням.', query: 'кремль крепость', category: 'прогулка', nearby: true },
-  { id: 'p5', emoji: '🌊', title: 'Озеро или река за городом', description: 'Берег, где можно посидеть, искупаться или покататься на сапах.', query: 'озеро', category: 'прогулка', nearby: true },
+  { id: 'p5', emoji: '🌊', title: 'Озеро или река за городом', description: 'Берег, где можно посидеть, искупаться или покататься на сапах.', query: 'озеро', category: 'прогулка', nearby: true, months: SUMMER },
   { id: 'p6', emoji: '♨️', title: 'Термальный комплекс', description: 'Тёплые бассейны под открытым небом — особенно хороши зимой.', query: 'термальный комплекс', category: 'активность', nearby: true },
   { id: 'p7', emoji: '🍇', title: 'Винодельня или сыроварня', description: 'Экскурсия на производство и дегустация на месте.', query: 'сыроварня винодельня экскурсия', category: 'ресторан', nearby: true },
-  { id: 'p8', emoji: '🐴', title: 'Конная прогулка', description: 'Конный клуб с прогулками для новичков.', query: 'конный клуб прогулка', category: 'активность', nearby: true },
+  { id: 'p8', emoji: '🐴', title: 'Конная прогулка', description: 'Конный клуб с прогулками для новичков.', query: 'конный клуб прогулка', category: 'активность', nearby: true, months: MILD },
   { id: 'p9', emoji: '🌷', title: 'Ботанический сад или оранжерея', description: 'Тропики посреди города — в любой сезон.', query: 'ботанический сад оранжерея', category: 'прогулка' },
   { id: 'p10', emoji: '🛍️', title: 'Фермерский или блошиный рынок', description: 'Попробовать местное, найти винтажную мелочь на память.', query: 'фермерский рынок', category: 'другое' },
   { id: 'p11', emoji: '☕', title: 'Кофейня с обжаркой', description: 'Кофейня, где сами обжаривают зерно, — и разговор с бариста.', query: 'кофейня обжарка', category: 'ресторан' },
-  { id: 'p12', emoji: '🥾', title: 'Экотропа', description: 'Маршрут на 5–10 км по лесу, деревянные настилы и тишина.', query: 'экотропа', category: 'прогулка', nearby: true },
+  { id: 'p12', emoji: '🥾', title: 'Экотропа', description: 'Маршрут на 5–10 км по лесу, деревянные настилы и тишина.', query: 'экотропа', category: 'прогулка', nearby: true, months: MILD },
   { id: 'p13', emoji: '🏘️', title: 'Старинный городок рядом', description: 'Маленький город в 1–3 часах езды: соборы, торговые ряды, пряники.', query: 'малый исторический город', category: 'прогулка', nearby: true },
   { id: 'p14', emoji: '🚂', title: 'Музей железной дороги', description: 'Паровозы, в которые можно залезть, и макеты, от которых не оторваться.', query: 'музей железной дороги', category: 'выставка' },
   { id: 'p15', emoji: '🎪', title: 'Цирк или шоу', description: 'Детское удовольствие для взрослых: акробаты, фокусы, свет.', query: 'цирк', category: 'театр' },
@@ -84,17 +100,17 @@ export const PLACE_IDEAS: PlaceIdea[] = [
   { id: 'p17', emoji: '🎯', title: 'Стрельба из лука', description: 'Спокойный, но азартный спорт — попробуйте вдвоём.', query: 'стрельба из лука тир', category: 'активность' },
   { id: 'p18', emoji: '🛕', title: 'Монастырь или храм', description: 'Архитектура, тишина, иногда — монастырская выпечка.', query: 'монастырь', category: 'прогулка', nearby: true },
   { id: 'p19', emoji: '🦉', title: 'Зоопарк или контактная ферма', description: 'Альпаки, совы и еноты — гарантированное хорошее настроение.', query: 'контактный зоопарк', category: 'прогулка' },
-  { id: 'p20', emoji: '🏡', title: 'Глэмпинг на ночь', description: 'Шатёр или домик в лесу с панорамными окнами.', query: 'глэмпинг', category: 'другое', nearby: true },
+  { id: 'p20', emoji: '🏡', title: 'Глэмпинг на ночь', description: 'Шатёр или домик в лесу с панорамными окнами.', query: 'глэмпинг', category: 'другое', nearby: true, months: WARM },
   { id: 'p21', emoji: '🎨', title: 'Арт-кластер', description: 'Бывший завод с галереями, мастерскими и барами.', query: 'арт-кластер', category: 'выставка' },
   { id: 'p22', emoji: '🍜', title: 'Гастрорынок', description: 'Десяток кухонь под одной крышей — каждый берёт по блюду на двоих.', query: 'гастрономический рынок фудмолл', category: 'ресторан' },
-  { id: 'p23', emoji: '⛷️', title: 'Горнолыжный склон', description: 'Даже если не катаетесь — тюбинг и глинтвейн у подъёмника.', query: 'горнолыжный комплекс', category: 'активность', nearby: true },
-  { id: 'p24', emoji: '🚣', title: 'Сапы или байдарки', description: 'Прокат на воде и неспешный сплав по реке.', query: 'прокат сап байдарки', category: 'активность', nearby: true },
-  { id: 'p25', emoji: '🌻', title: 'Лавандовое или подсолнуховое поле', description: 'Сезонная красота для фото — уточните, когда цветёт.', query: 'лавандовое поле', category: 'прогулка', nearby: true },
+  { id: 'p23', emoji: '⛷️', title: 'Горнолыжный склон', description: 'Даже если не катаетесь — тюбинг и глинтвейн у подъёмника.', query: 'горнолыжный комплекс', category: 'активность', nearby: true, months: SNOW },
+  { id: 'p24', emoji: '🚣', title: 'Сапы или байдарки', description: 'Прокат на воде и неспешный сплав по реке.', query: 'прокат сап байдарки', category: 'активность', nearby: true, months: SUMMER },
+  { id: 'p25', emoji: '🌻', title: 'Лавандовое или подсолнуховое поле', description: 'Сезонная красота для фото — уточните, когда цветёт.', query: 'лавандовое поле', category: 'прогулка', nearby: true, months: SUMMER },
   { id: 'p26', emoji: '🎻', title: 'Филармония', description: 'Концерт классической музыки в красивом зале.', query: 'филармония концертный зал', category: 'театр' },
   { id: 'p27', emoji: '🪂', title: 'Аэротруба или полёт на шаре', description: 'Почувствовать полёт: в аэротрубе — без парашюта, на аэростате — над облаками.', query: 'аэротруба полёт на воздушном шаре', category: 'активность' },
   { id: 'p28', emoji: '🏺', title: 'Краеведческий музей', description: 'Узнать про свой край то, о чём не рассказывали в школе.', query: 'краеведческий музей', category: 'выставка' },
   { id: 'p29', emoji: '🌉', title: 'Незнакомый район города', description: 'Выберите район, где никогда не гуляли, и пройдите его пешком.', query: 'достопримечательности', category: 'прогулка' },
-  { id: 'p30', emoji: '🍯', title: 'Пасека или ферма', description: 'Экскурсия, дегустация мёда и сыров, свежий воздух.', query: 'ферма экскурсия', category: 'другое', nearby: true },
+  { id: 'p30', emoji: '🍯', title: 'Пасека или ферма', description: 'Экскурсия, дегустация мёда и сыров, свежий воздух.', query: 'ферма экскурсия', category: 'другое', nearby: true, months: WARM },
 ];
 
 export const COUNTRY_IDEAS: CountryIdea[] = [
