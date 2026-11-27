@@ -19,13 +19,17 @@
 --   3. Внизу появится таблица с кодом приглашения запасного пространства:
 --      он нужен для строки [DEMO_INVITE_CODE] в store/review-notes.md.
 --
+--  Для скриншотов магазина: впишите свою почту в v_viewer_email — вас добавят участником
+--  демо-пространства, и его можно будет открыть со своего телефона (переключатель пространств).
+--
 --  Скрипт не трогает чужие данные: удаляются только пространства, созданные демо-ревьюером,
---  и демо-пространство партнёра. Требует миграции 0001–0004.
+--  и демо-пространство партнёра. Требует миграции 0001–0005.
 -- =====================================================================
 do $$
 declare
   v_reviewer_email text := 'demo-reviewer@example.com';  -- ← почта ревьюера (как в EXPO_PUBLIC_DEMO_EMAIL)
   v_partner_email  text := 'demo-partner@example.com';   -- ← почта партнёра
+  v_viewer_email   text := '';                           -- ← по желанию: своя почта, чтобы снять скриншоты демо
 
   c_main_name  constant text := 'Аня и Миша (демо)';
   c_spare_name constant text := 'Запасное пространство для проверки кода';
@@ -36,6 +40,8 @@ declare
   v_spare  uuid;
   v_goal   uuid;
   v_wish_a uuid;
+  v_viewer uuid;
+  d        date;
 begin
   if v_reviewer_email = 'demo-reviewer@example.com' or v_partner_email = 'demo-partner@example.com' then
     raise exception 'Впишите настоящие почты ревьюера и партнёра в начале скрипта (см. комментарий сверху)';
@@ -74,6 +80,13 @@ begin
   returning id into v_space;
   insert into public.space_members (space_id, user_id, role)
   values (v_space, v_a, 'owner'), (v_space, v_b, 'member');
+  if trim(v_viewer_email) <> '' then
+    select id into v_viewer from auth.users where lower(email) = lower(trim(v_viewer_email));
+    if v_viewer is null then raise exception 'Пользователь % не найден', v_viewer_email; end if;
+    if v_viewer not in (v_a, v_b) then
+      insert into public.space_members (space_id, user_id, role) values (v_space, v_viewer, 'member');
+    end if;
+  end if;
 
   -- Смотрим вместе
   insert into public.items (space_id, kind, title, note, media_type, status, created_by, created_at) values
@@ -133,8 +146,40 @@ begin
     (v_space, 'event', 'Ужин у родителей',          'Принести торт',      '🍲', current_date + 3, '19:00', '22:00', null, v_a),
     (v_space, 'task',  'Купить билеты в театр',      '',                  '🎟️', null,             null,    null,    null, v_b),
     (v_space, 'task',  'Записаться к стоматологу',   'Выбрать удобный день', '🦷', null,           null,    null,    v_b,  v_a);
-  insert into public.calendar_events (space_id, kind, title, note, emoji, starts_on, yearly, created_by)
-  values (v_space, 'date', 'Годовщина', 'Куда-нибудь сходить вдвоём', '💞', date '2023-06-14', true, v_a);
+  insert into public.calendar_events (space_id, kind, title, note, emoji, starts_on, yearly, remind_before, celebrate, created_by)
+  values (v_space, 'date', 'Годовщина', 'Куда-нибудь сходить вдвоём', '💞', date '2023-06-14', true, 7, 'fireworks', v_a);
+  insert into public.calendar_events (space_id, kind, title, note, emoji, starts_on, start_time, end_time, remind_before, created_by) values
+    (v_space, 'event', 'Кино: премьера',      'Места в центре',     '🎬', current_date + 6,  '20:30', '23:00', 0, v_b),
+    (v_space, 'event', 'Йога',                '',                   '🧘', current_date + 1,  '08:00', '09:00', null, v_a),
+    (v_space, 'event', 'Встреча с друзьями',  'Настолки у Лены',    '🎲', current_date + 11, '18:00', '22:00', 1, v_b);
+  insert into public.calendar_events (space_id, kind, title, note, emoji, starts_on, yearly, remind_before, celebrate, created_by)
+  values (v_space, 'date', 'День рождения Миши', 'Торт и шарики', '🎂', (date_trunc('month', current_date) + interval '18 days')::date, true, 3, 'confetti', v_a);
+
+  -- Бюджет: этот и прошлый месяц
+  insert into public.budget_entries (space_id, kind, amount, category, note, spent_on, created_by) values
+    (v_space, 'income',  95000, 'Зарплата',         '',                    date_trunc('month', current_date)::date + 4, v_a),
+    (v_space, 'income',  88000, 'Зарплата',         '',                    date_trunc('month', current_date)::date + 9, v_b),
+    (v_space, 'expense', 35000, 'Коммуналка',       'Аренда и свет',       date_trunc('month', current_date)::date + 1, v_b),
+    (v_space, 'expense',  6240, 'Продукты',         'Закупка на неделю',   current_date - 2, v_a),
+    (v_space, 'expense',  3180, 'Продукты',         '',                    current_date - 6, v_b),
+    (v_space, 'expense',  2450, 'Кафе',             'Завтрак в выходные',  current_date - 4, v_a),
+    (v_space, 'expense',  1290, 'Транспорт',        'Такси',               current_date - 3, v_b),
+    (v_space, 'expense',   599, 'Подписки и связь', 'Кинотеатр онлайн',    current_date - 8, v_a),
+    (v_space, 'expense',  3600, 'Развлечения',      'Билеты в театр',      current_date - 5, v_a),
+    (v_space, 'expense',  1890, 'Питомцы',          'Корм',                current_date - 1, v_b),
+    (v_space, 'expense', 34000, 'Коммуналка',       'Аренда и свет',       (date_trunc('month', current_date) - interval '1 month')::date + 1, v_b),
+    (v_space, 'expense', 18700, 'Продукты',         '',                    (date_trunc('month', current_date) - interval '1 month')::date + 15, v_a),
+    (v_space, 'income',  95000, 'Зарплата',         '',                    (date_trunc('month', current_date) - interval '1 month')::date + 4, v_a);
+
+  -- Рабочие дни: Аня — пн–пт, Миша — два через два, на этот и следующий месяц
+  for d in select generate_series(date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '2 months' - interval '1 day')::date, interval '1 day')::date loop
+    if extract(isodow from d) <= 5 then
+      insert into public.work_days (space_id, user_id, day) values (v_space, v_a, d);
+    end if;
+    if ((d - date_trunc('month', current_date)::date) % 4) < 2 then
+      insert into public.work_days (space_id, user_id, day) values (v_space, v_b, d);
+    end if;
+  end loop;
 
   -- Правило 2-2-2: одно свидание, одно место, одна страна в истории
   insert into public.rule_events (space_id, kind, title, note, done_on, created_by) values

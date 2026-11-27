@@ -11,10 +11,10 @@ Character counts (script `../tools/count_listing.py`, counts Unicode characters 
 |---|---:|---:|---|
 | App name | 29 | 30 | OK |
 | Subtitle | 30 | 30 | OK |
-| Promotional text | 163 | 170 | OK |
-| Description | 1511 | 4000 | OK |
+| Promotional text | 145 | 170 | OK |
+| Description | 1641 | 4000 | OK |
 | Keywords | 98 | 100 | OK |
-| What's New (1.0) | 213 | 4000 | OK |
+| What's New (1.0) | 235 | 4000 | OK |
 | Keywords format | 13 words | — | OK |
 <!-- counts:end -->
 
@@ -35,33 +35,34 @@ Movies, recipes, shopping list
 ## Promotional Text (≤ 170)
 
 <!-- field:promo -->
-A shared space for two or the whole family: what to watch, what to cook, where to go this weekend and what to buy. Add ideas and like the ones your loved ones add.
+A shared calendar, movies, recipes, shopping and budget for a couple, a family or friends. Add ideas, like them and never miss an important date.
 <!-- /field -->
 
 ## Description (≤ 4000)
 
 <!-- field:description -->
-Vmeste is a shared space for a couple or a family. It keeps movie-night picks, recipes, weekend ideas, the shopping list and wishlists in one place. Everyone can add things, and others can like them, which makes choosing easier.
+Vmeste is a shared space for a couple, a family or a group of friends. Calendar, movie-night picks, recipes, weekend ideas, the shopping list, a budget and wishlists — in one app, for everyone at once.
 
 GETTING STARTED
-• Sign in with your email: you'll get a code, no password needed.
-• Create a space and send your partner or family an invite code — or join someone else's space with theirs.
+• Sign in with Yandex ID or your email: you'll get a code, no password needed.
+• Create a space and send your people an invite code — or join someone else's space with theirs.
 
 SECTIONS
-• Movies & series — what to watch together.
-• Recipes — save them from a link so they don't get lost.
-• Weekend ideas — theatre, cinema, a restaurant, a walk, anything you'd like to try.
-• Savings jar — a shared goal and how much you've put aside. It's just a tracker: the app doesn't handle money or bank cards.
-• Shopping list — neatly grouped by category.
+• Calendar — events, tasks and important dates with reminders. Fireworks on the big day.
+• Movies & series — want to watch, watching, watched.
+• Food — recipes saved from a link, plus "What should we cook tonight?".
+• Weekend — places to go and things to try; past plans move to their own list.
+• Shopping — a shared list; ticked items disappear on their own.
+• Budget — spending and income by category; fill it in from a receipt QR code. It's just a tracker: the app doesn't handle money or bank cards.
+• Work days — who works when, right in the shared calendar.
+• Savings jar and wishlists — shared goals and wish lists. Others can secretly tap "I'll gift this" — the owner won't see it.
+• The 2-2-2 rule — a date every 2 weeks, a new place every 2 months, a new country every 2 years, with seasonal ideas.
 
 LIKES
-Someone adds an idea, others mark that they like it too. So it's easy to see what to pick tonight.
+Someone adds an idea, others mark that they like it too. So it's easy to see what to pick.
 
-WISHLISTS
-Everyone has their own wishlist. Others can secretly tap "I'll gift this" — the owner won't see it, and nobody else buys the same present.
-
-THE 2-2-2 RULE (OPTIONAL)
-A simple guideline for couples: a date night every 2 weeks, a new place every 2 months, a new country every 2 years. Turn it on and the app will send you a local reminder and suggest ideas. Don't need it? Just leave it off.
+MAKE IT YOURS
+Light and dark themes, a true-black OLED theme, colours and backgrounds, and your own set of tabs.
 
 DATA AND PRIVACY
 • No ads, no tracking, your data is never sold.
@@ -82,7 +83,7 @@ relationship,date,night,wishlist,gift,savings,weekend,ideas,shared,partner,toget
 ## What's New (version 1.0)
 
 <!-- field:whatsnew -->
-The first version of Vmeste: a shared space you join with an invite code, movies, recipes, weekend ideas, a savings jar, a shopping list, wishlists with a secret "I'll gift this" and the 2-2-2 rule with reminders.
+The first version of Vmeste: a shared calendar with reminders, movies, recipes, weekend ideas, shopping, a budget from receipts, work days, a savings jar, wishlists with a secret "I'll gift this" and the 2-2-2 rule with seasonal ideas.
 <!-- /field -->
 
 ## Category

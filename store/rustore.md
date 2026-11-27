@@ -10,10 +10,9 @@
 ```bash
 cd ~/vdvoem && git checkout main && git pull && npm install
 npx eas-cli@latest login
-npx eas-cli@latest init
 npx eas-cli@latest build -p android --profile production-apk
 ```
-- `init` привяжет проект к Expo и допишет `extra.eas.projectId` в `app.json` — изменение нужно отправить в репозиторий (или прислать ID Claude).
+- Проект уже создан на expo.dev (организация `deckkk491s-team`, slug `vdvoem`) и прописан в `app.json` (`owner`, `extra.eas.projectId`), поэтому `init` не нужен. Сборку можно запустить и без терминала: expo.dev → проект → GitHub → Build.
 - На вопрос «Generate a new Android Keystore?» ответить **Yes**.
 - Сборка идёт в облаке ~15–20 минут, в конце — ссылка на `.apk`.
 - **Сразу после первой сборки:** `npx eas-cli@latest credentials -p android` → скачать резервную копию ключа (keystore) и хранить вне репозитория. Без этого ключа обновить приложение в RuStore будет нельзя.
