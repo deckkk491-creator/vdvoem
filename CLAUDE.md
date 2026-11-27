@@ -46,7 +46,7 @@
 - `supabase/migrations/0003_reactions_wish_photos.sql` — реакции в чате (удалены в 0006), фото к желаниям (вложения `parent_type='wish'`, только владелец). Применена 24.10.2026.
 - `supabase/migrations/0004_security_hardening.sql` — по итогам аудита: заморозка владельцев/авторов, `done_by` только свой, `message_reads` только через RPC, вложения только к записям своего пространства, файлы чата/желаний удаляет только автор, коды приглашения 8 символов + лимит 10 попыток за 10 минут (`join_space` возвращает NULL на неверный код), `kick_member`, `rotate_invite_code`, удаление аккаунта обезличивает общие записи, а не удаляет их; `space_changes` — realtime об удалениях только для участников.
 - `supabase/migrations/0005_budget_workdays_reminders.sql` — `budget_entries`, `work_days` (свои дни отмечает только сам участник), поля календаря `remind_before`/`remind_time`/`celebrate`, акцент `sand`; `remove_member_data` и `delete_my_data` учитывают новые таблицы. Только добавляет новое. Применена в Supabase 12.11.2026 (через SQL Editor в браузере пользователя). Клиент переживает отсутствие полей напоминаний (`useCalendar.save` повторяет запись без них), но бюджет и рабочие дни без миграции показывают ошибку.
-- `supabase/migrations/0006_remove_chat.sql` — удаление чата: таблицы `messages`, `message_reads`, `message_reactions`, RPC `mark_chat_read`/`message_in_space`; `my_file_paths`, `space_file_paths`, `remove_member_data`, `delete_my_data` и политика удаления в хранилище переписаны без них. Файлы чата в бакете (`<space>/chat/`) миграция не трогает. Применена в Supabase 12.11.2026; в бакете остался 1 файл чата (0,1 МБ) — удалить вручную в Dashboard → Storage. Проверки — `rls_v6_test.sql`.
+- `supabase/migrations/0006_remove_chat.sql` — удаление чата: таблицы `messages`, `message_reads`, `message_reactions`, RPC `mark_chat_read`/`message_in_space`; `my_file_paths`, `space_file_paths`, `remove_member_data`, `delete_my_data` и политика удаления в хранилище переписаны без них. Файлы чата в бакете (`<space>/chat/`) миграция не трогает. Применена в Supabase 12.11.2026; последний файл чата удалён из бакета 27.11.2026. Проверки — `rls_v6_test.sql`.
 - CI job `database` прогоняет 0001–0005, `rls_v2…v5`, затем 0006 и `rls_v6_test.sql`, 0007 и `rls_v7_test.sql` на чистом Postgres (заглушки auth/storage). Локально в облачной сессии есть Postgres 16 (`/usr/lib/postgresql/16/bin`) — миграции и проверки можно прогнать до отправки.
 - `supabase/tests/` — проверки RLS. Отметку «я подарю» владелец вишлиста не видит.
 - `supabase/demo/seed_demo.sql` — демо-данные для ревьюера Apple (две почты вписываются в начале, повторный запуск пересоздаёт демо). CI прогоняет его на чистой базе.
@@ -65,14 +65,15 @@
 
 ## Supabase (настроено)
 - Проект `vdvoem` (ref lsdejadmrwuxiavgficc), регион West EU (Ирландия). Ключи прописаны по умолчанию в `src/lib/env.ts`.
-- Обе функции задеплоены (link-preview — 28.10.2026, delete-account — 24.10.2026 через Dashboard → Edge Functions → Code), Verify JWT выключен (проверка внутри функций). link-preview отдаёт и цену; delete-account удаляет и файлы из хранилища.
+- Функции задеплоены (link-preview — 28.10.2026, delete-account — 24.10.2026, yandex-signin — 27.11.2026, через Dashboard → Edge Functions), Verify JWT выключен (проверка внутри функций). link-preview отдаёт и цену; delete-account удаляет и файлы из хранилища.
 - Почта: свой SMTP через Яндекс (логин и пароль приложения — только в настройках Supabase, в репозиторий не записывать), лимит 30 писем в час. Шаблоны «Magic link» и «Confirm sign up» на русском, в них и код `{{ .Token }}`, и ссылка.
-- Вход работает и по коду, и по ссылке. Клиент в режиме PKCE: из ссылки принимается только `code` (готовые токены в ссылке игнорируются). Site URL `vdvoem://auth-callback`, redirect URLs `vdvoem://**` (и `exp://**` — только на время тестов в Expo Go, перед релизом убрать).
+- Вход работает и по коду, и по ссылке. Клиент в режиме PKCE: из ссылки принимается только `code` (готовые токены в ссылке игнорируются). Site URL `vdvoem://auth-callback`, redirect URLs `vdvoem://**` (тестового `exp://**` больше нет).
 - link-preview: редиректы вручную с перепроверкой, DNS-проверка на частные адреса, только порты 80/443. Скрытый WebView (`PageReader`) не открывает локальную сеть.
 
 ## Состояние на 27.11.2026
 - Все PR (#7–#10) влиты в `main` (18.11.2026). Выпуск — с базой в Ирландии (решение владельца).
-- Ветка `release-prep`: ClientID Яндекс ID по умолчанию. Сливать после того, как в Supabase задеплоена `yandex-signin` с секретом и применена 0007 — иначе кнопка «Войти с Яндекс ID» покажет ошибку.
+- 27.11.2026 в Supabase: применена 0007 (триггер `enforce_ru_signup_email` на месте), задеплоена `yandex-signin` (Verify JWT выключен, секрет `YANDEX_CLIENT_ID` задан; тестовый запрос с неверным токеном → 401 `yandex_token_invalid`), удалён последний файл старого чата, `exp://**` в Redirect URLs уже нет (Expo Go входит только по коду).
+- Первый магазин — RuStore: всё по шагам в `store/rustore.md`. EAS ещё не привязан к Expo-аккаунту (нет `extra.eas.projectId`), первую сборку владелец запускает на Маке.
 
 ## Состояние на 28.10.2026
 - `audit-fixes` влита в `main`. Миграция 0004 применена в Supabase, новая link-preview задеплоена (28.10.2026, через Chrome пользователя).
