@@ -73,7 +73,7 @@
 ## Состояние на 27.11.2026
 - Все PR (#7–#10) влиты в `main` (18.11.2026). Выпуск — с базой в Ирландии (решение владельца).
 - 27.11.2026 в Supabase: применена 0007 (триггер `enforce_ru_signup_email` на месте), задеплоена `yandex-signin` (Verify JWT выключен, секрет `YANDEX_CLIENT_ID` задан; тестовый запрос с неверным токеном → 401 `yandex_token_invalid`), удалён последний файл старого чата, `exp://**` в Redirect URLs уже нет (Expo Go входит только по коду).
-- Первый магазин — RuStore: всё по шагам в `store/rustore.md`. Проект EAS создан 27.11.2026: организация `deckkk491s-team`, projectId `0f731f91-b94b-4eb9-96c0-6f40ac545b7f` (прописаны в `app.json`).
+- Первый магазин — RuStore: всё по шагам в `store/rustore.md`. Проект EAS создан 27.11.2026: организация `deckkk491s-team`, projectId `0f731f91-b94b-4eb9-96c0-6f40ac545b7f` (прописаны в `app.json`). Репозиторий подключён к Expo через GitHub-приложение: сборка без терминала — expo.dev → проект → Builds → Build from GitHub (Android, ref `main`, профиль `production-apk`). Ключ подписи Android (upload keystore, JKS, alias `vmeste`, SHA-256 `C2:C6:B6:CE:…:ED:7A`) создан 27.11.2026, загружен в Expo Credentials; копия файла и пароль — у владельца. В репозиторий ключ и пароль не класть.
 - Ветки на GitHub удалять из облачной сессии нельзя (прокси отвечает 403): старые влитые ветки владелец удаляет сам на странице Branches.
 
 ## Состояние на 28.10.2026

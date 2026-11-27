@@ -6,14 +6,17 @@
 1. **Кабинет разработчика:** console.rustore.ru → войти через VK ID или Сбер ID → «Физическое лицо» → подтвердить личность через Госуслуги. Если позже понадобятся платные функции — статус самозанятого.
 2. **Expo-аккаунт** (бесплатно, expo.dev) — в нём EAS собирает подписанный APK и хранит ключ подписи.
 
-## 2. Сборка (один раз нужен терминал на Маке)
+## 2. Сборка
+
+Без терминала: expo.dev → «Вместе» → Builds → **Build from GitHub** → Android, Git ref `main`, профиль `production-apk` → Confirm. Ключ подписи уже лежит в Expo (создан 27.11.2026, копия у владельца).
+
+Или в терминале на Маке:
 ```bash
 cd ~/vdvoem && git checkout main && git pull && npm install
 npx eas-cli@latest login
 npx eas-cli@latest build -p android --profile production-apk
 ```
 - Проект уже создан на expo.dev (организация `deckkk491s-team`, slug `vdvoem`) и прописан в `app.json` (`owner`, `extra.eas.projectId`), поэтому `init` не нужен. Сборку можно запустить и без терминала: expo.dev → проект → GitHub → Build.
-- На вопрос «Generate a new Android Keystore?» ответить **Yes**.
 - Сборка идёт в облаке ~15–20 минут, в конце — ссылка на `.apk`.
 - **Сразу после первой сборки:** `npx eas-cli@latest credentials -p android` → скачать резервную копию ключа (keystore) и хранить вне репозитория. Без этого ключа обновить приложение в RuStore будет нельзя.
 - Номер сборки (versionCode) EAS увеличивает сам (`autoIncrement`, `appVersionSource: remote`). Версия для людей — `version` в `app.json` (сейчас 1.0.0).
