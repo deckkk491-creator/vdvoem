@@ -97,6 +97,7 @@ export default function WatchScreen() {
                 accent={st.fg}
                 accentBg={st.bg}
                 emoji={item.media_type === 'series' ? '📺' : '🎬'}
+                thumb={false}
                 onLike={() => toggleLike(item)}
                 onDislike={() => toggleDislike(item)}
                 onPress={() => setEditing(item)}
