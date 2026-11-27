@@ -58,7 +58,10 @@ export function ItemCard({
   footerExtra,
   extra,
   image,
+  thumb = true,
 }: {
+  /** false — без фото и значка слева; высота карточки остаётся той же */
+  thumb?: boolean;
   /** Картинка вместо image_url (например, своё фото из вложений) */
   image?: { uri: string; cacheKey?: string } | null;
   /** Эмодзи на месте фото, если картинки нет */
@@ -85,14 +88,14 @@ export function ItemCard({
   return (
     <Card onPress={onPress} onLongPress={onLongPress} style={{ marginBottom: 10, padding: 12 }}>
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-        {src ? (
+        {!thumb ? null : src ? (
           <ExpoImage source={src} style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: c.bgAlt }} contentFit="cover" transition={150} />
         ) : (
           <View style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: accentBg, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontSize: 34 }}>{emoji}</Text>
           </View>
         )}
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minHeight: 72 }}>
           <Text style={{ color: c.text, fontWeight: '700', fontSize: 16 }}>{item.title}</Text>
           {meta}
           {item.note ? (
