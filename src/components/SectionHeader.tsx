@@ -78,7 +78,8 @@ export function SectionHeader({
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: fonts.display, fontSize: 32, fontWeight: '700', color: c.text, letterSpacing: -0.5 }}>
-            {title} <Text style={{ fontSize: 28 }}>{emoji}</Text>
+            {/* Неразрывный пробел: смайлик переносится вместе с последним словом, а не один на строке */}
+            {title}{' '}<Text style={{ fontSize: 28 }}>{emoji}</Text>
           </Text>
           {subtitle ? <Text style={{ fontSize: 15, color: c.textMuted, marginTop: 2 }}>{subtitle}</Text> : null}
         </View>
