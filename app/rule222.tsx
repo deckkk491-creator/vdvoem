@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, useWindowDimensions, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Linking, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInTab } from '../src/lib/inTab';
 import { AttachmentEditor, AttachmentStrip, useAttachmentsFor } from '../src/components/Attachments';
@@ -34,7 +34,7 @@ import { humanError, supabase } from '../src/lib/supabase';
 import type { Attachment, ItemKind, RuleEvent, RuleKind } from '../src/lib/types';
 import { useAuth } from '../src/providers/AuthProvider';
 import { useRealtimeRefetch, useSpace } from '../src/providers/SpaceProvider';
-import { fonts, MAX_CONTENT_WIDTH, radius, sectionStyle, TAB_BAR_HEIGHT, useTheme } from '../src/theme';
+import { fonts, radius, sectionStyle, TAB_BAR_HEIGHT, useTheme } from '../src/theme';
 
 const KINDS: RuleKind[] = ['date', 'place', 'country'];
 const IDEAS_SHOWN = 3;
@@ -363,166 +363,83 @@ function IdeaCard({ item, onReplace, onSave, onDone }: { item: AnyIdea; onReplac
     text = item.idea.description;
   }
 
+  // Фото — квадратом 72×72 слева, как в «Еде»: свидания и места — своё фото, страна — первое фото из галереи
+  const photo = item.kind === 'country' ? countryPhotos(item.idea.id)[0] ?? null : ideaPhoto(item.idea.id);
+  const info = item.kind === 'country' ? COUNTRY_CARDS[item.idea.id] : undefined;
+  const [showInfo, setShowInfo] = useState(false);
+  useEffect(() => setShowInfo(false), [item.idea.id]);
+
   return (
-    <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
-      {item.kind === 'country' ? (
-        <CountryGallery countryId={item.idea.id} flag={item.idea.flag} />
-      ) : (
-        <IdeaPhoto id={item.idea.id} emoji={emoji} />
-      )}
-      <View style={{ padding: 14 }}>
-        {tag ? <Text style={{ color: st.fg, fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.6 }}>{tag}</Text> : null}
-        <Text style={{ fontFamily: fonts.display, fontSize: 20, fontWeight: '700', color: c.text, marginTop: 4 }}>
-          {item.kind === 'country' ? `${item.idea.flag} ${item.idea.name}` : item.idea.title}
-        </Text>
-        <Body muted style={{ marginTop: 4, fontSize: 14 }}>
-          {text}
-        </Body>
-        {item.kind === 'place' ? (
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-            <Button title="Яндекс Карты" small variant="secondary" icon="map-outline" onPress={() => openMapSearch(`${item.idea.query} ${city}`)} />
-            {Platform.OS === 'ios' ? (
-              <Button title="Apple Maps" small variant="secondary" icon="navigate-outline" onPress={() => openMapSearch(`${item.idea.query} ${city}`, 'apple')} />
-            ) : null}
+    <Card style={{ marginBottom: 10, padding: 12 }}>
+      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+        {photo ? (
+          <Image source={{ uri: photo.url }} style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: st.bg }} contentFit="cover" transition={150} />
+        ) : (
+          <View style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: st.bg, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 34 }}>{emoji}</Text>
           </View>
-        ) : null}
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-          <Button title="Другая" icon="refresh" small variant="secondary" onPress={onReplace} style={{ flex: 1 }} />
-          <Button title="В планы" icon="bookmark-outline" small onPress={onSave} color={st.fg} style={{ flex: 1 }} />
+        )}
+        <View style={{ flex: 1 }}>
+          {tag ? (
+            <Text style={{ color: st.fg, fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }} numberOfLines={1}>
+              {tag}
+            </Text>
+          ) : null}
+          <Text style={{ color: c.text, fontWeight: '700', fontSize: 16, marginTop: tag ? 2 : 0 }}>
+            {item.kind === 'country' ? `${item.idea.flag} ${item.idea.name}` : item.idea.title}
+          </Text>
+          <Text style={{ color: c.textMuted, fontSize: 13, marginTop: 2 }} numberOfLines={3}>
+            {text}
+          </Text>
+          {photo ? (
+            <Text
+              style={{ color: c.textFaint, fontSize: 10, marginTop: 4 }}
+              numberOfLines={1}
+              onPress={() => WebBrowser.openBrowserAsync(photo.source).catch(() => undefined)}
+              accessibilityRole="link"
+            >
+              Фото: {photo.author} · {photo.license}
+            </Text>
+          ) : null}
         </View>
-        <Button title="Мы это сделали — отметить" small variant="ghost" color={st.fg} onPress={onDone} style={{ marginTop: 4 }} />
+      </View>
+      {showInfo && info ? (
+        <View style={{ backgroundColor: st.bg, borderRadius: radius.sm, padding: 10, marginTop: 10 }}>
+          <CountryInfo info={info} color={c.text} />
+        </View>
+      ) : null}
+      <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+        <Button title="Другая" small variant="secondary" icon="refresh" onPress={onReplace} />
+        <Button title="В планы" small variant="ghost" color={st.fg} icon="bookmark-outline" onPress={onSave} />
+        <Button title="Сделали" small variant="ghost" color={st.fg} icon="checkmark" onPress={onDone} />
+        {info ? (
+          <Button
+            title={showInfo ? 'Скрыть' : 'О стране'}
+            small
+            variant="ghost"
+            color={st.fg}
+            icon="information-circle-outline"
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => undefined);
+              setShowInfo((v) => !v);
+            }}
+          />
+        ) : null}
+        {item.kind === 'place' ? (
+          <>
+            <Button title="Яндекс Карты" small variant="ghost" color={st.fg} icon="map-outline" onPress={() => openMapSearch(`${item.idea.query} ${city}`)} />
+            {Platform.OS === 'ios' ? (
+              <Button title="Apple Maps" small variant="ghost" color={st.fg} icon="navigate-outline" onPress={() => openMapSearch(`${item.idea.query} ${city}`, 'apple')} />
+            ) : null}
+          </>
+        ) : null}
       </View>
     </Card>
   );
 }
 
-/** Фото достопримечательностей страны — листаются пальцем. Нажатие на фото — визитка страны. */
-function CountryGallery({ countryId, flag }: { countryId: string; flag: string }) {
-  const { c } = useTheme();
-  const st = sectionStyle(c, 'rule');
-  const photos = useMemo(() => countryPhotos(countryId), [countryId]);
-  const info = COUNTRY_CARDS[countryId];
-  // Ширина карточки = ширина страницы минус поля. Размер окна читаем при каждой отрисовке: он меняется при складывании iPhone Duo и в Split View
-  const { width: windowW } = useWindowDimensions();
-  const sides = useSafeAreaInsets();
-  const width = Math.min(windowW, MAX_CONTENT_WIDTH) - sides.left - sides.right - 32;
-  const [page, setPage] = useState(0);
-  const [showInfo, setShowInfo] = useState(false);
-  useEffect(() => {
-    setShowInfo(false);
-    setPage(0);
-  }, [countryId]);
-
-  const height = 220;
-  const toggle = () => {
-    if (!info) return;
-    Haptics.selectionAsync().catch(() => undefined);
-    setShowInfo((v) => !v);
-  };
-
-  if (!photos.length) {
-    return (
-      <Pressable onPress={toggle} style={{ backgroundColor: st.bg, minHeight: info ? height : 0, paddingVertical: 16, alignItems: 'center', justifyContent: 'center' }}>
-        {showInfo && info ? <CountryInfo info={info} /> : <Text style={{ fontSize: 44 }}>{flag}</Text>}
-      </Pressable>
-    );
-  }
-  const p = photos[Math.min(page, photos.length - 1)];
-  return (
-    <View>
-      <ScrollView
-        key={countryId}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
-      >
-        {photos.map((ph) => (
-          <Pressable
-            key={ph.url}
-            onPress={toggle}
-            accessibilityRole="button"
-            accessibilityLabel={`${ph.caption}. Нажми, чтобы ${showInfo ? 'скрыть' : 'показать'} визитку страны`}
-          >
-            <Image source={{ uri: ph.url }} style={{ width, height, backgroundColor: st.bg }} contentFit="cover" transition={200} />
-          </Pressable>
-        ))}
-      </ScrollView>
-      {showInfo && info ? (
-        <Pressable onPress={toggle} style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.72)', padding: 14, justifyContent: 'center' }]} accessibilityRole="button" accessibilityLabel="Скрыть визитку страны">
-          <CountryInfo info={info} />
-        </Pressable>
-      ) : (
-        <>
-          {info ? (
-            <View pointerEvents="none" style={{ position: 'absolute', top: 10, right: 10, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
-              <Ionicons name="information-circle-outline" size={15} color="#fff" />
-              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>О стране</Text>
-            </View>
-          ) : null}
-          <View
-            pointerEvents="box-none"
-            style={{ position: 'absolute', left: 10, bottom: 10, right: 10, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}
-          >
-            <View style={{ backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 4, maxWidth: '80%' }}>
-              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }} numberOfLines={1}>
-                {p.caption}
-              </Text>
-              <Text
-                style={{ color: '#fff', fontSize: 10, opacity: 0.85 }}
-                numberOfLines={1}
-                onPress={() => WebBrowser.openBrowserAsync(p.source).catch(() => undefined)}
-                accessibilityRole="link"
-              >
-                Фото: {p.author} · {p.license}
-              </Text>
-            </View>
-            {photos.length > 1 ? (
-              <View pointerEvents="none" style={{ flexDirection: 'row', gap: 4, paddingBottom: 4 }}>
-                {photos.map((_, i) => (
-                  <View key={i} style={{ width: i === page ? 14 : 6, height: 6, borderRadius: 3, backgroundColor: i === page ? '#fff' : 'rgba(255,255,255,0.55)' }} />
-                ))}
-              </View>
-            ) : null}
-          </View>
-        </>
-      )}
-    </View>
-  );
-}
-
-/** Фото идеи свидания или места с подписью автора; если фото нет — эмодзи */
-function IdeaPhoto({ id, emoji }: { id: string; emoji: string }) {
-  const { c } = useTheme();
-  const st = sectionStyle(c, 'rule');
-  const ph = ideaPhoto(id);
-  if (!ph) {
-    return (
-      <View style={{ backgroundColor: st.bg, paddingVertical: 16, alignItems: 'center' }}>
-        <Text style={{ fontSize: 44 }}>{emoji}</Text>
-      </View>
-    );
-  }
-  return (
-    <View>
-      <Image source={{ uri: ph.url }} style={{ width: '100%', height: 190, backgroundColor: st.bg }} contentFit="cover" transition={200} />
-      <View style={{ position: 'absolute', left: 10, bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 4, maxWidth: '85%' }}>
-        <Text style={{ fontSize: 16 }}>{emoji}</Text>
-        <Text
-          style={{ color: '#fff', fontSize: 10, opacity: 0.9, flexShrink: 1 }}
-          numberOfLines={1}
-          onPress={() => WebBrowser.openBrowserAsync(ph.source).catch(() => undefined)}
-          accessibilityRole="link"
-        >
-          Фото: {ph.author} · {ph.license}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-/** Визитка страны: четыре коротких строки поверх фото */
-function CountryInfo({ info }: { info: CountryCard }) {
+/** Визитка страны: четыре коротких строки */
+function CountryInfo({ info, color }: { info: CountryCard; color: string }) {
   const rows: [string, string, string][] = [
     ['🗓', 'Сезон', info.season],
     ['🏖', 'Отдых', info.rest],
@@ -534,7 +451,7 @@ function CountryInfo({ info }: { info: CountryCard }) {
       {rows.map(([icon, label, text]) => (
         <View key={label} style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
           <Text style={{ fontSize: 15, width: 20 }}>{icon}</Text>
-          <Text style={{ flex: 1, color: '#fff', fontSize: 13, lineHeight: 17 }} numberOfLines={2}>
+          <Text style={{ flex: 1, color, fontSize: 13, lineHeight: 17 }}>
             <Text style={{ fontWeight: '800' }}>{label}: </Text>
             {text}
           </Text>
