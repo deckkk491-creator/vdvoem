@@ -39,6 +39,11 @@ export function itemMenu(title: string, onEdit: () => void, onDelete: () => void
   }
 }
 
+/**
+ * Карточка записи в списках (Кино, Еда, Выходные) — в одном виде с вариантами «Что приготовить сегодня?»:
+ * квадратное фото 72×72 слева (или эмодзи на цветном фоне), справа название, описание, метки и ссылка,
+ * внизу автор и лайки. Габариты у всех списков одинаковые.
+ */
 export function ItemCard({
   item,
   onLike,
@@ -46,18 +51,20 @@ export function ItemCard({
   onPress,
   onLongPress,
   accent,
+  accentBg,
+  emoji,
   badge,
   meta,
   footerExtra,
   extra,
-  showImage = true,
   image,
-  placeholder,
 }: {
   /** Картинка вместо image_url (например, своё фото из вложений) */
   image?: { uri: string; cacheKey?: string } | null;
-  /** Эмодзи-заглушка, если картинки нет совсем */
-  placeholder?: { emoji: string; bg: string };
+  /** Эмодзи на месте фото, если картинки нет */
+  emoji: string;
+  /** Фон под эмодзи */
+  accentBg: string;
   /** Дополнительный блок под текстом карточки (например, вложения) */
   extra?: React.ReactNode;
   item: ItemWithLikes;
@@ -66,62 +73,61 @@ export function ItemCard({
   onPress?: () => void;
   onLongPress?: () => void;
   accent: string;
+  /** Метки (тип, статус, категория) — строкой под описанием */
   badge?: React.ReactNode;
+  /** Строка под названием (место, время готовки) */
   meta?: React.ReactNode;
   footerExtra?: React.ReactNode;
-  showImage?: boolean;
 }) {
   const { c } = useTheme();
+  const src = image ?? (item.image_url ? { uri: item.image_url } : null);
+  const host = item.url ? hostOf(item.url) || 'Ссылка' : '';
   return (
-    <Card onPress={onPress} onLongPress={onLongPress} style={{ marginBottom: 12, padding: 0, overflow: 'hidden' }}>
-      {showImage && (image ?? item.image_url) ? (
-        <ExpoImage
-          source={image ?? { uri: item.image_url! }}
-          style={{ width: '100%', height: 170, backgroundColor: c.bgAlt }}
-          contentFit="cover"
-          transition={150}
-        />
-      ) : showImage && placeholder ? (
-        <View style={{ width: '100%', height: 110, backgroundColor: placeholder.bg, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 48 }}>{placeholder.emoji}</Text>
-        </View>
-      ) : null}
-      <View style={{ padding: 16 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-          <View style={{ width: 4, alignSelf: 'stretch', borderRadius: 2, backgroundColor: accent, opacity: 0.8 }} />
-          <View style={{ flex: 1 }}>
-            {badge ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>{badge}</View> : null}
-            <Text style={{ fontSize: 18, fontWeight: '700', color: c.text, lineHeight: 23 }}>{item.title}</Text>
-            {meta}
-            {item.note ? (
-              <Text style={{ fontSize: 14, color: c.textMuted, marginTop: 6, lineHeight: 20 }} numberOfLines={4}>
-                {item.note}
-              </Text>
-            ) : null}
-            {item.url ? (
-              <Pressable
-                onPress={() => openLink(item.url)}
-                hitSlop={10}
-                accessibilityRole="link"
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, alignSelf: 'flex-start' }}
-              >
-                <Ionicons name="link-outline" size={15} color={accent} />
-                <Text style={{ color: accent, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
-                  {hostOf(item.url) || 'Ссылка'}
-                </Text>
-              </Pressable>
-            ) : null}
-            {extra}
+    <Card onPress={onPress} onLongPress={onLongPress} style={{ marginBottom: 10, padding: 12 }}>
+      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+        {src ? (
+          <ExpoImage source={src} style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: c.bgAlt }} contentFit="cover" transition={150} />
+        ) : (
+          <View style={{ width: 72, height: 72, borderRadius: radius.sm, backgroundColor: accentBg, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 34 }}>{emoji}</Text>
           </View>
+        )}
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: c.text, fontWeight: '700', fontSize: 16 }}>{item.title}</Text>
+          {meta}
+          {item.note ? (
+            <Text style={{ color: c.textMuted, fontSize: 13, marginTop: 2 }} numberOfLines={3}>
+              {item.note}
+            </Text>
+          ) : null}
+          {badge || host ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 6 }}>
+              {badge}
+              {host ? (
+                <Pressable
+                  onPress={() => openLink(item.url)}
+                  hitSlop={8}
+                  accessibilityRole="link"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 1 }}
+                >
+                  <Ionicons name="link-outline" size={14} color={accent} />
+                  <Text style={{ color: accent, fontSize: 13, fontWeight: '600', flexShrink: 1 }} numberOfLines={1}>
+                    {host}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
+          {extra}
         </View>
-        {/* Если кнопкам не хватает места рядом с автором, они переносятся на строку ниже, а не наезжают на имя */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', rowGap: 10, columnGap: 8, marginTop: 14 }}>
-          <AddedBy userId={item.created_by} date={formatDate(item.created_at)} />
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
-            {footerExtra}
-            {onDislike ? <DislikeButton dislikes={item.dislikes} onPress={onDislike} /> : null}
-            <LikeButton likes={item.likes} onPress={onLike} />
-          </View>
+      </View>
+      {/* Если кнопкам не хватает места рядом с автором, они переносятся на строку ниже, а не наезжают на имя */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', rowGap: 10, columnGap: 8, marginTop: 12 }}>
+        <AddedBy userId={item.created_by} date={formatDate(item.created_at)} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+          {footerExtra}
+          {onDislike ? <DislikeButton dislikes={item.dislikes} onPress={onDislike} /> : null}
+          <LikeButton likes={item.likes} onPress={onLike} />
         </View>
       </View>
     </Card>

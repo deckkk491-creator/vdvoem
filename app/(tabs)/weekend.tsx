@@ -72,10 +72,12 @@ export default function WeekendScreen() {
         key={item.id}
         item={item}
         accent={st.fg}
+        accentBg={st.bg}
+        emoji={CATEGORY_EMOJI[item.category as WeekendCategory] ?? st.emoji}
         onLike={() => toggleLike(item)}
         onDislike={() => toggleDislike(item)}
         onPress={() => setEditing(item)}
-        extra={<AttachmentStrip attachments={byParent[item.id]} size={64} />}
+        extra={<AttachmentStrip attachments={byParent[item.id]} size={48} />}
         onLongPress={() => itemMenu(item.title, () => setEditing(item), () => remove(item.id).catch((e) => Alert.alert('Ошибка', humanError(e))))}
         badge={
           <>
@@ -94,10 +96,10 @@ export default function WeekendScreen() {
         }
         meta={
           item.place ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
-              <Ionicons name="location-outline" size={14} color={c.textMuted} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+              <Ionicons name="location-outline" size={13} color={c.textMuted} />
               <Text
-                style={{ fontSize: 14, color: c.textMuted, textDecorationLine: 'underline' }}
+                style={{ fontSize: 13, color: c.textMuted, textDecorationLine: 'underline', flexShrink: 1 }}
                 onPress={() => openMapSearch(`${item.place} ${space?.city ?? ''}`)}
                 numberOfLines={1}
               >
