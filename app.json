@@ -82,6 +82,12 @@
     },
     "locales": {
       "ru": "./locales/ru.json"
+    },
+    "owner": "deckkk491s-team",
+    "extra": {
+      "eas": {
+        "projectId": "0f731f91-b94b-4eb9-96c0-6f40ac545b7f"
+      }
     }
   }
 }
