@@ -13,7 +13,9 @@ export const TERMS_URL = (process.env.EXPO_PUBLIC_TERMS_URL ?? '').trim() || DEF
 
 // Вход через Яндекс ID (src/lib/yandexAuth.ts). ClientID приложения на oauth.yandex.ru — публичный, не секрет.
 // Без него кнопки «Войти с Яндекс ID» нет. Тот же ClientID — в секрете YANDEX_CLIENT_ID функции yandex-signin.
-export const YANDEX_CLIENT_ID = (process.env.EXPO_PUBLIC_YANDEX_CLIENT_ID ?? '').trim();
+// Приложение «Вместе» на oauth.yandex.ru (зарегистрировано 27.11.2026 в Яндекс-аккаунте владельца)
+export const DEFAULT_YANDEX_CLIENT_ID = 'b2ba52950e9c4bffad47418c28bdf61d';
+export const YANDEX_CLIENT_ID = (process.env.EXPO_PUBLIC_YANDEX_CLIENT_ID ?? '').trim() || DEFAULT_YANDEX_CLIENT_ID;
 // Страница, куда Яндекс возвращает вход (docs/yandex-callback.html); этот же адрес — Redirect URI в настройках Яндекса
 export const YANDEX_CALLBACK_PAGE = 'https://deckkk491-creator.github.io/vdvoem/yandex-callback.html';
 
